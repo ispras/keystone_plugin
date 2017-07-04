@@ -8,8 +8,8 @@ version = "0.1.0-1"               -- TODO: renumber, must match the info in the 
 supported_platforms = {"linux", "macosx"}
 source = {
   -- these are initially not required to make it work
-  --url = "git://github.com/Mashape/kong_plugin",
-  --tag = "0.1.0"
+  url = "git://github.com/Mashape/kong_plugin",
+  tag = "0.1.0"
 }
 
 description = {
@@ -19,16 +19,38 @@ description = {
 }
 
 dependencies = {
+  "luasec == 0.6",
+  "luasocket == 2.0.2",
+  "penlight == 1.4.1",
+  "mediator_lua == 1.1.2",
+  "lua-resty-http == 0.08",
+  "lua-resty-jit-uuid == 0.0.5",
+  "multipart == 0.5",
+  "version == 0.2",
+  "lapis == 1.5.1",
+  "lua-cassandra == 1.2.2",
+  "pgmoon-mashape == 2.0.1",
+  "luatz == 0.3",
+  "lua_system_constants == 0.1.2",
+  "lua-resty-iputils == 0.2.1",
+  "luacrypto == 0.3.2",
+  "luasyslog == 1.0.0",
+  "lua_pack == 1.0.4",
+  "lua-resty-dns-client == 0.4.2",
+  "lua-resty-worker-events == 0.3.0",
+  "luaposix >= 0.0"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
 build = {
   type = "builtin",
   modules = {
-    ["kong.plugins."..pluginName..".handler"] = "kong/plugins/"..pluginName.."/handler.lua",
-    ["kong.plugins."..pluginName..".schema"] = "kong/plugins/"..pluginName.."/schema.lua",
-    ["kong.plugins."..pluginName..".api"] = "kong/plugins/"..pluginName.."/api.lua",
-    ["kong.plugins."..pluginName..".daos"] = "kong/plugins/"..pluginName.."/daos.lua",
-    ["kong.plugins."..pluginName..".migrations.cassandra"] = "kong/plugins/"..pluginName.."/migrations/cassandra.lua",
+    ["kong.plugins.keystone.migrations.cassandra"] = "kong/plugins/keystone/migrations/cassandra.lua",
+    ["kong.plugins.keystone.handler"] = "kong/plugins/keystone/handler.lua",
+    ["kong.plugins.keystone.schema"] = "kong/plugins/keystone/schema.lua",
+    ["kong.plugins.keystone.api"] = "kong/plugins/keystone/api.lua",
+    ["kong.plugins.keystone.daos"] = "kong/plugins/keystone/daos.lua",
+    ["kong.plugins.keystone.sha512"] = "kong/plugins/keystone/sha512.lua",
+    ["kong.plugins.keystone.uuid4"] = "kong/plugins/keystone/uuid4.lua"
   }
 }
