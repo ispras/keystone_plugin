@@ -2,6 +2,11 @@ local responses = require "kong.tools.responses"
 local crud = require "kong.api.crud_helpers"
 local uuid4 = require('uuid4')
 local sha512 = require('sha512')
+local cjson = require "cjson"
+
+local SERVER_IP = '127.0.0.1'
+local HOST = '0.0.0.0'
+local PORT = 35357
 
 local ERROR = 413
 
@@ -24,7 +29,7 @@ function v20()
                     type = 'application/vnd.openstack.identity-v2.0+json'
                 }},
                 links = {
-                    {href = 'http://' .. SERVER_IP .. ':35357/v2.0/', rel = 'self'},
+                    {href = "http://" .. SERVER_IP .. ':35357/v2.0/', rel = 'self'},
                     {href = 'http://docs.openstack.org/', type = 'text/html', rel = 'describedby'}
                 }
         }
@@ -33,67 +38,75 @@ function v20()
 	return responses.send_HTTP_OK(body, get_headers())
 end
 
-function tenants(request, dao_factory)  
-	local ten_name = request.tenant.name
+function tenants(self, dao_factory)  
+    ngx.req.read_body()
+    local request = ngx.req.get_body_data()
+    request = cjson.decode(request)
     
-     -- return with error if tenant exists
-    local 
-    local select_res, err = dao_factory.tenname_to_tenid:find(ten_name)
+    local ten_name = request.tenant.name
+
+
+     -- return with error if tenant exists 
+    local res, err = dao_factory.keystone_tenname_to_tenid:find{tenant_name = ten_name} 
     
-    local response = {}
-    
-    if select_res then
+    if res then
         return responses.send(ERROR, "tenant with this name exists")
     end
+
+    local ten_id = uuid4.getUUID() 
     
-    --insert in tarantool
-    local ten_id = uuid4.getUUID()
-    
-    dao_factory.tenant_info:insert({
-        tenant_id = ten_id
+    res, err = dao_factory.keystone_tenant_info:insert({
+        tenant_id = ten_id,
         tenant_name = ten_name,
         description = nil,
         enabled = true
     })
     
-    dao_factory.tenname_to_tenid:insert({
+    if err then
+        return responses.send_HTTP_OK(err, get_headers())
+    end 
+    
+    res, err = dao_factory.keystone_tenname_to_tenid:insert({
         tenant_name = ten_name,
         tenant_id = ten_id
-    })
+    }) 
+
+    if err then
+        return responses.send_HTTP_OK(err, get_headers())
+    end 
     
-    --print("tenant id is " .. tenant_id)
-    --local test_sha_ = sha2.sha512hex(tenant_name) --sha openssl
 	local body = {
 					tenant = {
 								description = nil,
 								enabled = true,
-								id = tenant_id,
-								name = tenant_name
+								id = ten_id,
+								name = ten_name
 								--test_sha = test_sha_
 							 }
 				 }
 	
-    return responses.send_HTTP_OK(body, get_headers())
+    return responses.send_HTTP_OK(body, get_headers()) 
 end
 
-function delete_tenant(ten_id, dao_factory)(
-    local tenant_info, err = dao_factory.tenant_info:find(ten_id)
+function delete_tenant(self, dao_factory)
+    local ten_id = self.params.tenant_id
+    local tenant_info, err = dao_factory.keystone_tenant_info:find{tenant_id = ten_id}
      
-    if err then --user doesn't exist
+    if err then --tenant doesn't exist
         return responses.send(ERROR, err)
     end
     
     local ten_name = tenant_info.tenant_name
     
-    dao_factory.tenant_info:delete(ten_id)
-    dao_factory.tenname_to_tenid:delete(ten_name)
+    dao_factory.keystone_tenant_info:delete{tenant_id = ten_id}
+    dao_factory.keystone_tenname_to_tenid:delete{tenant_name = ten_name}
     
     return responses.send_HTTP_OK()
 end
 
-function get_user_info(uid, dao_factory)
-    
-    local user_info, err = dao_factory.user_info:find(uid)
+function get_user_info(self, dao_factory)
+    local uid = self.params.user_id
+    local user_info, err = dao_factory.keystone_user_info:find{user_id = uid}
     
     if err then --user doesn't exist
         return responses.send(ERROR, err)
@@ -115,40 +128,46 @@ function get_user_info(uid, dao_factory)
     return responses.send_HTTP_OK(body, get_headers())
 end
 
-function delete_user(uid, dao_factory)
-    local user_info, err = dao_factory.user_info:find(uid)
-     
+function delete_user(self, dao_factory)
+    local uid = self.params.user_id
+    local user_info, err = dao_factory.keystone_user_info:find{user_id = uid}
+    
     if err then --user doesn't exist
         return responses.send(ERROR, err)
     end
     
-    local user_name = tenant_info.user_name
+    local uname = user_info.user_name
     
-    dao_factory.user_info:delete(uid)
-    dao_factory.uname_to_uid:delete(user_name)
+    dao_factory.keystone_user_info:delete{user_id = uid}
+    dao_factory.keystone_uname_to_uid:delete{user_name = uname}
     
     return responses.send_HTTP_OK()
 end
 
 function users(request, dao_factory)
+    ngx.req.read_body()
+    local request = ngx.req.get_body_data()
+    request = cjson.decode(request)
+
 	local uname = request.user.name
 	local ten_id = request.user.tenantId
 
-	local passwd = sha512.crypt(request.user.password)-- sha512_crypt(request.user.password) --sha2.sha512hex(request.user.password)
+	local passwd = sha512.crypt(request.user.password)
 	local email_ = request.user.email
 	
 	if not ten_id then
 	    return responses.send(ERROR, "bad tenant")
 	end
-
-    local select_res = dao_factory.uname_to_uid:find(uname)
-    if select_res ~= nil then
-         return responses.send(ERROR, err)
+	
+	local res, err = dao_factory.keystone_uname_to_uid:find{user_name = uname} 
+    
+    if res then
+        return responses.send(ERROR, "user with this name exists")
     end
     
     local uid = uuid4.getUUID()
     
-    dao_factory.user_info:insert({
+    res, err = dao_factory.keystone_user_info:insert({
         user_id = uid,
         tenant_id = ten_id,
         user_name = uname,
@@ -158,19 +177,27 @@ function users(request, dao_factory)
         created_at = nil
     })
     
-    dao_factory.tenname_to_tenid:insert({
+    if err then
+        return responses.send_HTTP_OK(err, get_headers())
+    end 
+    
+    res, err = dao_factory.keystone_uname_to_uid:insert({
         user_name = uname,
         user_id = uid
-    })
+    }) 
+
+    if err then
+        return responses.send_HTTP_OK(err, get_headers())
+    end 
   
 	local body = {
 					user = {
-					        username = user_name,
-							name = user_name,
-							id = user_id,
+					        username = uname,
+							name = uname,
+							id = uid,
 							enabled = true,
 							email = email_, --'c_rally_9aa720c3_lk5OUaDz@email.me',
-							tenantID = tenant_id
+							tenantID = ten_id
 						   }
 				}
 	
@@ -178,66 +205,73 @@ function users(request, dao_factory)
 end
 
 function tokens(request, dao_factory)
-   -- local username_ = request.auth.identity.password.user.name
+    ngx.req.read_body()
+    local request = ngx.req.get_body_data()
+    request = cjson.decode(request)
+
     local uname = request.auth.passwordCredentials.username
     local password = sha512.crypt(request.auth.passwordCredentials.password)
     local ten_name = request.auth.tenantName
-    --local tenant_id = request.auth.tenant.id
     
-    local uname_to_uid, err = dao_factory.uname_to_uid:find(uname)
+    local uname_to_uid, err = dao_factory.keystone_uname_to_uid:find{user_name = uname} 
     
-    if err then --user doesn't exist
-        return responses.send(ERROR, err)
+    if err then
+        return responses.send(ERROR, "user with this name doesn't exist")
     end
     
     local uid = uname_to_uid.user_id
     
-    local user_info = dao_factory.user_info:find(uid)
-      
-    local upass = user_info.password
-
-    --if upass ~= password then
-    if not sha512.verify(request.auth.passwordCredentials.password, upass) then
-	    return responses.send(ERROR, "incorrect password") --incorrect password
-    end
-
-    local uid_to_tenants = {}
-    uid_to_tenants = box.space.uid_to_tenants:select(uid)
-    local is_tenant_exists = false
+    local user_info, err = dao_factory.keystone_user_info:find{user_id = uid}
     
-    local tenname_to_tenid, err = dao_factory.tenname_to_tenid:find(ten_name)
-    
-     if err then --user doesn't exist
+    if err then
         return responses.send(ERROR, err)
     end
     
-    local ten_id = tenname_to_tenid.tenant_id
+    local upass = user_info.password
+
+    if not sha512.verify(request.auth.passwordCredentials.password, upass) then
+	    return responses.send(ERROR, "incorrect password") --incorrect password
+    end
     
-    if user_info.tenant_id ~= ten_id then --user doesn't belong to this tenant
+    local tenname_to_tenid, err = dao_factory.keystone_tenname_to_tenid:find{tenant_name = ten_name} 
+    
+     if err then --tenant doesn't exist
+        return responses.send(ERROR, err)
+    end
+    
+    if user_info.tenant_id ~= tenname_to_tenid.tenant_id then --user doesn't belong to this tenant
 	    return responses.send(ERROR, "user doesn't belong to this tenant")
     end
-            
-    local token_id_ = sha512.crypt(os.clock())
+    
+    --sha512.crypt(os.clock())          
+    local token_id_ = uuid4.getUUID()--sha512.crypt(os.clock())
 	local issued_at_u = os.time()
 	local expires_u = issued_at_u + 60 * 60;
 	local issued_at_ = os.date("%Y-%m-%dT%H:%M:%S", issued_at_u)
 	local expires_ = os.date("%Y-%m-%dT%H:%M:%S", expires_u)
     
-    --insert in db
-    dao_factory.token_info:insert({
+    local ten_id = user_info.tenant_id
+    
+    --return responses.send_HTTP_OK(sha512.crypt(os.clock()), get_headers())
+
+    local res, err = dao_factory.keystone_token_info:insert({
         token_id = token_id_,
         user_id = uid,
         tenant_id = ten_id,
-        issued_at = issued_at_,
-        expires = expires_
+        issued_at = issued_at_u,
+        expires = expires_u
     })
     
-    --local tenid_to_teninfo = {}
-    --tenid_to_teninfo = box.space.tenid_to_teninfo:get(tenant_id)
+    if err then
+        return responses.send_HTTP_OK(err, get_headers())
+    end 
     
-   -- local ten_name = tenid_to_teninfo[2]
-   
-    local tenant_info = dao_factory.tenant_info:find(ten_id)
+    local tenant_info, err = dao_factory.keystone_tenant_info:find{tenant_id = ten_id} 
+    
+    if err then
+        return responses.send(ERROR, err)
+    end
+    
     local ten_description = tenant_info.description
     local ten_enabled = tenant_info.enabled
     
@@ -246,11 +280,11 @@ function tokens(request, dao_factory)
 							token = {
 								issued_at = issued_at_,
 								expires = expires_,
-								id = token_id,
+								id = token_id_,
 								tenant = {
 										description = ten_description, --"Admin tenant",
 										enabled = ten_enabled, --true,
-                                        id = tenant_id, --"6dcbaf4b07d64f91b87c4bc2ee8a0929",
+                                        id = ten_id, --"6dcbaf4b07d64f91b87c4bc2ee8a0929",
                                         name = ten_name --"admin"
                                 },
                                 audit_ids = {"A8a7LO3oShC9PuaHS9mfHQ"}
@@ -267,7 +301,7 @@ function tokens(request, dao_factory)
                                 name = "keystone"
                             }},
                             user = {
-                                username = username_, --"admin",
+                                username = uname, --"admin",
                                 id = uid, --"90407f560e344ad39c6727a358278c35",
                                 roles = {
                                     {name = "_member_"},
@@ -296,24 +330,28 @@ return {
     },
     ["/v2.0/tenants/:tenant_id"] = {
         DELETE = function(self, dao_factory)
-            delete_tenant(tenant_id, dao_factory)
-        end,
-
+            delete_tenant(self, dao_factory)
+        end
+    },
+  
+    ["/v2.0/tenants"] = {
         POST = function(self, dao_factory)
             tenants(self, dao_factory)
         end
     },
-    ["/v2.0/users/:user_id"] = {
-        GET = function(self, dao_factory)
-            get_user_info(user_id, dao_factory)
-        end
-        
-        DELETE = function(self, dao_factory)
-            delete_user(user_id, dao_factory)
-        end,
-
+    ["/v2.0/users"] = {
         POST = function(self, dao_factory)
             users(self, dao_factory)
+        end
+    },
+    
+    ["/v2.0/users/:user_id"] = {
+        GET = function(self, dao_factory)
+            get_user_info(self, dao_factory)
+        end,
+        
+        DELETE = function(self, dao_factory)
+            delete_user(self, dao_factory)
         end
     },
     ["/v2.0/tokens"] = {
@@ -322,4 +360,3 @@ return {
         end
     } 
 }
-
