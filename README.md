@@ -1,8 +1,8 @@
-#Keystone plugin for Kong
+# Keystone plugin for Kong
 
 This instruction will relate you how to prepare the environment for developing Kong plugins and will describe how to install, run and test the Keystone plugin. 
 
-###**Step 0: Vagrant+Virtualbox**
+### **Step 0: Vagrant+Virtualbox**
  
 First, you need to install [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/). So, you can find links for downloading it on their websites.
  
@@ -41,7 +41,7 @@ Now, if all goes well, you have Vagrant, VirtualBox and linux-headers installed 
  
 Also make sure, that visualization is allowed in your system and you have capabilities for creating virtual machines. This settings you can find in **BIOS**.
  
-###**Step 1: Kong+Vagrant**
+### **Step 1: Kong+Vagrant**
 
 [Kong](https://getkong.org/) is an open-source API proxy based on [NGINX](http://nginx.org/), which aims to «secure, manage and extend APIs and Microservices» thanks to a plugins oriented architecture.
  
@@ -198,7 +198,7 @@ If you have some problems look at logs, you can find them into the VM in this di
  
  Don't forget to destroy this VM before perfoming the next step!
  
-###**Step 2: Keystone plugin**
+### **Step 2: Keystone plugin**
 
 The **keystone-plugin** executes some functions, which exist in [Keystone](https://docs.openstack.org/keystone/latest/), the [OpenStack](https://docs.openstack.org/) Identity Service. Keystone is an OpenStack service that provides API client authentication, service discovery, and distributed multi-tenant authorization by implementing [OpenStack’s Identity API](https://developer.openstack.org/api-ref/identity/v3/).
 
@@ -435,4 +435,4 @@ Also you can test two DELETE-methods:
 This queries will delete entities by their ID.
 
 
-###**Step 3: Testing**
+### **Step 3: Testing**
