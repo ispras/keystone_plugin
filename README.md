@@ -394,7 +394,7 @@ Create user entity with name "admin" that will belong to created tenant. It will
         {
             "name": "admin",
              "tenantId": "EDD52ED8-B362-40AA-91A6-26596DAF5017",
-             "password": "password",
+             "password": "tester",
              "email": "some@email.com"
         }
     }
@@ -416,7 +416,7 @@ Now you can receive a token for this user. It will be POST-method via link http:
     "auth": {
         "passwordCredentials": {
             "username": "admin", 
-            "password": "password"
+            "password": "tester"
         },
         "tenantName": "admin"
     }
