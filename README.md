@@ -1,10 +1,10 @@
 # Keystone plugin for Kong
 
-This instruction will relate you how to prepare the environment for developing Kong plugins and will describe how to install, run and test the Keystone plugin. 
+This instruction will explain how to prepare the environment for developing Kong plugins and how to install, run and test the Keystone plugin. 
 
 ## **Step 0: Vagrant+Virtualbox**
  
-First, you need to install [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/). So, you can find links for downloading it on their websites.
+First, you need to install [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/). Download links can be found on their websites.
  
 For Vagrant:
 
@@ -14,7 +14,7 @@ For VirtualBox:
  
  ![](https://vfc.cc/7a7c2c2cd3bb3efaec7bbc7c4492933d) 
  
-You should choose **AMD64** for your Ubuntu version!  
+Choose **AMD64** version of Ubuntu.  
 
  
 Create new directory, for example, named as vagrant:
@@ -23,8 +23,7 @@ Create new directory, for example, named as vagrant:
 $ mkdir ~/vagrant
 $ cd ~/vagrant
 ~~~
-
-Save that packages in this directory and then unzip them:
+Unzip downloaded packages in this directory:
 
 ~~~sh
  $ sudo dpkg -i vagrant_*.deb
@@ -102,13 +101,13 @@ You should receive a **JSON** response:
 }
 ~~~
 
-For stoping the Kong instance use following command:
+For stopping the Kong instance use following command:
 
 ~~~sh
 $ kong stop
 ~~~ 
     
-After this destroy the VM, you can do this executing from the host machine following commands:
+After this destroy the VM, you can do this by executing following commands from the host machine:
 
 ~~~sh
 $ vagrant global-status
@@ -129,7 +128,7 @@ with Vagrant commands from any directory. For example:
 "vagrant destroy 1a2b3c4d"
 ~~~
  
-Now execute destroy command with id of your VM:
+Now execute destroy command with id of your VM as an argument:
     
 ~~~sh
 $ sudo vagrant destroy 7c52087
@@ -202,7 +201,7 @@ If you have some problems look at logs, you can find them into the VM in this di
 
 The **keystone-plugin** executes some functions, which exist in [Keystone](https://docs.openstack.org/keystone/latest/), the [OpenStack](https://docs.openstack.org/) Identity Service. Keystone is an OpenStack service that provides API client authentication, service discovery, and distributed multi-tenant authorization by implementing [OpenStack’s Identity API](https://developer.openstack.org/api-ref/identity/v3/).
 
-Code of the project you can find [here](https://github.com/lenaaxenova/keystone_plugin). 
+Code of the project can be found [here](https://github.com/lenaaxenova/keystone_plugin). 
 
 So, let's clone this project:
 
@@ -265,7 +264,7 @@ Make sure that at this moment the structure of your files looks like this:
 └── ...
 ~~~
 
-Also you should modify rockspecs files adding information about keystone-plugin and required lua-modules. You can do it copying rockspecs files from keystone-plugin project to it:
+Also you should modify rockspecs files adding information about keystone-plugin and required lua-modules. You can do it by copying rockspecs files from keystone-plugin project to it:
 
 ~~~sh
 $ cp ~/keystone_plugin/kong-plugin-keystone-0.1.0-1.rockspec ~/kong-vagrant/kong-plugin/kong-plugin-keystone-0.1.0-1.rockspec
@@ -292,7 +291,7 @@ Copy your configuration file into **/etc/kong/kong.conf** (do it inside the VM):
 $ sudo cp /kong-plugin/kong.conf /etc/kong/kong.conf
 ~~~
 
-Let's start kong selecting our configuration file:
+Let's start kong and specify our configuration file:
 
 ~~~sh
 $ cd /kong
@@ -307,7 +306,7 @@ Make sure, that kong has started without any problems:
 $ curl http://localhost:8001
 ~~~
 
- If you have some problems and the code status of the response isn't 200 look at logs, you can find them into the VM in this directory **/usr/local/kong/logs **and errors are described in file **error.log**:
+ If you have some problems and the code status of the response isn't 200 look at logs, you can find them in VM directory **/usr/local/kong/logs **and errors are described in file **error.log**:
 
  In case you don't have any problems let's add API and keystone as custom plugin from the host machine:
  
@@ -322,7 +321,7 @@ Then try to check the Admin host 8001 again:
 $ curl http://localhost:8001
 ~~~
 
-You should recive response like this:
+You should receive a response like this:
 
 ~~~sh
 HTTP/1.1 200 OK
@@ -342,7 +341,7 @@ Pay attention to the presence of the following lines:
 * **"plugins":{"enabled_in_cluster":["keystone"] ...}**
 * **"available_on_server":{..., "keystone":true, ...}**
 
-If you have found that lines, keystone-plugin is running and is enabled. So you can try to check some functions provided by this plugin. First let's call the simplest GET-method, that shows us information about keystone version:
+If you have found those lines, keystone-plugin is running and is enabled. So you can try to check some functions provided by this plugin. First let's call the simplest GET-method, that shows us information about keystone version:
 
 ~~~sh
 $ curl -i http://localhost:8001/v2.0/
@@ -407,9 +406,9 @@ In Mozila REST-extension it will look like this:
 
 ![](https://vfc.cc/29c9b77c2f108e1832baa910f9942b36)
 
-You can test the other GET-method that shows information of a user by his ID via link http://localhost:8001/v2.0/users/:user_id. Instead "user_id" you should write ID of the admin-user that we have created yet. This ID you have received in the response on that query. 
+You can test the other GET-method that shows information of a user by his ID via link http://localhost:8001/v2.0/users/:user_id. Replace "user_id" with ID of the admin-user, that we have created. This ID you have received in the response on that query. 
 
-Now you can receive a token for this user. It will be POST-method via link http://localhost:8001/v2.0/tokens with following message in JSON format:
+Now you can receive a token for this user. Execute POST-method via link http://localhost:8001/v2.0/tokens with following message in JSON format:
 
 ~~~javascript
 {
@@ -432,7 +431,7 @@ Also you can test two DELETE-methods:
 * http://localhost:8001/v2.0/tenants/:tenant_id
 * http://localhost:8001/v2.0/users/:user_id
 
-This queries will delete entities by their ID.
+These queries will delete entities by their ID.
 
 
 ## **Step 3: Testing**
