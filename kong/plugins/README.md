@@ -2,7 +2,7 @@
 
 The **keystone-plugin** executes some functions, which exist in [Keystone](https://docs.openstack.org/keystone/latest/), the [OpenStack](https://docs.openstack.org/) Identity Service. Keystone is an OpenStack service that provides API client authentication, service discovery, and distributed multi-tenant authorization by implementing [OpenStack’s Identity API](https://developer.openstack.org/api-ref/identity/v3/).
 
-Code of the project you can find [here](https://github.com/lenaaxenova/keystone_plugin). 
+Code of the project can be found [here](https://github.com/lenaaxenova/keystone_plugin). 
 
 The structure of this plugin looks like this:
 
@@ -21,7 +21,7 @@ keystone-plugin
 │                    └── uuid4.lua
 ~~~
 
-So let's consider in detail each file of this project. All of them are writed on Lua and in some files is used [lua-nginx-module API](https://github.com/openresty/lua-nginx-module), which enables Lua scripting capabilities in [Nginx](http://nginx.org/). Instead of compiling Nginx with this module, Kong is distributed along with [OpenResty](https://openresty.org/en/), which already includes lua-nginx-module. OpenResty is not a fork of Nginx, but a bundle of modules extending its capabilities.
+Let's review each file of this project. All of them are writed on Lua and in some files [lua-nginx-module API](https://github.com/openresty/lua-nginx-module) is used, which enables Lua scripting capabilities in [Nginx](http://nginx.org/). Instead of compiling Nginx with this module, Kong is distributed along with [OpenResty](https://openresty.org/en/), which already includes lua-nginx-module. OpenResty is not a fork of Nginx, but a bundle of modules extending its capabilities.
 
 The structure of complete plugin looks like this:
 
@@ -37,11 +37,11 @@ complete-plugin
 └── schema.lua
 ~~~
 
-The file** hooks.lua**, that is not used in keystone-plugin, implements the invalidation event handlers for the datastore entities defined in **daos.lua** and is requierd if you are storing entities in the in-memory cache, in order to invalidate them when they are being updated/deleted on the datastore.
+The file** hooks.lua**, that is not used in keystone-plugin, implements the invalidation event handlers for the datastore entities defined in **daos.lua** and is required if you are storing entities in the in-memory cache, in order to invalidate them when they are being updated/deleted in the datastore.
 
-Two mandatory files that should present in every plugin are **handler.lua** and **schema.lua**. 
+Two mandatory files that should be present in every plugin are: **handler.lua** and **schema.lua**. 
 
-The **schema.lua** contains the configuration schema of the plugin. In **keystone-plugin** is only defined that the value of parametr **token_expiration** is 7200 by default and it's required.
+The **schema.lua** contains the configuration schema of the plugin. The only defined parametr in **keystone-plugin** is **token_expiration**, which is 7200 by default and it's required.
 
 Here is the code of this module:
 
@@ -73,8 +73,8 @@ This plugin has to store custom entities in the database and interact with them,
 The **migrations/cassandra.lua** returns a table consisting of three fields:
 
 * **name** - the name of migration. Note, that it must be unique.
-* **up** - this field will be executed when Kong migrates forward. It must bring your database's schema to the latest state required by your plugin. This plugin interacts with Cassandra DB, so in this field we create tables and indexes in datastore using [CQL notation](https://cassandra.apache.org/doc/old/CQL-2.2.html). If you want to use [PostgreSQL](https://www.postgresql.org/) it must be strings of SQL.
-* **down** - this field must execute the necessary actions to revert your schema to its previous state, before **up** was ran. So we drop the objects, that have created in **up** section.
+* **up** - this field will be executed when Kong migrates forward. It must bring your database's schema to the latest state required by your plugin. This plugin interacts with Cassandra DB, so in this field we create tables and indices in datastore using [CQL notation](https://cassandra.apache.org/doc/old/CQL-2.2.html). If you want to use [PostgreSQL](https://www.postgresql.org/) it must be strings of SQL.
+* **down** - this field must execute the necessary actions to revert your schema to its previous state, before **up** was ran. So we drop the objects, that whore created in **up** section.
 
 Here is the code of **migrations/cassandra.lua**: 
 
@@ -142,9 +142,9 @@ return {
 }
 ~~~
 
-So we declare here the structure of the data space, that we will use in the keystone plugin. 
+The structure of the data space is declared here. It will be used in the keystone plugin. 
 
-The **daos.lua** defines a list of DAOs (Database Access Objects) that are abstractions of custom entities needed by your plugin and stored in the datastore. For every stored entity we have to create table, where will be declared the name of the stored table, its primary key, and information about all its fields. As a result we have to return a table with fields named as stored tables, that will refer on tables with description.
+The **daos.lua** defines a list of DAOs (Database Access Objects) that are abstractions of custom entities needed by your plugin and are stored in the datastore. For every stored entity we have to create a table, where will be declared the name of the stored table, its primary key, and information about all its fields. As a result we have to return a table with fields named as stored tables, that will refer on tables with description.
 
 Here is the code of **daos.lua**:
 
@@ -213,9 +213,9 @@ return {
 }
 ~~~
 
-The last module of this plugin is **api.lua**. It defines a list of endpoints to be available in the Admin API to interact with custom entities handled by your plugin. So all management logic is implemented in this module. As a result we return a table containing strings describing your routes and HTTP verbs they support. Routes are then assigned a simple handler function. Note, that here is used [Lapis request object notation](http://leafo.net/lapis/reference/actions.html#request-object) for interaction with request objects and  [Lapis routes & URL Patterns]( http://leafo.net/lapis/reference/actions.html#routes--url-patterns) for record your routes. 
+The last module of this plugin is **api.lua**. It defines a list of endpoints to be available in the Admin API to interact with custom entities handled by your plugin. So all management logic is implemented in this module. As a result we return a table containing strings describing your routes and HTTP verbs they support. Routes are then assigned a simple handler function. Note, that [Lapis request object notation](http://leafo.net/lapis/reference/actions.html#request-object) is used here for interaction with request objects and  [Lapis routes & URL Patterns]( http://leafo.net/lapis/reference/actions.html#routes--url-patterns) for recording your routes. 
 
-Let's look at some parts of the code of this module, he is quite cumbersome:
+Let's look at some parts of the code of this module, which is quite cumbersome:
 
 ~~~lua
 local responses = require "kong.tools.responses"
@@ -365,7 +365,7 @@ return {
 ~~~
 
 
-Let's focus in some principals moments. We import here two kong libraries:
+Let's focus on some key moments. We import two kong libraries:
 
 * [kong.tools.responses](https://github.com/Mashape/kong/blob/master/kong/tools/responses.lua) - in this library are kong helper methods to send HTTP responses to clients. In this code we can see two models of using it:
 
@@ -373,9 +373,9 @@ Let's focus in some principals moments. We import here two kong libraries:
 return responses.send(ERROR, "tenant with this name exists")
 ~~~
 
-Here is used "**send**" method, first argument is the code of the response, the type is number, second is the body of the response, that encodes in JSON format automatically, the type should be string or lua-table. Also it could reseve the third argument with response headers, the type is lua-table. As a result it returns ngx.exit command from  [lua-nginx-module API](https://github.com/openresty/lua-nginx-module) with code, body and headers, that it has recived.
+"**send**" method is used here, first argument is the code of the response, the type is number, second is the body of the response, that encodes in JSON format automatically, the type should be string or lua-table. Also it could receive the third argument with response headers, the type is lua-table. As a result it returns ngx.exit command from  [lua-nginx-module API](https://github.com/openresty/lua-nginx-module) with code, body and headers, that it had received.
 
-The other type of using this module is:
+The other way of using this module is:
 
 ~~~lua 
 return responses.send_HTTP_OK(body, get_headers())
@@ -385,7 +385,7 @@ Here we use "send_HTTP_OK" method, that sends responses with 200 code status. It
 
 In this library you can find the other functions that provides send responses with defined HTTP status code.
 
-* [kong.api.crud_helpers](https://github.com/Mashape/kong/blob/master/kong/api/crud_helpers.lua) - this library is usefull for CRUD operations with datastore and helps making them more convient for user. It isn't used in this module for the present. 
+* [kong.api.crud_helpers](https://github.com/Mashape/kong/blob/master/kong/api/crud_helpers.lua) - this library is usefull for CRUD operations with datastore and helps making them more convenient for user. It isn't used in this module for the present. 
 
 Now let's look at the simplest GET-method, that we call in */v2.0* location:
 
@@ -399,10 +399,10 @@ Now let's look at the simplest GET-method, that we call in */v2.0* location:
 
 It accepts two default arguments:
 
-* **self**-  the Lapis request object;
+* **self** -  the Lapis request object;
 * **dao_factory** - the DAO factory, that allow us to communicate with datastore;
 
-Also it could recive the third argument, that is not used in this code:
+Also it could receive the third argument, that is not used in this code:
 
 * **helpers** - it is a lua-table with the following properties:
 	*  *responses*: a module with helper functions to send HTTP responses.
@@ -471,7 +471,7 @@ function tenants(self, dao_factory)
 end
 ~~~
 
-First we have to recive and reed the body of the request, for this we use two functions from [lua-nginx-module API](https://github.com/openresty/lua-nginx-module):
+First we have to receive and read the body of the request, for this we use two functions from [lua-nginx-module API](https://github.com/openresty/lua-nginx-module):
 
 ~~~lua
 ngx.req.read_body()
@@ -494,11 +494,11 @@ local res, err = dao_factory.keystone_tenname_to_tenid:find{tenant_name = ten_na
     })
 ~~~
  
-First, we try to find in *keystone_tenname_to_tenid* table the field by their primary key. We have to send this parametr as lua-table with fields coincided with the fields of requested stored table fields, that determinate the primary key. If the field has found, it returns this entity in *res* variable as lua-table.
+First, we try to find in *keystone_tenname_to_tenid* table the field by their primary key. We have to send this parameter as lua-table with fields coincided with the fields of requested stored table fields, that determine the primary key. If the field was found, it returns this entity in *res* variable as lua-table.
 
 Then we try to insert in *keystone_tenant_info* table the new entity. It is given also as a lua-tables with fields coincided with all the fields of requested stored table. 
 
-Finaly, let's look at the DELETE-method in */v2.0/tenants/:tenant_id* location, in which is used parametr *tenant_id* according to [Lapis routes & URL Patterns](http://leafo.net/lapis/reference/actions.html#routes--url-patterns):
+Finaly, let's look at the DELETE-method in */v2.0/tenants/:tenant_id* location, in which is used parameter *tenant_id* according to [Lapis routes & URL Patterns](http://leafo.net/lapis/reference/actions.html#routes--url-patterns):
 
 ~~~lua
  ["/v2.0/tenants/:tenant_id"] = {
