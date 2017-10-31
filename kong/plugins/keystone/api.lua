@@ -50,7 +50,7 @@ function tenants(self, dao_factory)
     local res, err = dao_factory.keystone_tenname_to_tenid:find{tenant_name = ten_name} 
     
     if res then
-        return responses.send(ERROR, "tenant with this name exists")
+        return responses.send(ERROR, "tenant with this name exists " .. res)
     end
 
     local ten_id = uuid4.getUUID() 
