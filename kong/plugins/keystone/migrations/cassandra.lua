@@ -21,7 +21,7 @@ return {
         actor_id varchar,
         target_id varchar,
         role_id varchar,
-        inherited tinyint,
+        inherited boolean,
         PRIMARY KEY (type, actor_id, target_id, role_id, inherited)
       );
 
@@ -57,7 +57,7 @@ return {
         service_id varchar,
         url text,
         extra text,
-        enabled tinyint,
+        enabled boolean,
         region_id varchar,
         PRIMATY KEY (id)
       );
@@ -117,7 +117,7 @@ return {
 
       CREATE TABLE IF NOT EXISTS identity_provider(
         id varchar,
-        enabled tinyint,
+        enabled boolean,
         description text,
         domain_id varchar,
         PRIMARY KEY (id)
@@ -179,7 +179,7 @@ return {
         local_user_id int,
         password varchar,
         expires_at timestamp,
-        self_service tinyint,
+        self_service boolean,
         password_hash varchar,
         created_at_int bigint,
         expires_at_int bigint,
@@ -213,10 +213,10 @@ return {
         name varchar,
         extra text,
         description text,
-        enabled tinyint,
+        enabled boolean,
         domain_id varchar,
         parent_id varchar,
-        is_domain tinyint,
+        is_domain boolean,
         PRIMARY KEY (id)
       );
 
@@ -240,6 +240,159 @@ return {
         name varchar,
         PRIMARY KEY (project_id, name)
       );
+
+      CREATE TABLE IF NOT EXISTS region(
+        id varchar,
+        description varchar,
+        parent_region_id varchar,
+        extra text,
+        PRIMARY KEY (id)
+      );
+
+      CREATE TABLE IF NOT EXISTS request_token(
+        id varchar,
+        request_secret varchar,
+        verifier varchar,
+        authorizing_user_id varchar,
+        requested_project_id varchar,
+        role_ids text,
+        consumer_id varchar,
+        expires_at varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON request_token(consumer_id);
+
+      CREATE TABLE IF NOT EXISTS revocation_event(
+        id int,
+        domain_id varchar,
+        project_id varchar,
+        user_id varchar,
+        role_id varchar,
+        trust_id varchar,
+        consumer_id varchar,
+        access_token_id varchar,
+        issued_before timestamp,
+        expires_at timestamp,
+        revoked_at timestamp,
+        audit_id varchar,
+        audit_chain_id varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON revocation_event(project_id);
+      CREATE INDEX IF NOT EXISTS ON revocation_event(user_id);
+      CREATE INDEX IF NOT EXISTS ON revocation_event(issued_before);
+      CREATE INDEX IF NOT EXISTS ON revocation_event(revoked_at);
+      CREATE INDEX IF NOT EXISTS ON revocation_event(audit_id);
+
+      CREATE TABLE IF NOT EXISTS role(
+        id varchar,
+        name varchar,
+        extra text,
+        domain_id varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON role(name);
+
+      CREATE TABLE IF NOT EXISTS sensitive_config(
+        domain_id varchar,
+        group varchar,
+        option varchar,
+        value text,
+        PRIMARY KEY (domain_id, group, option)
+      );
+
+      CREATE TABLE IF NOT EXISTS service(
+        id varchar,
+        type varchar,
+        enabled boolean,
+        extra text,
+        PRIMARY KEY (id)
+      );
+
+      CREATE TABLE IF NOT EXISTS service_provider(
+        auth_url varchar,
+        id varchar,
+        enabled boolean,
+        description text,
+        sp_url varchar,
+        relay_state_prefix varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE TABLE IF NOT EXISTS token(
+        id varchar,
+        expires timestamp,
+        extra text,
+        valid boolean,
+        trust_id varchar,
+        user_id varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON token(expires);
+      CREATE INDEX IF NOT EXISTS ON token(trust_id);
+      CREATE INDEX IF NOT EXISTS ON token(user_id);
+
+      CREATE TABLE IF NOT EXISTS trust(
+        id varchar,
+        trustor_user_id varchar,
+        trustee_user_id varchar,
+        project_id varchar,
+        impersonation boolean,
+        deleted_at timestamp,
+        expires_at timestamp,
+        remaining_users int,
+        extra text,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON trust(trustor_user_id);
+
+      CREATE TABLE IF NOT EXISTS trust_role(
+        trust_id varchar,
+        role_id varchar,
+        PRIMARY KEY (trust_id, role_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS user(
+        id varchar,
+        extra text,
+        enabled boolean,
+        default_project_id varchar,
+        created_at timestamp,
+        last_active_at date,
+        domain_id varchar,
+        PRIMARY KEY (id)
+      );
+
+      CREATE INDEX IF NOT EXISTS ON user(default_project_id);
+      CREATE INDEX IF NOT EXISTS ON user(domain_id);
+
+      CREATE TABLE IF NOT EXISTS user_group_membership(
+        user_id varchar,
+        group_id varchar,
+        PRIMARY KEY (user_id, group_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS user_option(
+        user_id varchar,
+        option_id varchar,
+        option_value text,
+        PRIMARY KEY (user_id, option_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS whitelisted_config(
+        domain_id varchar,
+        group varchar,
+        option varchar,
+        value text,
+        PRIMARY KEY (domain_id, group, option)
+      );
+
+
 
     ]],
     down = [[
@@ -268,6 +421,20 @@ return {
       DROP TABLE project_endpoint;
       DROP TABLE project_endpoint_group;
       DROP TABLE project_tag;
+      DROP TABLE region;
+      DROP TABLE request_token;
+      DROP TABLE revocation_event;
+      DROP TABLE role;
+      DROP TABLE sensitive_config;
+      DROP TABLE service;
+      DROP TABLE service_config;
+      DROP TABLE token;
+      DROP TABLE trust;
+      DROP TABLE trust_role;
+      DROP TABLE user;
+      DROP TABLE user_group_membership;
+      DROP TABLE user_option;
+      DROP TABLE whitelisted_config;
     ]]
   }
 }
