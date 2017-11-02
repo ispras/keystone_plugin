@@ -1,34 +1,60 @@
-User = {}
+local responses = require "kong.tools.responses"
+local errors = require "kong.dao.errors"
+local uuid4 = require('uuid4')
+local User = {}
 
-function list_users(self, dao_factory)
+local function get_headers()
+	--local req_id = PREFIX .. COUNTER
+    local headers = {}
+    headers["x-openstack-request-id"] = uuid4.getUUID() -- uuid (uuid4)
+    headers.Vary = "X-Auth-Token"
+    return headers
+end
+
+local function list_users(self, dao_factory)
+    local domain_id = self.req.domain_id
+    local enabled = self.req.enabled
+    local idp_id = self.req.idp_id
+    local name = self.req.name
+    local password_expires_at = self.req.password_expires_at
+    local protocol_id = self.req.protocol_id
+    local unique_id = self.req.unique_id
+
+    local users, err = dao_factory.user:find_all()
+
+    if err then
+        responses.send(400, err)
+    end
+    responses.send_HTTP_OK(users, get_headers())
     return ''
 end
 
-function create_user(self, dao_factory)
+local function create_user(self, dao_factory)
     return ''
 end
 
-function get_user_info(self, dao_factory)
+local function get_user_info(self, dao_factory)
+    local uid = self.params.user_id
     return ''
 end
 
-function update_user(self, dao_factory)
+local function update_user(self, dao_factory)
     return ''
 end
 
-function delete_user(self, dao_factory)
+local function delete_user(self, dao_factory)
     return ''
 end
 
-function list_user_groups(self, dao_factory)
+local function list_user_groups(self, dao_factory)
     return ''
 end
 
-function list_user_projects(self, dao_factory)
+local function list_user_projects(self, dao_factory)
     return ''
 end
 
-function change_user_password(self, dao_factory)
+local function change_user_password(self, dao_factory)
     return ''
 end
 
