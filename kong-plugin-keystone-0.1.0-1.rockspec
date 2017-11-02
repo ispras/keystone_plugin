@@ -51,6 +51,20 @@ build = {
     ["kong.plugins.keystone.api"] = "kong/plugins/keystone/api.lua",
     ["kong.plugins.keystone.daos"] = "kong/plugins/keystone/daos.lua",
     ["kong.plugins.keystone.sha512"] = "kong/plugins/keystone/sha512.lua",
-    ["kong.plugins.keystone.uuid4"] = "kong/plugins/keystone/uuid4.lua"
+    ["kong.plugins.keystone.uuid4"] = "kong/plugins/keystone/uuid4.lua",
+    ["kong.plugins.keystone.views.users"] = "kong/plugins/keystone/views/users.lua",
+    ["kong.plugins.keystone.views.services_and_endpoints"] = "kong/plugins/keystone/views/services_and_endpoints.lua",
+    ["kong.plugins.keystone.views.roles"] = "kong/plugins/keystone/views/roles.lua",
+    ["kong.plugins.keystone.views.regions"] = "kong/plugins/keystone/views/regions.lua",
+    ["kong.plugins.keystone.views.projects"] = "kong/plugins/keystone/views/projects.lua",
+    ["kong.plugins.keystone.views.project_tags"] = "kong/plugins/keystone/views/project_tags.lua",
+    ["kong.plugins.keystone.views.policies"] = "kong/plugins/keystone/views/policies.lua",
+    ["kong.plugins.keystone.views.os_pki_api"] = "kong/plugins/keystone/views/os_pki_api.lua",
+    ["kong.plugins.keystone.views.os_inherit_api"] = "kong/plugins/keystone/views/os_inherit_api.lua",
+    ["kong.plugins.keystone.views.groups"] = "kong/plugins/keystone/views/groups.lua",
+    ["kong.plugins.keystone.views.domains"] = "kong/plugins/keystone/views/domains.lua",
+    ["kong.plugins.keystone.views.domain_configuration"] = "kong/plugins/keystone/views/domain_configuration.lua",
+    ["kong.plugins.keystone.views.credentials"] = "kong/plugins/keystone/views/credentials.lua",
+    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua"
   }
 }
