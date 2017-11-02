@@ -59,7 +59,7 @@ return {
         extra text,
         enabled boolean,
         region_id varchar,
-        PRIMATY KEY (id)
+        PRIMARY KEY (id)
       );
 
       CREATE INDEX IF NOT EXISTS ON endpoint(service_id);
@@ -135,7 +135,7 @@ return {
 
       CREATE TABLE IF NOT EXISTS implied_role(
         prior_role_id varchar,
-        implied_role_id vachar,
+        implied_role_id varchar,
         PRIMARY KEY (prior_role_id, implied_role_id)
       );
 
@@ -146,11 +146,12 @@ return {
         name varchar,
         failed_auth_count int,
         failed_auth_at timestamp,
-        PRIMARY_KEY (id)
+        PRIMARY KEY (id)
       );
 
       CREATE INDEX IF NOT EXISTS ON local_user(user_id);
       CREATE INDEX IF NOT EXISTS ON local_user(domain_id);
+
 
       CREATE TABLE IF NOT EXISTS mapping(
         id varchar,
@@ -322,7 +323,7 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE TABLE IF NOT EXISTS token(
+      CREATE TABLE IF NOT EXISTS token_(
         id varchar,
         expires timestamp,
         extra text,
@@ -332,9 +333,9 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON token(expires);
-      CREATE INDEX IF NOT EXISTS ON token(trust_id);
-      CREATE INDEX IF NOT EXISTS ON token(user_id);
+      CREATE INDEX IF NOT EXISTS ON token_(expires);
+      CREATE INDEX IF NOT EXISTS ON token_(trust_id);
+      CREATE INDEX IF NOT EXISTS ON token_(user_id);
 
       CREATE TABLE IF NOT EXISTS trust(
         id varchar,
@@ -428,7 +429,7 @@ return {
       DROP TABLE sensitive_config;
       DROP TABLE service;
       DROP TABLE service_config;
-      DROP TABLE token;
+      DROP TABLE token_;
       DROP TABLE trust;
       DROP TABLE trust_role;
       DROP TABLE user;
@@ -438,3 +439,6 @@ return {
     ]]
   }
 }
+
+
+

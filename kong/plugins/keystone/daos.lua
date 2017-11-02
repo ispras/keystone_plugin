@@ -16,7 +16,7 @@ local ACCESS_TOKEN_SCHEMA = {
 local ASSIGNMENT_SCHEMA = {
     primary_key = {"type", "actor_id", "target_id", "role_id", "inherited"},
     table = "assignment",
-    fileds = {
+    fields = {
         type = { type = "string", enum = {"UserProject", "GroupProject", "GroupDomain"}, required = true },
         actor_id = { type = "id", required = true },
         target_id = { type = "id", required = true },
@@ -37,7 +37,7 @@ local CONFIG_REGISTER_SCHEMA = {
 local CONSUMER_SCHEMA = {
     primary_key = {"id"},
     table = "consumer",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         description = { type = "string" },
         secret = { type = "string", required = true },
@@ -48,7 +48,7 @@ local CONSUMER_SCHEMA = {
 local CREDENTIAL_SCHEMA = {
     primary_key = {"id"},
     table = "credential",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         user_id = { type = "id", required = true },
         project_id = { type = "id" },
@@ -111,7 +111,7 @@ local FEDERATION_PROTOCOL_SCHEMA = {
 local GROUP_SCHEMA = {
     primary_key = {"id"},
     table = "group",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         domain_id = { type = "id", required = true, queryable = true },
         name = { type = "string", required = true },
@@ -145,7 +145,7 @@ local IDENTITY_PROVIDER_SCHEMA = {
 local IDP_REMOTE_IDS_SCHEMA = {
     primary_key = {"remote_id"},
     table = "idp_remote_ids",
-    fileds = {
+    fields = {
         idp_id = { type = "id", queryable = true },
         remote_id = { type = "id", required = true }
     }
@@ -154,7 +154,7 @@ local IDP_REMOTE_IDS_SCHEMA = {
 local IMPLIED_ROLE_SCHEMA = {
     primary_key = {"prior_role_id", "implied_role_id"},
     table = "implied_role",
-    fileds = {
+    fields = {
         prior_role_id = { type = "id", required = true },
         implied_role_id = { type = "id", required = true }
     }
@@ -163,7 +163,7 @@ local IMPLIED_ROLE_SCHEMA = {
 local LOCAL_USER_SCHEMA = {
     primary_key = {"id"},
     table = "local_user",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         user_id = { type = "id", required = true, unique = true, queryable = true },
         domain_id = { type = "id", required = true, queryable = true },
@@ -185,7 +185,7 @@ local MAPPING_SCHEMA = {
 local MIGRATE_VERSION_SCHEMA = {
     primary_key = {"repository_id"},
     table = "migrate_version",
-    fileds = {
+    fields = {
         repository_id = { type = "id", required = true },
         repository_path = { type = "string" },
         version = { type = "number" }
@@ -205,7 +205,7 @@ local NONLOCAL_USER_SCHEMA = {
 local PASSWORD_SCHEMA = {
     primary_key = {"id"},
     table = "password",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         local_user_id = { type = "id", required = true, queryable = true },
         password = { type = "string" },
@@ -231,7 +231,7 @@ local POLICY_SCHEMA = {
 
 local POLICY_ASSOCIATION_SCHEMA = {
     primary_key = {"id"},
-    table = "policy_asssociation",
+    table = "policy_association",
     fields = {
         id = { type = "id", required = true },
         policy_id = { type = "id", required = true },
@@ -244,7 +244,7 @@ local POLICY_ASSOCIATION_SCHEMA = {
 local PROJECT_SCHEMA = {
     primary_key = {"id"},
     table = "project",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         name = { type = "string", required = true },
         extra = { type = "table" },
@@ -259,7 +259,7 @@ local PROJECT_SCHEMA = {
 local PROJECT_ENDPOINT_SCHEMA = {
     primary_key = {"endpoint_id", "project_id"},
     table = "project_endpoint",
-    fileds = {
+    fields = {
         endpoint_id = { type = "id", required = true },
         project_id = { type = "id", required = true }
     }
@@ -268,7 +268,7 @@ local PROJECT_ENDPOINT_SCHEMA = {
 local PROJECT_ENDPOINT_GROUP_SCHEMA = {
     primary_key = {"enpoint_group_id", "project_id"},
     table = "project_endpoint_group",
-    fileds = {
+    fields = {
         endpoint_group_id = { type = "id", required = true },
         project_id = { type = "id", required = true }
     }
@@ -277,7 +277,7 @@ local PROJECT_ENDPOINT_GROUP_SCHEMA = {
 local PROJECT_TAG_SCHEMA = {
     primary_key = {"project_id", "name"},
     table = "project_tag",
-    fileds = {
+    fields = {
         project_id = { type = "id", required = true },
         name = { type = "string", required = true }
     }
@@ -297,7 +297,7 @@ local REGION_SCHEMA = {
 local REQUEST_TOKEN_SCHEMA = {
     primary_key = {"id"},
     table = "request_token",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         request_secret = { type = "string", required = true },
         verifier = { type = "string" },
@@ -312,7 +312,7 @@ local REQUEST_TOKEN_SCHEMA = {
 local REVOCATION_EVENT_SCHEMA = {
     primary_key = {"id"},
     table = "revocation_event",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         domain_id = { type = "id" },
         project_id = { type = "id" },
@@ -332,7 +332,7 @@ local REVOCATION_EVENT_SCHEMA = {
 local ROLE_SCHEMA = {
     primary_key = {"id"},
     table = "role",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         name = { type = "string", required = true },
         extra = { type = "table" },
@@ -342,8 +342,8 @@ local ROLE_SCHEMA = {
 
 local SENSITIVE_CONFIG_SCHEMA = {
     primary_key = {"domain_id", "group", "option"},
-    table = "sensetive_config",
-    fileds = {
+    table = "sensitive_config",
+    fields = {
         domain_id = { type = "id", required = true },
         group = { type = "id", required = true },
         option = { type = "id", required = true },
@@ -377,8 +377,8 @@ local SERVICE_PROVIDER_SCHEMA = {
 
 local TOKEN_SCHEMA = {
     primary_key = {"id"},
-    table = "token",
-    fileds = {
+    table = "token_",
+    fields = {
         id = { type = "id", required = true },
         expires = { type = "timestamp" },
         extra = { type = "table" },
@@ -416,7 +416,7 @@ local TRUST_ROLE_SCHEMA = {
 local USER_SCHEMA = {
     primary_key = {"id"},
     table = "user",
-    fileds = {
+    fields = {
         id = { type = "id", required = true },
         extra = { type = "table" },
         enabled = { type = "boolean" },
@@ -430,7 +430,7 @@ local USER_SCHEMA = {
 local USER_GROUP_MEMBERSHIP_SCHEMA = {
     primary_key = {"user_id", "group_id"},
     table = "user_group_membership",
-    fileds = {
+    fields = {
         user_id = { type = "id", required = true },
         group_id = { type = "id", required = true }
     }
@@ -439,7 +439,7 @@ local USER_GROUP_MEMBERSHIP_SCHEMA = {
 local USER_OPTION_SCHEMA = {
     primary_key = {"user_id", "option_id"},
     table = "user_option",
-    fileds = {
+    fields = {
         user_id = { type = "id", required = true },
         option_id = { type = "id", required = true },
         option_value = { type = "string" }
@@ -449,7 +449,7 @@ local USER_OPTION_SCHEMA = {
 local WHITELISTED_CONFIG_SCHEMA = {
     primary_key = {"domain_id", "group", "option"},
     table = "whitelisted_config",
-    fileds = {
+    fields = {
         domain_id = { type = "id", required = true },
         group = { type = "string", required = true },
         option = { type = "string", required = true },
@@ -478,7 +478,7 @@ return {
     nonlocal_user = NONLOCAL_USER_SCHEMA,
     password = PASSWORD_SCHEMA,
     policy = POLICY_SCHEMA,
-    policy_asssociation = POLICY_ASSOCIATION_SCHEMA,
+    policy_association = POLICY_ASSOCIATION_SCHEMA,
     project = PROJECT_SCHEMA,
     project_endpoint = PROJECT_ENDPOINT_SCHEMA,
     project_endpoint_group = PROJECT_ENDPOINT_GROUP_SCHEMA,
@@ -487,7 +487,7 @@ return {
     request_token = REQUEST_TOKEN_SCHEMA,
     revocation_event = REVOCATION_EVENT_SCHEMA,
     role = ROLE_SCHEMA,
-    sensetive_config = SENSITIVE_CONFIG_SCHEMA,
+    sensitive_config = SENSITIVE_CONFIG_SCHEMA,
     service = SERVICE_SCHEMA,
     service_provider = SERVICE_PROVIDER_SCHEMA,
     token = TOKEN_SCHEMA,
