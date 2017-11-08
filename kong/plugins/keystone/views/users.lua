@@ -155,7 +155,7 @@ local function create_user(self, dao_factory)
     -- else -> nonlocal_user
     if passwd then
         local loc_user = {
-            id = uuid4.getUUID4(),
+            id = uuid4.getUUID(),
             user_id = user.id,
             domain_id = user.domain_id,
             name = uname

@@ -21,6 +21,7 @@ local function get_subtree_as_list(self, dao_factory, project) --not tested
     end
 end
 
+
 local function get_subtree_as_ids(self, dao_factory, project) --not tested
     local child_projects, err = dao_factory.project:find_all({parent_id=project.id})
     if not child_projects then
@@ -33,15 +34,77 @@ local function get_subtree_as_ids(self, dao_factory, project) --not tested
     end
 end
 
-local function list_projects(self, dao_factory)
+local function bool(a)
+    if type(a) == "string" then
+        return a == "true"
+    else
+        return a
+    end
+end
 
-    return ''
+local default_domain = 'cc207ed2-61e4-4e7b-ab33-6e65acc8f76c'
+
+local function list_projects(self, dao_factory)
+    local resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        },
+        projects = {}
+    }
+    local domain_id = self.params.domain_id
+    local enabled = bool(self.params.enabled)
+    local is_domain = bool(self.params.is_domain)
+    local name = self.params.name
+    local parent_id = self.params.parent_id
+
+    local args = ( domain_id ~= nil or enabled ~= nil or is_domain ~= nil or name ~= nil or parent_id ~= nil ) and
+            { domain_id = domain_id, enabled = enabled, is_domain = is_domain, name = name, parent_id = parent_id } or nil
+    local projects, err = dao_factory.project:find_all(args)
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.project:find_all(...)"})
+    end
+    if not next(projects) then
+        return responses.send_HTTP_OK(resp)
+    end
+
+    for i = 1, #projects do
+        resp.projects[i] = {}
+        resp.projects[i].description = projects[i].description
+        resp.projects[i].domain_id = projects[i].domain_id
+        resp.projects[i].enabled = projects[i].enabled
+        resp.projects[i].id = projects[i].id
+        resp.projects[i].name = projects[i].name
+        resp.projects[i].parent_id = projects[i].parent_id
+        resp.projects[i].links = {
+            self = resp.links.self..'/'..resp.projects[i].id
+        }
+        resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
+        if err then
+            if not resp.errors then
+                resp.errors = {num = 0}
+            end
+            resp.errors.num = resp.errors.num + 1
+            resp.errors[resp.errors.num] = {
+                error = err,
+                func = "dao_factory.project_tag:find_all"
+            }
+        end
+
+    end
+
+    return responses.send_HTTP_OK(resp)
 
 end
 
 local function create_project(self, dao_factory)
-    ngx.req.read_body()
-    local request = ngx.req.get_body_data()
+--    if true then
+--        return responses.send_HTTP_BAD_REQUEST(self.params) end -- TODO why self.params.domain not null?
+
+--    ngx.req.read_body()
+--    local request = ngx.req.get_body_data()
+    local request = self.params
 
     local name = request.project.name -- must be checked that name is unique
     if not name then
@@ -49,14 +112,18 @@ local function create_project(self, dao_factory)
     end
 
     local res, err = dao_factory.project:find_all({name=name})
-    if res then
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.project:find_all"})
+    end
+
+    if next(res) then
         return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
     end
 
-    local is_domain = request.project.is_domain or false
+    local is_domain = bool(request.project.is_domain) or false
     local description = request.project.description or ''
-    local domain_id = request.project.domain_id --must be supplemented
-    local enabled = request.project.enabled or true
+    local domain_id = request.project.domain_id or default_domain --must be supplemented
+    local enabled = bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
     local id = utils.uuid()
 
@@ -73,7 +140,7 @@ local function create_project(self, dao_factory)
     local res, err = dao_factory.project:insert(project_obj)
 
     if err then
-            return responses.send_HTTP_CONFLICT(err)
+            return responses.send_HTTP_CONFLICT({error = err, object = project_obj})
     end
 
     project_obj.links = {
@@ -106,8 +173,9 @@ local function get_project_info(self, dao_factory)
         parent_id = project.parent_id
     }
 
-    ngx.req.read_body()
-    local request = ngx.req.get_body_data()
+--    ngx.req.read_body()
+--    local request = ngx.req.get_body_data()
+    local request = self.params
 
     if request then
         if request.parents_as_list then
@@ -245,7 +313,7 @@ end
 
 Project.list_projects = list_projects
 Project.create_project = create_project
-Project.get_project_info = get_project_info
+Project.get_preject_info = get_project_info
 Project.update_project = update_project
 Project.delete_project = delete_project
 
@@ -268,5 +336,5 @@ return {
         DELETE = function(self, dao_factory)
             Project.delete_project(self, dao_factory)
         end
-    },
+    }
 }

@@ -12,4 +12,7 @@ add_routes(users)
 local projects = require ('kong.plugins.keystone.views.projects')
 add_routes(projects)
 
+local domains = require ('kong.plugins.keystone.views.domains')
+add_routes(domains)
+
 return views

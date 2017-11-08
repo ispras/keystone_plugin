@@ -50,8 +50,8 @@ class TestKeystone(unittest.TestCase):
     def test_create_domain (self):
         body = {
             "domain" : {
-                "name": "default_domain",
-                "description" : "Default domain for all users, groups and projects without specified domain",
+                "name": "valerius_domain",
+                "description" : "kuku",
                 "enabled" :  True
             }
         }
@@ -66,5 +66,6 @@ class TestKeystone(unittest.TestCase):
         self.checkCode(res, 200)
 
         response = res.json()
-        print(response)
+        for k, v in response.items():
+            print(k, '\n\t', v)
 
