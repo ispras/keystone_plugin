@@ -5,38 +5,41 @@ import json
 class TestKeystone(unittest.TestCase):
     host = 'http://localhost:8001'
     def checkCode(self, res, code):
-        if res.status_code != 200:
-            print("Failed with error:", res.reason, res.json())
+        if res.status_code != code:
+            try:
+                print("Failed with error:", res.reason, res.json())
+            except Exception:
+                print("Failed with error:", res.reason)
             self.assertEqual(res.status_code, code)
-    def test_version(self):
-        res = requests.get(self.host + '/v2.0')
-        self.checkCode(res, 200)
-        response = res.json()
-        for key, val in response['version'].items():
-            print('\t', key, ':', val)
 
-    def test_create_tenant(self):
-        body = {
-            "tenant" : {
-                "name" : "admin"
-            }
+    def test_list_users(self):
+        query = {
+            # 'domain_id' : 'domain_id',
+            'enabled': 'true',
+            'idp_id': 'idp_id',
+            'name': 'name',
+            'password_expires_at': 'password_expires_at',
+            'protocol_id': 'protocol_id',
+            'unique_id': 'unique_id'
         }
-        res = requests.post(self.host + '/v2.0/tenants', json = body)
+        res = requests.get(self.host + '/v3/users', params = query)
         self.checkCode(res, 200)
-
         response = res.json()
-        self.tenant_id = response['tenant']['id']
+        print(response['links']['self'])
+        for key, val in response['users'].items():
+            print('\t', key, ':', val)
 
     def test_create_user(self):
         body = {
             "user": {
+                "default_project_id": "default_project_id",
+                "domain_id": "domain_id",
+                "enabled": "true",
                 "name": "admin",
-                "tenantId": self.tenant_id,
-                "password": "tester",
-                "email": "some@email.com"
+                "password": "tester"
             }
         }
-        res = requests.post(self.host + '/v2.0/users', json = body)
+        res = requests.post(self.host + '/v3/users', json = body)
         self.checkCode(res, 200)
 
         response = res.json()
@@ -44,37 +47,24 @@ class TestKeystone(unittest.TestCase):
 
         self.user_id = response['user']['id']
 
-    def test_user_info(self):
-        res = requests.get(self.host + '/v2.0/users/:' + self.user_id)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for key, val in response['user'].items():
-            print('\t', key, ':', val)
-
-    def test_receive_token(self):
+    def test_create_domain (self):
         body = {
-            "auth": {
-                "passwordCredentials": {
-                    "username": "admin",
-                    "password": "tester"
-                },
-                "tenantName": "admin"
+            "domain" : {
+                "name": "default_domain",
+                "description" : "Default domain for all users, groups and projects without specified domain",
+                "enabled" :  True
             }
         }
-        res = requests.post(self.host + '/v2.0/tokens', json = body)
+        res = requests.post(self.host + '/v3/domains', json = body)
+        self.checkCode(res, 201)
+
+        response = res.json()
+        print(response)
+
+    def test_list_domain(self):
+        res = requests.get(self.host + '/v3/domains')
         self.checkCode(res, 200)
 
         response = res.json()
-        for key, val in response['auth'].items():
-            print('\t', key, ':', val)
-
-    def test_delete_user(self):
-        res = requests.delete(self.host + '/v2.0/users/:' + self.user_id)
-        self.checkCode(res, 200)
-
-
-    def test_delete_tenant(self):
-        res = requests.delete(self.host + '/v2.0/tenants/:' + self.tenant_id)
-        self.checkCode(res, 200)
+        print(response)
 

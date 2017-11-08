@@ -3,10 +3,10 @@ local uuid4 = require('uuid4')
 local sha512 = require('sha512')
 
 local function bool(a)
-    if type(a) == "boolean" then
-        return a
-    else
+    if type(a) == "string" then
         return a == "true"
+    else
+        return a
     end
 end
 
