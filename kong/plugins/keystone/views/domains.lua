@@ -21,17 +21,18 @@ local function delete_domain(self, dao_factory)
 end
 
 local function update_params(params)
+    params.project = {}
     if params.domain then
-        params.domain.is_domain = true
+        params.project = params.domain
     end
-    params.project = params.domain
+    params.project.is_domain = true
     params.domain = nil
 end
 
 return {
     ["/v3/domains"] = {
         GET = function (self, dao_factory)
-            update_params(self.params)
+            self.params.is_domain = true
             projects["/v3/projects"].GET(self, dao_factory)
         end,
         POST = function (self, dao_factory)
@@ -49,7 +50,6 @@ return {
             projects["/v3/projects/:project_id"].PATCH(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            update_params(self.params)
             projects["/v3/projects/:project_id"].DELETE(self, dao_factory)
         end
     }

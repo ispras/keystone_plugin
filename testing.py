@@ -106,12 +106,38 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_create_project (self):
+    def test_get_domain_info(self):
+        res = requests.get(self.host + '/v3/domains/85220b62-f5cf-4fc7-adce-823e320592f4')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        print(response)
+
+    def test_update_domain(self):
         body = {
-            "project" : {
-                "name": "check_project",
-                "description" : "kuku",
-                "enabled" :  True
+        "domain": {
+            "description": "My updated domain",
+            "name": "myUpdatedDomain"
+            }
+        }
+        res = requests.patch(self.host + '/v3/domains/85220b62-f5cf-4fc7-adce-823e320592f4', json=body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_delete_domain(self):
+        res = requests.delete(self.host + '/v3/domains/85220b62-f5cf-4fc7-adce-823e320592f4')
+        self.checkCode(res, 204)
+
+    def test_create_project(self):
+        body = {
+        "project": {
+            "description": "New project",
+            "enabled": True,
+            "is_domain": False,
+            "name": "NewProject3"
             }
         }
         res = requests.post(self.host + '/v3/projects', json = body)

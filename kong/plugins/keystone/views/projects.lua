@@ -44,6 +44,23 @@ local function list_projects(self, dao_factory)
         },
         projects = {}
     }
+
+--    local args = {}
+
+--    if self.params.domain_id then
+--        args.domain_id = self.params.domain_id
+--    end
+--    if self.params.enabled then
+--        args.enabled = kstn_utils.bool(self.params.enabled)
+--    end
+--    if self.params.is_domain then
+--        args.is_domain = kstn_utils.bool(self.params.is_domain)
+--    end
+--    if self.params.name t
+--    if true then
+--        return responses.send_HTTP_OK(self.params)
+--    end
+
     local domain_id = self.params.domain_id
     local enabled = kstn_utils.bool(self.params.enabled)
     local is_domain = kstn_utils.bool(self.params.is_domain)
