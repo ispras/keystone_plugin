@@ -2,6 +2,7 @@ local responses = require "kong.tools.responses"
 local crud = require "kong.api.crud_helpers"
 local cjson = require "cjson"
 local utils = require "kong.tools.utils"
+local kstn_utils = require ("kong.plugins.keystone.utils")
 
 local Project = {}
 
@@ -34,16 +35,6 @@ local function get_subtree_as_ids(self, dao_factory, project) --not tested
     end
 end
 
-local function bool(a)
-    if type(a) == "string" then
-        return a == "true"
-    else
-        return a
-    end
-end
-
-local default_domain = 'cc207ed2-61e4-4e7b-ab33-6e65acc8f76c'
-
 local function list_projects(self, dao_factory)
     local resp = {
         links = {
@@ -54,8 +45,8 @@ local function list_projects(self, dao_factory)
         projects = {}
     }
     local domain_id = self.params.domain_id
-    local enabled = bool(self.params.enabled)
-    local is_domain = bool(self.params.is_domain)
+    local enabled = kstn_utils.bool(self.params.enabled)
+    local is_domain = kstn_utils.bool(self.params.is_domain)
     local name = self.params.name
     local parent_id = self.params.parent_id
 
@@ -124,10 +115,10 @@ local function create_project(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
     end
 
-    local is_domain = bool(request.project.is_domain) or false
+    local is_domain = kstn_utils.bool(request.project.is_domain) or false
     local description = request.project.description or ''
-    local domain_id = request.project.domain_id or default_domain --must be supplemented
-    local enabled = bool(request.project.enabled) or true
+    local domain_id = request.project.domain_id or kstn_utils.default_domain(dao_factory) --must be supplemented
+    local enabled = kstn_utils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
     local id = utils.uuid()
 

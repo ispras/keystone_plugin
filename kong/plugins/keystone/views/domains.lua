@@ -1,6 +1,3 @@
-local responses = require "kong.tools.responses"
-local uuid4 = require('uuid4')
-local sha512 = require('sha512')
 local projects = require ("kong.plugins.keystone.views.projects")
 
 local function list_domains(self, dao_factory)

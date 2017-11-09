@@ -9,7 +9,7 @@ local ACCESS_TOKEN_SCHEMA = {
         project_id = { type = "string", required = true },
         role_ids = { type = "array", required = true },
         consumer_id = { type = "string", required = true, queryable = true },
-        expires_at = { type = "timestamp" },
+        expires_at = { type = "string" },
     }
 }
 
@@ -169,7 +169,7 @@ local LOCAL_USER_SCHEMA = {
         domain_id = { type = "string", required = true, queryable = true },
         name = { type = "string", required = true },
         failed_auth_count = { type = "number" },
-        failed_auth_at = { type = "timestamp" }
+        failed_auth_at = { type = "string" }
     }
 }
 
@@ -209,12 +209,12 @@ local PASSWORD_SCHEMA = {
         id = { type = "string", required = true },
         local_user_id = { type = "string", required = true, queryable = true },
         password = { type = "string" },
-        expires_at = { type = "timestamp" },
+        expires_at = { type = "string" },
         self_service = { type = "boolean" },
         password_hash = { type = "string" },
-        created_at_int = { type = "number", required = true },
-        expires_at_int = { type = "number" },
-        created_at = { type = "timestamp", required = true }
+        created_at_int = { type = "timestamp", required = true },
+        expires_at_int = { type = "timestamp" },
+        created_at = { type = "string", required = true }
     }
 }
 
@@ -250,7 +250,7 @@ local PROJECT_SCHEMA = {
         extra = { type = "table" },
         description = { type = "string" },
         enabled = { type = "boolean" },
-        domain_id = { type = "string", required = true, queryable = true },
+        domain_id = { type = "string", queryable = true },
         parent_id = { type = "string", queryable = true },
         is_domain = { type = "boolean", required = true }
     }
@@ -305,7 +305,7 @@ local REQUEST_TOKEN_SCHEMA = {
         requested_project_id = { type = "string", required = true },
         role_ids = { type = "array" },
         consumer_id = { type = "string", required = true },
-        expires_at = { type = "timestamp" }
+        expires_at = { type = "string" }
     }
 }
 
@@ -321,9 +321,9 @@ local REVOCATION_EVENT_SCHEMA = {
         trust_id = { type = "string" },
         consumer_id = { type = "string" },
         access_token_id = { type = "string" },
-        issued_before = { type = "timestamp", required = true },
-        expires_at = { type = "timestamp" },
-        revoked_at = { type = "timestamp", required = true },
+        issued_before = { type = "string", required = true },
+        expires_at = { type = "string" },
+        revoked_at = { type = "string", required = true },
         audit_id = { type = "string" },
         audit_chain_id = { type = "string" }
     }
@@ -380,7 +380,7 @@ local TOKEN_SCHEMA = {
     table = "token_",
     fields = {
         id = { type = "string", required = true },
-        expires = { type = "timestamp" },
+        expires = { type = "string" },
         extra = { type = "table" },
         valid = { type = "boolean" },
         trust_id = { type = "string" },
@@ -397,8 +397,8 @@ local TRUST_SCHEMA = {
         trustee_user_id = { type = "string", required = true },
         project_id = { type = "string" },
         impersonation = { type = "boolean", required = true },
-        deleted_at = { type = "timestamp" },
-        expires_at = { type = "timestamp" },
+        deleted_at = { type = "string" },
+        expires_at = { type = "string" },
         remaining_uses = { type = "number" },
         extra = { type = "table" }
     }
@@ -421,8 +421,8 @@ local USER_SCHEMA = {
         extra = { type = "table" },
         enabled = { type = "boolean" },
         default_project_id = { type = "string" },
-        created_at = { type = "timestamp" },
-        last_active_at = { type = "timestamp" },
+        created_at = { type = "string" },
+        last_active_at = { type = "string" },
         domain_id = { type = "string", required = true }
     }
 }
