@@ -22,6 +22,7 @@ end
 local function delete_domain(self, dao_factory)
     return ''
 end
+
 local function update_params(params)
     if params.domain then
         params.domain.is_domain = true

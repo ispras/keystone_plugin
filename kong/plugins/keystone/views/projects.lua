@@ -100,12 +100,16 @@ end
 
 local function create_project(self, dao_factory)
 --    if true then
---        return responses.send_HTTP_BAD_REQUEST(self.params) end -- TODO why self.params.domain not null?
+--        return responses.send_HTTP_BAD_REQUEST({params = self.params, request = self.req}) end -- TODO why self.params.domain not null?
 
---    ngx.req.read_body()
---    local request = ngx.req.get_body_data()
+    --ngx.req.read_body()
+    --local request = ngx.req.get_body_data()
+    --request = cjson.decode(request)
     local request = self.params
-
+    if not request.project then
+         return responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
+    end
+    --print(request)
     local name = request.project.name -- must be checked that name is unique
     if not name then
         return responses.send_HTTP_BAD_REQUEST("Error: project name must be in the request")
@@ -173,8 +177,9 @@ local function get_project_info(self, dao_factory)
         parent_id = project.parent_id
     }
 
---    ngx.req.read_body()
---    local request = ngx.req.get_body_data()
+    --ngx.req.read_body()
+    --local request = ngx.req.get_body_data()
+    --request = cjson.decode(request)
     local request = self.params
 
     if request then
@@ -239,55 +244,24 @@ local function update_project(self, dao_factory)
     end
 
     local project, err = dao_factory.project:find({id=project_id})
-    if err then
+    if not project then
         return responses.send_HTTP_NOT_FOUND("Error: bad project id")
     end
 
-    local project_obj = {
-        is_domain = project.is_domain,
-        description = project.description,
-        domain_id = project.domain_id,
-        enabled = project.enabled,
-        id = project.id,
-        links = {self = self:build_url(self.req.parsed_url.path)},
-        name = project.name,
-        parent_id = project.parent_id
-    }
-
-    ngx.req.read_body()
-    local request = ngx.req.get_body_data()
-
-    local new_params = {}
-    if request then
-        if request.is_domain then
-            new_params.is_domain = request.is_domain
-            project_obj.is_domain = request.is_domain
-        end
-
-        if request.description then
-            new_params.description = request.description
-            project_obj.is_domain = request.description
-        end
-
-        if request.domain_id then
-            new_params.domain_id = request.domain_id
-            project_obj.domain_id = request.domain_id
-        end
-
-        if request.enabled then
-            new_params.enabled = request.enabled
-            project_obj.enabled = request.enabled
-        end
-
-        if request.name then
-            new_params.name = request.name
-            project_obj.name = request.name
-        end
-
-        local _, err = dao_factory.project:update(new_params, {id=project_obj.id})
+--    ngx.req.read_body()
+--    local request = ngx.req.get_body_data()
+--    request = cjson.decode(request)
+    local request = self.params
+    if not request.project then
+         return responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
     end
 
+    local updated_project, err = dao_factory.project:update(request.project, {id=project.id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST(err)
+    end
 
+    local response = {project = updated_project}
     return responses.send_HTTP_OK(response)
 end
 
@@ -313,7 +287,7 @@ end
 
 Project.list_projects = list_projects
 Project.create_project = create_project
-Project.get_preject_info = get_project_info
+Project.get_project_info = get_project_info
 Project.update_project = update_project
 Project.delete_project = delete_project
 

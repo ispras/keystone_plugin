@@ -47,7 +47,7 @@ class TestKeystone(unittest.TestCase):
 
         self.user_id = response['user']['id']
 
-    def test_create_domain (self):
+    def test_create_domain(self):
         body = {
             "domain" : {
                 "name": "valerius_domain",
@@ -69,3 +69,49 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
+    def test_create_project(self):
+        body = {
+        "project": {
+            "description": "New project",
+            "enabled": True,
+            "is_domain": False,
+            "name": "NewProject2"
+        }
+}
+        res = requests.post(self.host + '/v3/projects', json = body)
+        self.checkCode(res, 201)
+
+        response = res.json()
+        print(response)
+
+    def test_list_project(self):
+        res = requests.get(self.host + '/v3/projects')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_get_project_info(self):
+        res = requests.get(self.host + '/v3/projects/ea0341a4-3640-4a27-9be6-fd8a78c5fefb')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        print(response)
+
+    def test_update_project(self):
+        body = {
+        "project": {
+            "description": "My updated project",
+            "name": "myUpdatedProject"
+            }
+        }
+        res = requests.patch(self.host + '/v3/projects/ea0341a4-3640-4a27-9be6-fd8a78c5fefb', json=body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        print(response)
+
+    def test_delete_project(self):
+        res = requests.delete(self.host + '/v3/projects/cc207ed2-61e4-4e7b-ab33-6e65acc8f76c')
+        self.checkCode(res, 204)
