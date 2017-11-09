@@ -364,7 +364,7 @@ return {
         enabled boolean,
         default_project_id varchar,
         created_at timestamp,
-        last_active_at date,
+        last_active_at timestamp,
         domain_id varchar,
         PRIMARY KEY (id)
       );

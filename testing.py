@@ -15,7 +15,9 @@ class TestKeystone(unittest.TestCase):
                 print("Failed with error:", res.reason)
             self.assertEqual(res.status_code, code)
 
-    def test_list_users(self):
+
+class TestKeystoneUser(TestKeystone):
+    def list(self):
         query = {
             # 'domain_id' : 'domain_id',
             'enabled': 'true',
@@ -39,7 +41,7 @@ class TestKeystone(unittest.TestCase):
                         print('\t', uk, '\t:\t', uv)
                     print()
 
-    def test_create_local_user(self):
+    def create_local(self):
         body = {
             "user": {
                 "enabled": "true",
@@ -62,7 +64,7 @@ class TestKeystone(unittest.TestCase):
 
         self.user_id = response['user']['id']
 
-    def test_create_nonlocal_user(self):
+    def create_nonlocal(self):
         body = {
             "user": {
                 "name": "nonloc_user"
@@ -83,10 +85,11 @@ class TestKeystone(unittest.TestCase):
 
         self.user_id = response['user']['id']
 
-    def test_create_domain(self):
+class TestKeystoneDomain(TestKeystone):
+    def create(self):
         body = {
             "domain" : {
-                "name": "check_domain",
+                "name": "default_domain",
                 "description" : "kuku",
                 "enabled" :  True
             }
@@ -98,7 +101,7 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_list_domain(self):
+    def list(self):
         res = requests.get(self.host + '/v3/domains')
         self.checkCode(res, 200)
 
@@ -106,14 +109,8 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_get_domain_info(self):
-        res = requests.get(self.host + '/v3/domains/85220b62-f5cf-4fc7-adce-823e320592f4')
-        self.checkCode(res, 200)
-
-        response = res.json()
-        print(response)
-
-    def test_update_domain(self):
+class TestKeystoneProject(TestKeystone):
+    def create (self):
         body = {
         "domain": {
             "description": "My updated domain",
@@ -147,7 +144,7 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_list_project(self):
+    def list(self):
         res = requests.get(self.host + '/v3/projects')
         self.checkCode(res, 200)
 
@@ -155,7 +152,7 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_get_project_info(self):
+    def get_info(self):
         res = requests.get(self.host + '/v3/projects/ea0341a4-3640-4a27-9be6-fd8a78c5fefb')
         self.checkCode(res, 200)
 
@@ -163,7 +160,7 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_update_project(self):
+    def update(self):
         body = {
         "project": {
             "description": "My updated project",
@@ -177,6 +174,6 @@ class TestKeystone(unittest.TestCase):
         for k, v in response.items():
             print(k, '\n\t', v)
 
-    def test_delete_project(self):
+    def delete(self):
         res = requests.delete(self.host + '/v3/projects/cc207ed2-61e4-4e7b-ab33-6e65acc8f76c')
         self.checkCode(res, 204)

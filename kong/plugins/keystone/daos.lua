@@ -421,8 +421,8 @@ local USER_SCHEMA = {
         extra = { type = "table" },
         enabled = { type = "boolean" },
         default_project_id = { type = "string" },
-        created_at = { type = "string" },
-        last_active_at = { type = "string" },
+        created_at = { type = "timestamp" },
+        last_active_at = { type = "timestamp" },
         domain_id = { type = "string", required = true }
     }
 }

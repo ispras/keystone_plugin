@@ -139,9 +139,10 @@ local function create_user(self, dao_factory)
     end
 
     user.id = utils.uuid()
-    user.created_at = os.date("%Y-%m-%dT%XZ") -- time format YYYY-MM-DDTHH:mm:ssZ
---    user.created_at = os.time()
+--    user.created_at = os.date("%Y-%m-%dT%X+0000") -- time format YYYY-MM-DDTHH:mm:ssZ
+--    user.last_active_at = os.date("%Y-%m-%d")
 --    user.created_at = os.date("*t")
+    user.created_at = os.time()
 
     local _, err = dao_factory.user:insert(user)
     if err then
