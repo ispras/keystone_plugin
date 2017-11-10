@@ -1,6 +1,6 @@
 local views = {}
 
-function add_routes(obj)
+local function add_routes(obj)
     for k, v in pairs(obj) do
         views[k] = v
     end
@@ -14,5 +14,11 @@ add_routes(projects)
 
 local domains = require ('kong.plugins.keystone.views.domains')
 add_routes(domains)
+
+local regions = require ('kong.plugins.keystone.views.regions')
+add_routes(regions)
+
+local services_and_endpoints = require ('kong.plugins.keystone.views.services_and_endpoints')
+add_routes(services_and_endpoints)
 
 return views

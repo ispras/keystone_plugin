@@ -309,7 +309,8 @@ return {
         id varchar,
         type varchar,
         enabled boolean,
-        extra text,
+        name varchar,
+        description text,
         PRIMARY KEY (id)
       );
 
