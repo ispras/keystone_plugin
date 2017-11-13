@@ -10,4 +10,4 @@ export KONG_CUSTOM_PLUGINS=keystone
 echo ">>> Updating database schema..."
 kong migrations up
 echo ">>> Starting kong..."
-kong start -c /etc/kong/kong.conf
+kong restart -c /etc/kong/kong.conf
