@@ -74,7 +74,7 @@ return {
       );
 
       CREATE TABLE IF NOT EXISTS federated_user(
-        id int,
+        id varchar,
         user_id varchar,
         idp_id varchar,
         protocol_id varchar,
@@ -140,7 +140,7 @@ return {
       );
 
       CREATE TABLE IF NOT EXISTS local_user(
-        id int,
+        id varchar,
         user_id varchar,
         domain_id varchar,
         name varchar,
@@ -176,8 +176,8 @@ return {
       CREATE INDEX IF NOT EXISTS ON nonlocal_user(user_id);
 
       CREATE TABLE IF NOT EXISTS password(
-        id int,
-        local_user_id int,
+        id varchar,
+        local_user_id varchar,
         password varchar,
         expires_at timestamp,
         self_service boolean,
@@ -263,7 +263,7 @@ return {
       CREATE INDEX IF NOT EXISTS ON request_token(consumer_id);
 
       CREATE TABLE IF NOT EXISTS revocation_event(
-        id int,
+        id varchar,
         domain_id varchar,
         project_id varchar,
         user_id varchar,
