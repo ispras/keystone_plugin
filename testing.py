@@ -177,3 +177,66 @@ class TestKeystoneProject(TestKeystone):
     def delete(self):
         res = requests.delete(self.host + '/v3/projects/cc207ed2-61e4-4e7b-ab33-6e65acc8f76c')
         self.checkCode(res, 204)
+
+    def test_create_region(self):
+        body = {
+            "region": {
+                "description": "My subregion",
+                "id": "RegionOneSubRegion2",
+                "parent_region_id": "RegionOneSubRegion1"
+            }
+        }
+        res = requests.post(self.host + '/v3/regions', json = body)
+        self.checkCode(res, 201)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_list_region(self):
+        res = requests.get(self.host + '/v3/regions')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_get_region_info(self):
+        res = requests.get(self.host + '/v3/regions/RegionOneSubRegion')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_update_region(self):
+        body = {
+            "region": {
+                "description": "My subregion 3"
+            }
+        }
+        res = requests.patch(self.host + '/v3/regions/RegionOneSubRegion', json=body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_delete_region(self):
+        res = requests.delete(self.host + '/v3/regions/RegionOneSubRegion1')
+        self.checkCode(res, 204)
+
+    def test_create_service(self):
+        body = {
+            "service": {
+                "type": "compute",
+                "name": "compute2",
+                "description": "Compute service 2"
+            }
+        }
+        res = requests.post(self.host + '/v3/services', json = body)
+        self.checkCode(res, 201)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)

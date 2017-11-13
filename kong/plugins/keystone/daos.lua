@@ -356,7 +356,8 @@ local SERVICE_SCHEMA = {
         id = { type = "string", required = true },
         type = { type = "string" },
         enabled = { type = "boolean", required = true },
-        extra = { type = "table" }
+        name = { type = "string", required = true},
+        description = { type = "string"}
     }
 }
 
