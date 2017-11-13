@@ -85,6 +85,26 @@ class TestKeystoneUser(TestKeystone):
 
         self.user_id = response['user']['id']
 
+    def delete(self):
+        user_id = '730fbea0-ed5f-47f4-a86c-8296481422e7'
+        res = requests.delete(self.host + '/v3/users/' + user_id)
+        self.checkCode(res, 204)
+
+    def get_info(self):
+        user_id = '730fbea0-ed5f-47f4-a86c-8296481422e7'
+        res = requests.get(self.host + '/v3/users/' + user_id)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            if k != 'user':
+                print(k, '\n\t', v)
+            else:
+                print(k)
+                for uk, uv in v.items():
+                    print('\t', uk, '\t:\t', uv)
+
+
 class TestKeystoneDomain(TestKeystone):
     def create(self):
         body = {
