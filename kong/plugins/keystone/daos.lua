@@ -169,7 +169,7 @@ local LOCAL_USER_SCHEMA = {
         domain_id = { type = "string", required = true, queryable = true },
         name = { type = "string", required = true },
         failed_auth_count = { type = "number" },
-        failed_auth_at = { type = "string" }
+        failed_auth_at = { type = "timestamp" }
     }
 }
 
@@ -209,12 +209,10 @@ local PASSWORD_SCHEMA = {
         id = { type = "string", required = true },
         local_user_id = { type = "string", required = true, queryable = true },
         password = { type = "string" },
-        expires_at = { type = "string" },
+        expires_at = { type = "timestamp" },
         self_service = { type = "boolean" },
         password_hash = { type = "string" },
-        created_at_int = { type = "timestamp", required = true },
-        expires_at_int = { type = "timestamp" },
-        created_at = { type = "string", required = true }
+        created_at = { type = "timestamp", required = true }
     }
 }
 
@@ -321,9 +319,9 @@ local REVOCATION_EVENT_SCHEMA = {
         trust_id = { type = "string" },
         consumer_id = { type = "string" },
         access_token_id = { type = "string" },
-        issued_before = { type = "string", required = true },
-        expires_at = { type = "string" },
-        revoked_at = { type = "string", required = true },
+        issued_before = { type = "timestamp", required = true },
+        expires_at = { type = "timestamp" },
+        revoked_at = { type = "timestamp", required = true },
         audit_id = { type = "string" },
         audit_chain_id = { type = "string" }
     }
@@ -380,7 +378,7 @@ local TOKEN_SCHEMA = {
     table = "token_",
     fields = {
         id = { type = "string", required = true },
-        expires = { type = "string" },
+        expires = { type = "timestamp" },
         extra = { type = "table" },
         valid = { type = "boolean" },
         trust_id = { type = "string" },
@@ -397,8 +395,8 @@ local TRUST_SCHEMA = {
         trustee_user_id = { type = "string", required = true },
         project_id = { type = "string" },
         impersonation = { type = "boolean", required = true },
-        deleted_at = { type = "string" },
-        expires_at = { type = "string" },
+        deleted_at = { type = "timestamp" },
+        expires_at = { type = "timestamp" },
         remaining_uses = { type = "number" },
         extra = { type = "table" }
     }
