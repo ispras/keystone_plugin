@@ -182,8 +182,6 @@ return {
         expires_at timestamp,
         self_service boolean,
         password_hash varchar,
-        created_at_int bigint,
-        expires_at_int bigint,
         created_at timestamp,
         PRIMARY KEY (id)
       );
