@@ -86,7 +86,7 @@ class TestKeystoneUser(TestKeystone):
         self.user_id = response['user']['id']
 
     def delete(self):
-        user_id = '730fbea0-ed5f-47f4-a86c-8296481422e7'
+        user_id = 'bfeef63f-ff7e-446b-95a5-66b8a2c06710'
         res = requests.delete(self.host + '/v3/users/' + user_id)
         self.checkCode(res, 204)
 
@@ -104,6 +104,65 @@ class TestKeystoneUser(TestKeystone):
                 for uk, uv in v.items():
                     print('\t', uk, '\t:\t', uv)
 
+    def update(self):
+        user_id = 'bfeef63f-ff7e-446b-95a5-66b8a2c06710'
+        body = {
+            "user" : {
+                'enabled': True,
+                'name' : 'check',
+                'password' : 'secret2'
+            }
+        }
+        res = requests.patch(self.host + '/v3/users/' + user_id, json = body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            if k != 'user':
+                print(k, '\n\t', v)
+            else:
+                print(k)
+                for uk, uv in v.items():
+                    print('\t', uk, '\t:\t', uv)
+
+    def list_groups(self):
+        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
+        res = requests.get(self.host + '/v3/users/' + user_id + '/groups')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            if k != 'groups':
+                print(k, '\n\t', v)
+            else:
+                print(k)
+                for uk, uv in v.items():
+                    print('\t', uk, '\t:\t', uv)
+
+    def list_projects(self):
+        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
+        res = requests.get(self.host + '/v3/users/' + user_id + '/projects')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            if k != 'projects':
+                print(k, '\n\t', v)
+            else:
+                print(k)
+                for uk, uv in v.items():
+                    print('\t', uk, '\t:\t', uv)
+
+    def change_password(self):
+        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
+        body = {
+            'user' : {
+                'password' : 'new_tester',
+                'original_password' : 'tester'
+            }
+        }
+        res = requests.post(self.host + '/v3/users/' + user_id + '/password', json = body)
+        self.checkCode(res, 204)
 
 class TestKeystoneDomain(TestKeystone):
     def create(self):

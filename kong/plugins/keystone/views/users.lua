@@ -255,40 +255,84 @@ end
 
 local function update_user(self, dao_factory)
     local user_id = self.params.user_id
-    local user = self.params.user
-    if not user then
-        return responses.send_HTTP_BAD_REQUEST({message = "No user object detected in request"})
-    end
-
-    local uname = user.name
-    if not uname then
-        return responses.send_HTTP_BAD_REQUEST({message = "No name in user object"})
-    end
-
-    local passwd
-    if user.password then
-        passwd = {
-            password= sha512.crypt(user.password)
-        }
-    end
-
-    user = {
-        default_project_id = user.default_project_id,
-        domain_id = user.domain_id,
-        enabled = kutils.bool(user.enabled)
-    }
-
-    if next(user) then
-        local user, err = dao_factory.user:update({id = user_id}, user)
-        if err then
-            return responses.send_HTTP_BAD_REQUEST(err)
-        end
-    else
-        local user, err = dao_factory.user:find({id = user_id})
+    local user, err = dao_factory.user:find({id = user_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:find"})
     end
     if not next(user) then
         return responses.send_HTTP_BAD_REQUEST({message = "No user found, check id = "..user_id})
     end
+
+    local uupdate = self.params.user
+    if not uupdate then
+        return responses.send_HTTP_BAD_REQUEST({message = "No user object detected in request"})
+    end
+
+    local loc_user, err1 = dao_factory.local_user:find_all({user_id = user_id})
+    local nonloc_user, err2 = dao_factory.nonlocal_user:find_all({user_id = user_id})
+    if err1 or err2 then
+        return responses.send_HTTP_BAD_REQUEST({{error = err1, func = "dao_factory.local_user:find_all"}}, {error = err2, func = "dao_factory.nonlocal_user:find_all"})
+    end
+    local loc_user = loc_user[1]
+    local nonloc_user = nonloc_user[1]
+
+    local uname = uupdate.name
+    if uname or uupdate.domain_id then
+        local check_domain = uupdate.domain_id or user.domain_id
+        local check_name = uname or loc_user.name or nonloc_user.name
+        local temp1, err1 = dao_factory.local_user:find_all({domain_id = check_domain, name = check_name})
+        local temp2, err2 = dao_factory.nonlocal_user:find_all({domain_id = check_domain, name = check_name})
+        if err1 or err2 then
+            return responses.send_HTTP_BAD_REQUEST({{error = err1, func = "dao_factory.local_user:find_all"}}, {error = err2, func = "dao_factory.nonlocal_user:find_all"})
+        end
+        if next(temp1) then
+            if temp1[1].user_id ~= user_id then
+                return responses.send_HTTP_BAD_REQUEST({message = "Requested name is already exists in requested domain"})
+            end
+        elseif next(temp2) then
+            if temp2[1].user_id ~= user_id then
+                return responses.send_HTTP_BAD_REQUEST({message = "Requested name is already exists in requested domain"})
+            end
+        end
+
+    end
+
+    local passwd
+    if uupdate.password then
+        passwd = {
+            password= sha512.crypt(uupdate.password)
+        }
+    end
+
+    uupdate = {
+        default_project_id = uupdate.default_project_id,
+        domain_id = uupdate.domain_id,
+        enabled = kutils.bool(uupdate.enabled)
+    }
+
+    if next(uupdate) then
+        local err
+        user, err = dao_factory.user:update(uupdate, {id = user_id})
+        if err then
+            return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:update"})
+        end
+    end
+    if uupdate.domain_id then
+        if loc_user then
+            local _, err = dao_factory.local_user:update({domain_id = uupdate.domain_id}, {id = loc_user.id})
+            if err then
+                return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.local_user:update"})
+            end
+            loc_user.domain_id = uupdate.domain_id
+        elseif nonloc_user then
+            local _, err = dao_factory.nonlocal_user:update({domain_id = uupdate.domain_id}, {domain_id = uupdate.domain_id, name = nonloc_user.name})
+            if err then
+                return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.nonlocal_user:update"})
+            end
+            nonloc_user.domain_id = uupdate.domain_id
+        end
+    end
+
 
     local resp = {
         user = {
@@ -304,61 +348,128 @@ local function update_user(self, dao_factory)
     }
 
     if uname or passwd then
-        local loc_user, err1 = dao_factory.local_user:find_all({user_id = user_id})
-        local nonloc_user, err2 = dao_factory.nonlocal_user:find_all({user_id = user_id})
-        if err1 or err2 then
-            return responses.send_HTTP_BAD_REQUEST({{error = err1, func = "dao_factory.local_user:find_all"}}, {error = err2, func = "dao_factory.nonlocal_user:find_all"})
-        elseif next(loc_user) then
+        if loc_user then
+            resp.user.name = loc_user.name
             if uname then
-                local loc_user, err = dao_factory.local_user:update({id = loc_user[1].id}, {name = uname})
+                local temp, err = dao_factory.local_user:find_all({domain_id = user.domain_id, name = uname})
+                if err then
+                    return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.local_user:find_all"})
+                end
+
+                local temp, err = dao_factory.local_user:update({name = uname}, {id = loc_user.id})
                 if err then
                     return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.local_user:update"})
                 end
+                resp.user.name = temp.name
             end
 
-            resp.user.name = loc_user.name
 
             if passwd then
-                passwd.created_at = os.date("%Y:%m:%dT%XZ")
-                local passwd, err = dao_factory.password:update({local_user_id = loc_user.id}, passwd)
+                passwd.created_at = os.time()
+                local temp, err = dao_factory.password:find_all({local_user_id = loc_user.id})
                 if err then
-                    return responses.send_HTTP_BAD_REQUEST(err)
+                    return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.password:find_all"})
+                elseif next(temp) then
+                    local passwd, err = dao_factory.password:update(passwd, {id = temp[1].id})
+                    if err then
+                        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.password:update"})
+                    else
+                        resp.user.password_expires_at = passwd.expires_at or "null"
+                    end
+                else
+                    passwd.id = utils.uuid()
+                    passwd.local_user_id = loc_user.id
+                    local passwd, err = dao_factory.password:insert(passwd)
+                    if err then
+                        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.password:insert"})
+                    else
+                        resp.user.password_expires_at = passwd.expires_at or "null"
+                    end
                 end
-                resp.user.password_expires_at = passwd.expires_at
             end
-        elseif next(nonloc_user) then
+        elseif nonloc_user then
             resp.user.name = nonloc_user.name
             if uname then
-                local nonloc_user, err = dao_factory.nonlocal_user:update({user_id = user_id}, {name = uname})
+                local _, err = dao_factory.nonlocal_user:update({name = uname}, {domain_id = nonloc_user.domain_id, name = nonloc_user.name})
                 if err then
-                    return responses.send_HTTP_BAD_REQUEST(err)
+                    return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.nonlocal_user:update"})
                 end
-                resp.user.name = nonloc_user.name
+                resp.user.name = uname
             end
-
 
             if passwd then
-                local nonloc_user, err = dao_factory.nonlocal_user:delete({user_id = user_id})
+                local _, err = dao_factory.nonlocal_user:delete({domain_id = nonloc_user.domain_id, name = nonloc_user.name})
                 if err then
-                    return responses.send_HTTP_BAD_REQUEST(err)
+                    return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.nonlocal_user:delete"})
                 end
+                loc_user = {
+                    id = utils.uuid(),
+                    user_id = user_id,
+                    domain_id = nonloc_user.domain_id,
+                    name = resp.user.name
+                }
+
+                passwd.id = utils.uuid()
+                passwd.local_user_id = loc_user.id
+                passwd.created_at = os.time()
+                local temp, err = dao_factory.password:insert(passwd)
+                if err then
+                    responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.password:insert"})
+                end
+                resp.user.password_expires_at = temp.expires_at or "null"
+
                 local loc_user, err = dao_factory.local_user:insert(loc_user)
                 if err then
-                    return responses.send_HTTP_BAD_REQUEST(err)
+                    return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.local_user:insert"})
+                end
+            end
+        else
+            kutils.handle_dao_error(resp, "No local or nonlocal user existed")
+            if passwd then
+                local loc_user = {
+                    id = utils.uuid(),
+                    user_id = user_id,
+                    domain_id = user.domain_id,
+                    name = uname
+                }
+
+                passwd.id = utils.uuid()
+                passwd.local_user_id = loc_user.id
+                passwd.created_at = os.time()
+                local temp, err = dao_factory.password:insert(passwd)
+                if err then
+                    kutils.handle_dao_error(resp, err, "dao_factory.password:insert")
+                    local nonloc_user = {
+                        user_id = user.id,
+                        domain_id = user.domain_id,
+                        name = uname
+                    }
+                    local _, err = dao_factory.nonlocal_user:insert(nonloc_user)
+                    if err then
+                        kutils.handle_dao_error(resp, err, "dao_factory.nonlocal_user:insert")
+                    end
+
+                else
+                    resp.user.password_expires_at = temp.expires_at
+                    local _, err = dao_factory.local_user:insert(loc_user)
+                    if err then
+                        kutils.handle_dao_error(resp, err, "dao_factory.local_user:insert")
+                    end
+
                 end
 
-                passwd.local_user_id = loc_user.id
-                passwd.created_at_int = 0
-                passwd.created_at = os.date("%Y:%m:%dT%XZ")
-                local passwd, err = dao_factory.password:insert(passwd)
+            else
+                local nonloc_user = {
+                    domain_id = user.domain_id,
+                    user_id = user_id,
+                    name = uname
+                }
+                local _, err = dao_factory.nonlocal_user:insert(nonloc_user)
                 if err then
-                    responses.send_HTTP_BAD_REQUEST(err)
+                    kutils.handle_dao_error(resp, err, "dao_factory.nonlocal_user:insert")
                 end
-                resp.user.password_expires_at = passwd.expires_at
             end
 
-        else
-            responses.send_HTTP_BAD_REQUEST({message = "No name found for user "..user_id})
         end
     end
 
@@ -464,6 +575,13 @@ end
 
 local function list_user_groups(self, dao_factory)
     local user_id = self.params.user_id
+    local user, err = dao_factory.user:find({id = user_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:find"})
+    elseif not user or not next(user) then
+        return responses.send_HTTP_BAD_REQUEST({message = "No requested user in database"})
+    end
+
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
@@ -474,16 +592,16 @@ local function list_user_groups(self, dao_factory)
     }
     local groups, err = dao_factory.user_group_membership:find_all({user_id = user_id})
     if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user_group_membership:find_all"})
     end
     for i = 1, #groups do
         local group, err = dao_factory.group:find({id = groups[i].group_id})
         if err then
-            return responses.send_HTTP_BAD_REQUEST(err)
+            kutils.handle_dao_error(resp, err, "dao_factory.group:find")
         end
         resp.groups[i] = group
         resp.groups.extra = nil
-        resp.groups[i].links.self = self:build_url("/v3/groups/"..group.id)
+        resp.groups[i].links.self =  self:build_url("/v3/groups/"..group.id)
     end
 
     return responses.send_HTTP_OK(resp)
@@ -491,6 +609,14 @@ end
 
 local function list_user_projects(self, dao_factory)
     local user_id = self.params.user_id
+    local user, err = dao_factory.user:find({id = user_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:find"})
+    elseif not user or not next(user) then
+        return responses.send_HTTP_BAD_REQUEST({message = "No requested user in database"})
+    end
+
+    local domain_id = user.domain_id
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
@@ -500,16 +626,16 @@ local function list_user_projects(self, dao_factory)
         projects = {}
     }
 
-    local projects = {} -- TODO
+    local projects, err = dao_factory.project:find_all({domain_id = domain_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.projects:find_all"})
+    end
+
     for i = 1, #projects do
-        local project, err = dao_factory.group:find({id = projects[i].group_id})
-        if err then
-            return responses.send_HTTP_BAD_REQUEST(err)
-        end
-        resp.projects[i] = project
+        resp.projects[i] = projects[i]
         resp.projects.extra = nil
         resp.projects.is_domain = nil
-        resp.projects[i].links.self = self:build_url("/v3/groups/"..project.id)
+        resp.projects[i].links.self = self:build_url("/v3/projects/"..projects[i].id)
     end
 
     return responses.send_HTTP_OK(resp)
@@ -517,24 +643,37 @@ end
 
 local function change_user_password(self, dao_factory) -- TODO second method by patch
     local user_id = self.params.user_id
-    local user = self.params.user
-    local loc_user, err = dao_factory.local_user:find({user_id = user_id})
+    local user, err = dao_factory.user:find({id = user_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:find"})
+    elseif not user or not next(user) then
+        return responses.send_HTTP_BAD_REQUEST({message = "No requested user in database"})
+    end
+
+    local uupdate = self.params.user
+    local temp, err = dao_factory.local_user:find_all({user_id = user_id})
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.local_user:find_all"})
+    end
+    local loc_user = temp[1]
+    if not loc_user then
+        return responses.send_HTTP_BAD_REQUEST({message = "User is not local"})
+    end
+
+    local temp, err = dao_factory.password:find_all({local_user_id = loc_user.id})
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-    local passwd, err = dao_factory.password:find({local_user_id = loc_user.id})
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
-    if sha512.verify(user.original_password, passwd.password) ~= true then
+    local passwd = temp[1]
+    if sha512.verify(uupdate.original_password, passwd.password) ~= true then
         return responses.send_HTTP_BAD_REQUEST({message = "Incorrect original_password"})
     end
 
-    passwd.created_at = os.date("%Y:%m:%dT%XZ")
-    passwd.password = sha512.crypt(user.password)
-    local passwd, err = dao_factory.password:update({local_user_id = loc_user.id}, passwd)
+    passwd.created_at = os.time()
+    passwd.password = sha512.crypt(uupdate.password)
+    local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
     if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.password:update"})
     end
 
     return responses.send_HTTP_NO_CONTENT()
