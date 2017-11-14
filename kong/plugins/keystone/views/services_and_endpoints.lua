@@ -29,14 +29,14 @@ function list_services(self, dao_factory)
     end
 
     if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.region:find_all(...)"})
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.services:find_all(...)"})
     end
 
-    if not next(regions) then
+    if not next(services) then
         return responses.send_HTTP_OK(resp)
     end
 
-    for i = 1, #regions do
+    for i = 1, #services do
         resp.services[i] = {}
         resp.services[i].description = services[i].description
         resp.services[i].id = services[i].id
