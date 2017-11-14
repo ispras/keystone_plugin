@@ -261,8 +261,7 @@ class TestKeystoneProject(TestKeystone):
         body = {
             "region": {
                 "description": "My subregion",
-                "id": "RegionOneSubRegion2",
-                "parent_region_id": "RegionOneSubRegion1"
+                "id": "RegionOne",
             }
         }
         res = requests.post(self.host + '/v3/regions', json = body)
@@ -378,4 +377,55 @@ class TestKeystoneService(TestKeystone):
 
     def test_delete_service(self):
         res = requests.delete(self.host + '/v3/services/63f7baeb-b038-4883-8c2a-e6414d58b758')
+        self.checkCode(res, 204)
+
+    def test_create_endpoint(self):
+        body = {
+            "endpoint": {
+                "interface": "public",
+                "region_id": "RegionOne",
+                "url": "http://example.com/identity/v3/endpoints/828384",
+                "service_id": "f056805f-9d9f-4168-ab8d-e45c31bff24b"
+            }
+        }
+        res = requests.post(self.host + '/v3/endpoints', json = body)
+        self.checkCode(res, 201)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_list_endpoints(self):
+        res = requests.get(self.host + '/v3/endpoints')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_get_endpoint_info(self):
+        res = requests.get(self.host + '/v3/endpoints/86012e94-55c2-4938-86c7-d3a4f467a1fa')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_update_endpoint(self):
+        body = {
+            "endpoint": {
+                "interface": "internal",
+                "url": "http://example.com/identity/v3/endpoints/828384",
+                "service_id": "3c858b69-cd97-4d60-9678-64289d6c2389"
+            }
+        }
+        res = requests.patch(self.host + '/v3/endpoints/86012e94-55c2-4938-86c7-d3a4f467a1fa', json=body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_delete_endpoint(self):
+        res = requests.delete(self.host + '/v3/endpoints/86012e94-55c2-4938-86c7-d3a4f467a1fa')
         self.checkCode(res, 204)

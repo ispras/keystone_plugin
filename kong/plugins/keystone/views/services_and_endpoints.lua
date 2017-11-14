@@ -10,6 +10,10 @@ local available_service_types = {
     compute = true, ec2 = true, identity = true, image = true, network = true, volume = true
 }
 
+local available_interface_types = {
+    public = true, internal = true, admin = true
+}
+
 function list_services(self, dao_factory)
     local resp = {
         links = {
@@ -155,23 +159,189 @@ function delete_service(self, dao_factory)
 end
 
 function list_endpoints(self, dao_factory)
-    return ''
+    local resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        },
+        endpoints = {}
+    }
+
+    local args = {}
+    if self.params.interface then
+        if not available_interface_types[self.params.interface] then
+            return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
+        end
+        args.interface = self.params.interface
+    end
+
+    if self.params.service_id then
+        local service, err = dao_factory.service:find({id = self.params.service_id})
+        if not service or err then
+            return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
+        end
+        args.service_id = self.params.service_id
+    end
+
+    local endpoints = {}
+    local err
+    if next(args) then
+        endpoints, err = dao_factory.endpoint:find_all(args)
+    else
+        endpoints, err = dao_factory.endpoint:find_all()
+    end
+
+    if err then
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.endpoint:find_all(...)"})
+    end
+
+    if not next(endpoints) then
+        return responses.send_HTTP_OK(resp)
+    end
+
+    for i = 1, #endpoints do
+        resp.endpoints[i] = {}
+        resp.endpoints[i].region_id = endpoints[i].region_id
+        resp.endpoints[i].id = endpoints[i].id
+        resp.endpoints[i].links = {
+                self = self:build_url(self.req.parsed_url.path)
+        }
+        resp.endpoints[i].enabled = endpoints[i].enabled
+        resp.endpoints[i].url = endpoints[i].url
+        resp.endpoints[i].interface = endpoints[i].interface
+        resp.endpoints[i].service_id = endpoints[i].service_id
+    end
+    return responses.send_HTTP_OK(resp)
 end
 
 function create_endpoint(self, dao_factory)
-    return ''
+    local endpoint = self.params.endpoint
+    if not endpoint then
+        return responses.send_HTTP_BAD_REQUEST("endpoint is nil, check self.params")
+    end
+
+    if not endpoint.url then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint url")
+    end
+
+    if not endpoint.enabled then
+        endpoint.enabled = true
+    end
+
+    if not endpoint.interface or not available_interface_types[endpoint.interface] then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
+    end
+
+    if not endpoint.service_id then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint service_id")
+    end
+
+    local service, err = dao_factory.service:find({id = endpoint.service_id})
+    if not service or err then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
+    end
+
+    if endpoint.region_id then
+        local region, err = dao_factory.region:find({id = endpoint.region_id})
+        if not region or err then
+            return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
+        end
+    end
+
+    endpoint.id = utils.uuid()
+    local _, err = dao_factory.endpoint:insert(endpoint)
+    if err then
+        return responses.send_HTTP_CONFLICT(err)
+    end
+
+    endpoint.links = {
+                self = self:build_url(self.req.parsed_url.path)
+    }
+
+    return responses.send_HTTP_CREATED({endpoint = endpoint})
 end
 
 function get_endpoint_info(self, dao_factory)
-    return ''
+    local endpoint_id = self.params.endpoint_id
+    if not endpoint_id then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
+    end
+
+    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
+    if not endpoint then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
+    end
+
+    endpoint.links = {
+                self = self:build_url(self.req.parsed_url.path)
+            }
+    return responses.send_HTTP_OK({endpoint = endpoint})
 end
 
 function update_endpoint(self, dao_factory)
-    return ''
+    local endpoint_id = self.params.endpoint_id
+    if not endpoint_id then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
+    end
+
+    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
+    if not endpoint then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
+    end
+
+    local new_endpoint = self.params.endpoint
+    if not new_endpoint then
+        return responses.send_HTTP_BAD_REQUEST("endpoint is nil, check self.params")
+    end
+
+    if new_endpoint.interface and not available_interface_types[new_endpoint.interface] then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
+    end
+
+    if new_endpoint.service_id then
+       local service, err = dao_factory.service:find({id = new_endpoint.service_id})
+        if not service or err then
+            return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
+        end
+    end
+
+    if new_endpoint.region_id then
+        local region, err = dao_factory.region:find({id = endpoint.region_id})
+        if not region or err then
+            return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
+        end
+    end
+
+    local updated_endpoint, err = dao_factory.endpoint:update(new_endpoint, {id = endpoint_id})
+
+    if not updated_endpoint or err then
+        return responses.send_HTTP_CONFLICT(err)
+    end
+
+    updated_endpoint.links = {
+                self = self:build_url(self.req.parsed_url.path)
+            }
+    return responses.send_HTTP_OK({endpoint = updated_endpoint})
 end
 
 function delete_endpoint(self, dao_factory)
-    return ''
+    local endpoint_id = self.params.endpoint_id
+    if not endpoint_id then
+        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
+    end
+
+    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
+    if not endpoint then
+        return responses.send_HTTP_NOT_FOUND("Error: no such endpoint in the system")
+    end
+
+    local _, err = dao_factory.endpoint:delete({id = endpoint_id})
+    if err then
+        return responses.send_HTTP_FORBIDDEN(err)
+    end
+
+    return responses.send_HTTP_NO_CONTENT()
 end
 
 ServiceAndEndpoint.list_services = list_services
