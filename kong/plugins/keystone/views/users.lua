@@ -2,7 +2,6 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
-local time = require "kong.tools.timestamp"
 
 local function list_users(self, dao_factory, helpers)
     local resp = {

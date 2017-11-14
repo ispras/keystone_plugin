@@ -21,4 +21,7 @@ add_routes(regions)
 local services_and_endpoints = require ('kong.plugins.keystone.views.services_and_endpoints')
 add_routes(services_and_endpoints)
 
+local auth_and_tokens = require ("kong.plugins.keystone.views.auth_and_tokens")
+add_routes(auth_and_tokens)
+
 return views

@@ -18,6 +18,15 @@ return {
         end
         resp.errors.num = 1 + resp.errors.num
         resp.errors[resp.errors.num] = {error = err, func = func }
+    end,
+    time_to_string = function(timestamp)
+        return timestamp and os.date("%Y-%m-%dT%X.000000Z", timestamp) or "null"
+    end,
+    string_to_time = function(s)
+        local format ="(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+).(%d+)"
+        local time = {}
+        time.day, time.month, time.year, time.hour, time.min, time.sec, time.zone=s:match(format)
+        return os.time(time)
     end
 
 }

@@ -380,7 +380,7 @@ local TOKEN_SCHEMA = {
     fields = {
         id = { type = "string", required = true },
         expires = { type = "timestamp" },
-        extra = { type = "table" },
+        extra = { type = "string" },
         valid = { type = "boolean" },
         trust_id = { type = "string" },
         user_id = { type = "string" }
