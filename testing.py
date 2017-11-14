@@ -319,3 +319,37 @@ class TestKeystoneProject(TestKeystone):
         response = res.json()
         for k, v in response.items():
             print(k, '\n\t', v)
+
+    def test_list_services(self):
+        res = requests.get(self.host + '/v3/services')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_get_service_info(self):
+        res = requests.get(self.host + '/v3/services/63f7baeb-b038-4883-8c2a-e6414d58b758')
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_update_service(self):
+        body = {
+        "service": {
+            "description": "Block Storage Service V2"
+            }
+        }
+        res = requests.patch(self.host + '/v3/services/63f7baeb-b038-4883-8c2a-e6414d58b758', json=body)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)
+
+    def test_delete_service(self):
+        res = requests.delete(self.host + '/v3/services/63f7baeb-b038-4883-8c2a-e6414d58b758')
+        self.checkCode(res, 204)
+
