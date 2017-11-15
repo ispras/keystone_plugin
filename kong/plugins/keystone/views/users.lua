@@ -611,11 +611,10 @@ local function list_user_projects(self, dao_factory)
     local user, err = dao_factory.user:find({id = user_id})
     if err then
         return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.user:find"})
-    elseif not user or not next(user) then
+    elseif not user then
         return responses.send_HTTP_BAD_REQUEST({message = "No requested user in database"})
     end
 
-    local domain_id = user.domain_id
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
@@ -625,16 +624,27 @@ local function list_user_projects(self, dao_factory)
         projects = {}
     }
 
-    local projects, err = dao_factory.project:find_all({domain_id = domain_id})
+    local temp, err = dao_factory.assignment:find_all({type = "UserProject", actor_id = user.id})
     if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.projects:find_all"})
+        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.assignment:find_all"})
     end
 
-    for i = 1, #projects do
-        resp.projects[i] = projects[i]
-        resp.projects.extra = nil
-        resp.projects.is_domain = nil
-        resp.projects[i].links.self = self:build_url("/v3/projects/"..projects[i].id)
+    for i = 1, #temp do
+        local project, err = dao_factory.project:find({id = temp[i].target_id})
+        if err then
+            kutils.handle_dao_error(resp, err, "dao_factory.project:find")
+        end
+        resp.projects[i] = {
+            description = project.description or "null",
+            domain_id = project.domain_id or "null",
+            enabled = project.enabled or "null",
+            id = project.id,
+            links = {
+                self = self:build_url('/v3/projects/'..project.id)
+            },
+            name = project.name,
+            parent_id = project.parent_id or "null"
+        }
     end
 
     return responses.send_HTTP_OK(resp)
