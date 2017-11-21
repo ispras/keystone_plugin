@@ -1,3 +1,4 @@
+local utils = require "kong.tools.utils"
 
 return {
     bool = function (a)
@@ -28,6 +29,12 @@ return {
         time.day, time.month, time.year, time.hour, time.min, time.sec, time.zone=s:match(format)
         return os.time(time)
     end,
+    headers = function()
+        local headers = {}
+        headers["x-openstack-request-id"] = utils.uuid()
+        headers.Vary = "X-Auth-Token"
+        return headers
+    end,
     parse_json = function(file_name)
         local storage = {}
         local file, err = io.open(file_name, "r")
@@ -49,6 +56,5 @@ return {
         file:close()
 
         return nil, storage
-    end
-
+    end,
 }

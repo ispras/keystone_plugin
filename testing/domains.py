@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneDomains(TestKeystoneBase):
@@ -8,8 +8,8 @@ class TestKeystoneDomains(TestKeystoneBase):
     def create(self):
         body = {
             "domain" : {
-                "name": "default_domain",
-                "description" : "kuku",
+                "name": "admin",
+                "description" : "admin domain for testing",
                 "enabled" :  True
             }
         }
