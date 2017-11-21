@@ -17,7 +17,7 @@ local ASSIGNMENT_SCHEMA = {
     primary_key = {"type", "actor_id", "target_id", "role_id", "inherited"},
     table = "assignment",
     fields = {
-        type = { type = "string", enum = {"UserProject", "GroupProject", "GroupDomain"}, required = true },
+        type = { type = "string", enum = {"UserProject", "UserDomain", "GroupProject", "GroupDomain"}, required = true },
         actor_id = { type = "string", required = true },
         target_id = { type = "string", required = true },
         role_id = { type = "string", required = true },

@@ -315,7 +315,8 @@ local function auth_password_unscoped(self, dao_factory)
     local token = {
         id = utils.uuid(),
         valid = true,
-        user_id = user.id
+        user_id = user.id,
+        expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
     if err then
@@ -365,7 +366,8 @@ local function auth_password_scoped(self, dao_factory)
     local token = {
         id = utils.uuid(),
         valid = true,
-        user_id = user.id
+        user_id = user.id,
+        expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
     if err then
@@ -414,7 +416,8 @@ local function auth_token_unscoped(self, dao_factory)
     local token = {
         id = utils.uuid(),
         valid = true,
-        user_id = user.id
+        user_id = user.id,
+        expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
     if err then
@@ -458,7 +461,8 @@ local function auth_token_scoped(self, dao_factory)
     local token = {
         id = utils.uuid(),
         valid = true,
-        user_id = user.id
+        user_id = user.id,
+        expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
     if err then
