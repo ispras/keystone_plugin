@@ -27,6 +27,28 @@ return {
         local time = {}
         time.day, time.month, time.year, time.hour, time.min, time.sec, time.zone=s:match(format)
         return os.time(time)
+    end,
+    parse_json = function(file_name)
+        local storage = {}
+        local file, err = io.open(file_name, "r")
+        if not file or err then
+            return err
+        end
+
+        while true do
+            local t = file:read("*line")
+            if not t then
+                break
+            end
+            local a, b = t:match('\"(.*)\":%s\"(.*)\"')
+            if a then
+                storage[a] = b
+            end
+
+        end
+        file:close()
+
+        return nil, storage
     end
 
 }
