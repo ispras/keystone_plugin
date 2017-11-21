@@ -1,3 +1,4 @@
+local utils = require "kong.tools.utils"
 
 return {
     bool = function (a)
@@ -27,6 +28,11 @@ return {
         local time = {}
         time.day, time.month, time.year, time.hour, time.min, time.sec, time.zone=s:match(format)
         return os.time(time)
-    end
-
+    end,
+    headers = function()
+        local headers = {}
+        headers["x-openstack-request-id"] = utils.uuid()
+        headers.Vary = "X-Auth-Token"
+        return headers
+    end,
 }

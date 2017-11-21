@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 
@@ -13,7 +13,8 @@ class TestKeystoneProjects(TestKeystoneBase):
             "description": "New project",
             "enabled": True,
             "is_domain": False,
-            "name": "NewProject3"
+            "name": "admin",
+            "domain_id": "db680c6e-d4e1-4a59-af41-8b30ea8dce6d"
             }
         }
         res = requests.post(self.host, json = body)
