@@ -1,5 +1,6 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
+local kutils = require ("kong.plugins.keystone.utils")
 
 Region = {}
 
@@ -20,10 +21,8 @@ function list_regions(self, dao_factory)
     else
         regions, err = dao_factory.region:find_all()
     end
+    kutils.assert_dao_error(err, "region:find_all")
 
-    if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.region:find_all(...)"})
-    end
     if not next(regions) then
         return responses.send_HTTP_OK(resp)
     end
@@ -51,12 +50,14 @@ function create_region(self, dao_factory)
     region_obj.id = request.region.id or utils.uuid()
 
     local res, err = dao_factory.region:find({id = region_obj.id})
+    kutils.assert_dao_error(err, "region find")
     if res then
         return responses.send_HTTP_BAD_REQUEST("Error: region with this id exists")
     end
 
     if request.region.parent_region_id then
         local parent_region, err = dao_factory.region:find({id=request.region.parent_region_id})
+        kutils.assert_dao_error(err, "region find")
         if not parent_region then
             return responses.send_HTTP_NOT_FOUND("Error: parent region doesn't exist")
         end
@@ -64,6 +65,7 @@ function create_region(self, dao_factory)
     end
 
     local region, err = dao_factory.region:insert(region_obj)
+    kutils.assert_dao_error(err, "region insert")
     if not region then
             return responses.send_HTTP_CONFLICT({error = err, object = region_obj})
     end
@@ -83,9 +85,7 @@ function get_region_info(self, dao_factory)
     end
 
     local region, err = dao_factory.region:find({id=region_id})
-    if err then
-        return responses.send_HTTP_NOT_FOUND("Error: bad region id")
-    end
+    kutils.assert_dao_error(err, "region find")
 
     region.links = {
                 self = self:build_url(self.req.parsed_url.path)
@@ -101,9 +101,7 @@ function update_region(self, dao_factory)
     end
 
     local region, err = dao_factory.region:find({id=region_id})
-    if err then
-        return responses.send_HTTP_NOT_FOUND("Error: bad region id")
-    end
+    kutils.assert_dao_error(err, "region find")
 
     local request = self.params
     if not request.region then
@@ -112,15 +110,11 @@ function update_region(self, dao_factory)
 
     if request.region.parent_region_id then
         local _, err = dao_factory.region:find({id=request.region.parent_region_id})
-        if err then
-            return responses.send_HTTP_NOT_FOUND("Error: parent region doesn't exist")
-        end
+        kutils.assert_dao_error(err, "region find")
     end
 
     local updated_region, err = dao_factory.region:update(request.region, {id=region.id})
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    kutils.assert_dao_error(err, "region update")
 
     updated_region.links = {
                 self = self:build_url(self.req.parsed_url.path)
@@ -136,19 +130,16 @@ function delete_region(self, dao_factory)
     end
 
     local _, err = dao_factory.region:find({id=region_id})
-    if err then
-        return responses.send_HTTP_NOT_FOUND("Error: bad region id")
-    end
+    kutils.assert_dao_error(err, "region find")
 
     local child, err = dao_factory.region:find_all({parent_region_id = region_id})
+    kutils.assert_dao_error(err, "region find_all")
     if next(child) then
         return responses.send_HTTP_CONFLICT("Error: this region has child regions")
     end
 
     local _, err = dao_factory.region:delete({id = region_id})
-    if err then
-        return responses.send_HTTP_NOT_FOUND(err)
-    end
+    kutils.assert_dao_error(err, "region delete")
 
     return responses.send_HTTP_NO_CONTENT()
 end

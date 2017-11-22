@@ -2,7 +2,7 @@ local responses = require "kong.tools.responses"
 local crud = require "kong.api.crud_helpers"
 local cjson = require "cjson"
 local utils = require "kong.tools.utils"
-local kstn_utils = require ("kong.plugins.keystone.utils")
+local kutils = require ("kong.plugins.keystone.utils")
 
 local Project = {}
 
@@ -11,6 +11,7 @@ local subtrtee_as_ids = {}
 
 local function get_subtree_as_list(self, dao_factory, project) --not tested
     local child_projects, err = dao_factory.project:find_all({parent_id=project.id})
+    kutils.assert_dao_error(err, "project find_all")
     if not child_projects then
         return
     end
@@ -25,6 +26,7 @@ end
 
 local function get_subtree_as_ids(self, dao_factory, project) --not tested
     local child_projects, err = dao_factory.project:find_all({parent_id=project.id})
+    kutils.assert_dao_error(err, "project find_all")
     if not child_projects then
         return
     end
@@ -46,17 +48,15 @@ local function list_projects(self, dao_factory)
     }
 
     local domain_id = self.params.domain_id
-    local enabled = kstn_utils.bool(self.params.enabled)
-    local is_domain = kstn_utils.bool(self.params.is_domain)
+    local enabled = kutils.bool(self.params.enabled)
+    local is_domain = kutils.bool(self.params.is_domain)
     local name = self.params.name
     local parent_id = self.params.parent_id
 
     local args = ( domain_id ~= nil or enabled ~= nil or is_domain ~= nil or name ~= nil or parent_id ~= nil ) and
             { domain_id = domain_id, enabled = enabled, is_domain = is_domain, name = name, parent_id = parent_id } or nil
     local projects, err = dao_factory.project:find_all(args)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.project:find_all(...)"})
-    end
+    kutils.assert_dao_error(err, "project:find_all")
     if not next(projects) then
         return responses.send_HTTP_OK(resp)
     end
@@ -73,17 +73,7 @@ local function list_projects(self, dao_factory)
             self = resp.links.self..'/'..resp.projects[i].id
         }
         resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
-        if err then
-            if not resp.errors then
-                resp.errors = {num = 0}
-            end
-            resp.errors.num = resp.errors.num + 1
-            resp.errors[resp.errors.num] = {
-                error = err,
-                func = "dao_factory.project_tag:find_all"
-            }
-        end
-
+        kutils.handle_dao_error(resp, err, "project_tag:find_all")
     end
 
     return responses.send_HTTP_OK(resp)
@@ -107,19 +97,17 @@ local function create_project(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: project name must be in the request")
     end
 
-    local is_domain = kstn_utils.bool(request.project.is_domain) or false
+    local is_domain = kutils.bool(request.project.is_domain) or false
     local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
-    if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.project:find_all"})
-    end
+    kutils.assert_dao_error(err, "project:find_all")
 
     if next(res) then
         return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
     end
 
     local description = request.project.description or ''
-    local domain_id = request.project.domain_id or kstn_utils.default_domain(dao_factory) --must be supplemented
-    local enabled = kstn_utils.bool(request.project.enabled) or true
+    local domain_id = request.project.domain_id or kutils.default_domain(dao_factory) --must be supplemented
+    local enabled = kutils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
     local id = utils.uuid()
 
@@ -134,9 +122,7 @@ local function create_project(self, dao_factory)
     }
 
     local res, err = dao_factory.project:insert(project_obj)
-    if err then
-            return responses.send_HTTP_CONFLICT({error = err, object = project_obj})
-    end
+    kutils.assert_dao_error(err, "project:insert")
 
     project_obj.links = {
                 self = self:build_url(self.req.parsed_url.path)
@@ -153,14 +139,12 @@ local function get_project_info(self, dao_factory)
     end
 
     local project, err = dao_factory.project:find({id=project_id})
-
-    if err then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad project id")
-    end
+    kutils.assert_dao_error(err, "project find")
 
     if not project then
         project, err = dao_factory.project:find_all({name=project_id})
-        if err or not next(project) then
+        kutils.assert_dao_error(err, "project find_all")
+        if not next(project) then
             return responses.send_HTTP_BAD_REQUEST("No such project in the system")
         end
         project = project[1]
@@ -192,6 +176,7 @@ local function get_project_info(self, dao_factory)
                 end
 
                 local parent, err = dao_factory.project:find({id=cur_project.parent_id})
+                kutils.assert_dao_error(err, "project find")
                 if not parent then
                     break
                 end
@@ -217,6 +202,7 @@ local function get_project_info(self, dao_factory)
                 end
 
                 local parent, err = dao_factory.project:find({id=cur_project.parent_id})
+                kutils.assert_dao_error(err, "project find")
                 if not parent then
                     break
                 end
@@ -256,6 +242,7 @@ local function update_project(self, dao_factory)
     end
 
     local project, err = dao_factory.project:find({id=project_id})
+    kutils.assert_dao_error(err, "project find")
     if not project then
         return responses.send_HTTP_NOT_FOUND("Error: bad project id")
     end
@@ -269,9 +256,7 @@ local function update_project(self, dao_factory)
     end
 
     local updated_project, err = dao_factory.project:update(request.project, {id=project.id})
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    kutils.assert_dao_error(err, "project update")
 
     local response = {project = updated_project}
     return responses.send_HTTP_OK(response)
@@ -284,15 +269,10 @@ local function delete_project(self, dao_factory)
     end
 
     local _, err = dao_factory.project:find({id=project_id})
-    if err then
-        return responses.send_HTTP_NOT_FOUND("Error: bad project id")
-    end
+    kutils.assert_dao_error(err, "project find")
 
     local _, err = dao_factory.project:delete({id = project_id})
-
-    if err then
-        return responses.send_HTTP_NOT_FOUND(err)
-    end
+    kutils.assert_dao_error(err, "project delete")
 
     return responses.send_HTTP_NO_CONTENT()
 end

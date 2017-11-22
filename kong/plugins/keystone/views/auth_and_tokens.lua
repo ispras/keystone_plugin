@@ -11,13 +11,9 @@ local function check_user(user, dao_factory)
         if user.id then
             local err
             user, err = dao_factory.user:find({id = user.id})
-            if err then
-                return {error = err, func = "dao_factory.user:find"}
-            end
+            kutils.assert_dao_error(err, "user find")
             local temp, err = dao_factory.local_user:find_all({user_id = user.id})
-            if err then
-                return {error = err, func = "dao_factory.local_user:find_all"}
-            end
+            kutils.assert_dao_error(err, "local_user find_all")
             if not next(temp) then
                 return {message = "Requested user is not local"}
             end
@@ -25,9 +21,7 @@ local function check_user(user, dao_factory)
         else
             if not user.domain.id then
                 local temp, err = dao_factory.project:find_all({is_domain = true, name = user.domain.name})
-                if err then
-                    return {error = err, func = "dao_factory.project:find_all"}
-                end
+                kutils.assert_dao_error(err, "project find_all")
                 if not next(temp) then
                     return {message = "Requested domain is not found, check domain name = "..user.domain.name}
                 end
@@ -36,27 +30,20 @@ local function check_user(user, dao_factory)
             end
 
             local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
---            local temp, err = dao_factory.local_user:find_all ({name = user.name})
-            if err then
-                return {error = err, func = "dao_factory.local_user:find_all"}
-            end
+            kutils.assert_dao_error(err, "local_user find_all")
             if not next(temp) then
                 return {message = "Requested user is not found, check user name = "..user.name .. " with domain id = " .. user.domain.id}
             end
             loc_user = temp[1]
             user, err = dao_factory.user:find({id = loc_user.user_id})
-            if err then
-                return {error = err, func = "dao_factory.user:find"}
-            end
+            kutils.assert_dao_error(err, "user find")
         end
     end
 
     if not domain then
         local err
         domain, err = dao_factory.project:find({id = user.domain_id})
-        if err then
-            return {error = err, func = "dao_factory.project:find"}
-        end
+        kutils.assert_dao_error(err, "project:find")
     end
 
     local resp = {
@@ -74,9 +61,7 @@ local function check_user(user, dao_factory)
 end
 local function check_password(upasswd, loc_user_id, dao_factory)
     local passwd, err = dao_factory.password:find_all ({local_user_id = loc_user_id})
-    if err then
-        return {error = err, func = "dao_factory.password:find_all"}
-    end
+    kutils.assert_dao_error(err, "password:find_all")
     passwd = passwd[1]
     if not sha512.verify(upasswd, passwd.password) then
         return {message = "Incorrect password"}
@@ -93,41 +78,29 @@ local function check_scope(scope, dao_factory)
     if scope.project then
         if scope.project.id then
             local temp, err = dao_factory.project:find({id = scope.project.id})
-            if err then
-                return {error = err, func = "dao_factory.project:find" }
-            end
+            kutils.assert_dao_error(err, "project:find")
             if not temp then
                 return {message = "No requsted project for scope found" }
             end
             project = temp
             local temp, err = dao_factory.project:find({id = project.domain_id})
-            if err then
-                return {erorr = err, func = "dao_factory.project:find" }
-            end
+            kutils.assert_dao_error(err, "project:find")
             domain_name = temp[1].name
         elseif scope.project.name and scope.project.domain and (scope.project.domain.id or scope.project.domain.name) then
             if not scope.project.domain.id then
                 local temp, err = dao_factory.project:find_all ({name = scope.project.domain.name, is_domain = true})
-                if err then
-                    return {error = err, func = "dao_factory.project:find_all" }
-                end
+                kutils.assert_dao_error(err, "project:find_all")
                 if not next(temp) then
                     return {message = "No domain whith specified name = "..scope.project.domain.name }
                 end
                 scope.project.domain.id = temp[1].id
             else
                 local temp, err = dao_factory.project:find ({id = scope.project.domain.id})
-                if err then
-                    return {error = err, func = "dao_factory.project:find" }
-                end
-                scope.project.domain.name = temp.name
+                kutils.assert_dao_error(err, "project:find")
             end
             domain_name = scope.project.domain.name
             local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
---            local temp, err = dao_factory.project:find_all({name = scope.project.name})
-            if err then
-                return {error = err, func = "dao_factory.project:find_all" }
-            end
+            kutils.assert_dao_error(err, "project:find_all")
             if not next(temp) then
                 return {message = "No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name}
             end
@@ -139,16 +112,12 @@ local function check_scope(scope, dao_factory)
     elseif scope.domain then
         if scope.domain.id then
             local temp, err = dao_factory.project:find({id = scope.domain.id})
-            if err then
-                return {error = err, func = "dao_factory.project:find" }
-            end
+            kutils.assert_dao_error(err, "project:find")
             project = temp
 
         elseif scope.domain.name then
             local temp, err = dao_factory.project:find_all({name = scope.domain.name, is_domain = true})
-            if err then
-                return {error = err, func = "dao_factory.project:find_all" }
-            end
+            kutils.assert_dao_error(err, "project:find_all")
             if not next(temp) then
                 return {message = "No domain found with requested name" }
             end
@@ -159,9 +128,7 @@ local function check_scope(scope, dao_factory)
 
         if project.domain_id then
             local temp, err = dao_factory.project:find({id = project.domain_id})
-            if err then
-                return {error = err, func = "dao_factory.project:find" }
-            end
+            kutils.assert_dao_error(err, "project:find")
             domain_name = temp.name
         end
 
@@ -176,20 +143,16 @@ local function get_roles(domain_scoped, dao_factory, user_id, project_id)
 
     local roles = {}
     local temp, err = dao_factory.assignment:find_all ({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user_id, target_id = project_id})
-    if err then
-        return {error = err, func = "dao_factory.request_token:find_all"}
-    end
+    kutils.assert_dao_error(err, "assignment find_all")
     for i = 1, #temp do
         local role, err = dao_factory.role:find({id = temp[i].role_id})
-        if err then
-                return {error = err, func = "dao_factory.role:find"}
-        end
+        kutils.assert_dao_error(err, "role find")
         roles[i] = {
             id = role.id,
             name = role.name
         }
     end
-    admin_role = {{id = '45f6fc21-e5cf-4f21-9439-8761a2973d98', name = 'admin'}}
+    local admin_role = {{id = '45f6fc21-e5cf-4f21-9439-8761a2973d98', name = 'admin'}}
 --    return nil, roles
     return nil, admin_role
 end
@@ -197,9 +160,7 @@ end
 local function get_catalog(dao_factory)
     local catalog = {}
     local servs, err = dao_factory.service:find_all()
-    if err then
-        return {error = err, func = "dao_factory.service:find_all" }
-    end
+    kutils.assert_dao_error(err, "service:find_all")
     for i = 1, #servs do
         catalog[i] = {
             endpoints = {},
@@ -208,9 +169,7 @@ local function get_catalog(dao_factory)
             name = servs[i].name
         }
         local endps, err = dao_factory.endpoint:find_all({service_id = servs[i].id})
-        if err then
-            return {error = err, func = "dao_factory.endpoint:find_all" }
-        end
+        kutils.assert_dao_error(err, "endpoint:find_all")
         for j = 1, #endps do
             catalog[i].endpoints[j] = {
                 region_id = endps[j].region_id or "null",
@@ -221,9 +180,7 @@ local function get_catalog(dao_factory)
             }
             if endps[j].region_id then
                 local region, err = dao_factory.region:find({id = endps[j].region_id})
-                if err then
-                    return {error = err, func = "dao_factory.region:find" }
-                end
+                kutils.assert_dao_error(err, "region:find")
                 catalog[i].endpoints[j].region = region.description
             end
         end
@@ -238,9 +195,7 @@ local function check_token_auth(token, dao_factory, allow_expired, validate)
     end
 
     local temp, err = dao_factory.token:find({id = token.id})
-    if err then
-        return {error = err, func = "dao_factory.token:find"}
-    end
+    kutils.assert_dao_error(err, "token:find")
     if not temp then
         return {message = "No token found" }
     end
@@ -251,9 +206,7 @@ local function check_token_auth(token, dao_factory, allow_expired, validate)
         end
     elseif not token.valid then
         token, err = dao_factory.token:update({valid = true}, {id = token.id})
-        if err then
-            return {error = err, func = "dao_factory.token:update" }
-        end
+        kutils.assert_dao_error(err, "token:update")
     end
     if not allow_expired then
         if token.expires and token.expires > os.time() then
@@ -270,21 +223,13 @@ local function check_token_user (token, dao_factory, allow_expired, validate)
     end
 
     local user, err = dao_factory.user:find({id = token.user_id})
-    if err then
-        return {error = err, func = "dao_factory.user:find" }
-    end
+    kutils.assert_dao_error(err, "user:find")
     local domain, err = dao_factory.project:find({id = user.domain_id})
-    if err then
-        return {error = err, func = "dao_factory.project:find" }
-    end
+    kutils.assert_dao_error(err, "project:find")
     local loc_user, err = dao_factory.local_user:find_all({user_id = user.id})
-    if err then
-        return {error = err, func = "dao_factory.local_user:find_all" }
-    end
+    kutils.assert_dao_error(err, "local_user:find_all")
     local password, err = dao_factory.password:find_all({local_user_id = loc_user[1].id})
-    if err then
-        return {error = err, func = "dao_factory.password:find_all" }
-    end
+    kutils.assert_dao_error(err, "password:find_all")
 
     local resp = {
         domain = {
@@ -321,9 +266,7 @@ local function auth_password_unscoped(self, dao_factory)
         expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
-    if err then
-        return responses.send_HTTP_CONFLICT ({error = err, func = "dao_factory.token:insert"})
-    end
+    kutils.assert_dao_error(err, "token:insert")
 
     local resp = {
         token = {
@@ -361,9 +304,7 @@ local function auth_password_scoped(self, dao_factory)
     end
 
     local err, roles = get_roles(scope.domain and true or false, dao_factory, user.id, project.id)
-    if err then
-        kutils.handle_dao_error(resp, err, "get_roles")
-    end
+    kutils.handle_dao_error(resp, err, "get_roles")
 
     local token = {
         id = utils.uuid(),
@@ -372,9 +313,7 @@ local function auth_password_scoped(self, dao_factory)
         expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
-    if err then
-        return responses.send_HTTP_CONFLICT ({error = err, func = "dao_factory.token:insert"})
-    end
+    kutils.assert_dao_error(err, "token:insert")
 
     resp = {
         token = {
@@ -398,11 +337,8 @@ local function auth_password_scoped(self, dao_factory)
     }
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(dao_factory)
-        if err then
-            kutils.handle_dao_error(resp, err, "get_catalog")
-        else
-            resp.token.catalog = catalog
-        end
+        kutils.handle_dao_error(resp, err, "get_catalog")
+        resp.token.catalog = catalog or {}
     end
 
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
@@ -422,9 +358,7 @@ local function auth_token_unscoped(self, dao_factory)
         expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
-    if err then
-        return responses.send_HTTP_CONFLICT ({error = err, func = "dao_factory.token:insert"})
-    end
+    kutils.assert_dao_error(err, "token:insert")
 
     local resp = {
         token = {
@@ -456,9 +390,7 @@ local function auth_token_scoped(self, dao_factory)
     end
 
     local err, roles = get_roles(scope.domain and true or false, dao_factory, user.id, project.id)
-    if err then
-        kutils.handle_dao_error (resp, err, "get_roles")
-    end
+    kutils.handle_dao_error (resp, err, "get_roles")
 
     local token = {
         id = utils.uuid(),
@@ -467,9 +399,7 @@ local function auth_token_scoped(self, dao_factory)
         expires = os.time() + 24*60*60
     }
     local token, err = dao_factory.token:insert(token)
-    if err then
-        return responses.send_HTTP_CONFLICT ({error = err, func = "dao_factory.token:insert"})
-    end
+    kutils.assert_dao_error(err, "token:insert")
 
     resp = {
         token = {
@@ -493,11 +423,8 @@ local function auth_token_scoped(self, dao_factory)
     }
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(dao_factory)
-        if err then
-            kutils.handle_dao_error(resp, err, "get_catalog")
-        else
-            resp.token.catalog = catalog
-        end
+        kutils.handle_dao_error(resp, err, "get_catalog")
+        resp.token.catalog = catalog or {}
     end
 
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
@@ -535,14 +462,11 @@ local function get_token_info(self, dao_factory)
         }
     }
     local temp, err = dao_factory.assignments:find_all({actor_id = user.id})
-    if err then
-        kutils.handle_dao_error(resp, err, "dao_factory.assignments:find_all")
-    end
+    kutils.handle_dao_error(resp, err, "assignments:find_all")
     for i = 1, #temp do
         local role, err = dao_factory.role:find({id = temp[i].role_id})
-        if err then
-            kutils.handle_dao_error(resp, err, "dao_factory.role:find")
-        else
+        kutils.handle_dao_error(resp, err, "role:find")
+        if not role then
             resp.token.roles[i] = {
                 id = role.id,
                 name = role.name
@@ -553,11 +477,8 @@ local function get_token_info(self, dao_factory)
 
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(dao_factory)
-        if err then
-            kutils.handle_dao_error(resp, err, "get_catalog")
-        else
-            resp.token.catalog = catalog
-        end
+        kutils.handle_dao_error(resp, err, "get_catalog")
+        resp.token.catalog = catalog or {}
     end
 
     return responses.send_HTTP_OK(resp, {["X-Subject-Token"] = token.id})
@@ -597,9 +518,7 @@ local function revoke_token(self, dao_factory)
         id = subj_token
     }
     local _, err = dao_factory.token:update({valid = false}, {id = token.id})
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "dao_factory.token:find"})
-    end
+    kutils.assert_dao_error(err, "token update")
 
     return responses.send_HTTP_NO_CONTENT()
 end
@@ -651,14 +570,11 @@ local function get_scopes(self, dao_factory, domain_scoped)
     }
     local projects = {}
     local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user.id})
-    if err then
-        return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.assignment:find_all"})
-    end
+    kutils.assert_dao_error(err, "assignment:find_all")
     for i = 1, #temp do
         local project, err = dao_factory.project:find({id = temp[i].target_id})
-        if err then
-            kutils.handle_dao_error(resp, err, "dao_factory.project:find")
-        else
+        kutils.assert_dao_error(err, "project:find")
+        if project then
             projects[i] = {
                 id = project.id,
                 links = {
@@ -679,7 +595,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
     return responses.send_HTTP_OK(resp)
 end
 
-routes =  {
+local routes =  {
     ["/v3/auth/tokens"] = {
         POST = function(self, dao_factory)
             if self.params.auth then
