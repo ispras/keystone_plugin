@@ -13,28 +13,16 @@ class TestKeystoneRegions(TestKeystoneBase):
                 "id": "RegionOne",
             }
         }
-        res = requests.post(self.host, json = body)
-        self.checkCode(res, 201)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.post(self.host, json = body)
+        self.checkCode(201)
 
     def list(self):
-        res = requests.get(self.host)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host)
+        self.checkCode(200)
 
     def get_info(self):
-        res = requests.get(self.host + '/RegionOneSubRegion')
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host + '/RegionOneSubRegion')
+        self.checkCode(200)
 
     def update(self):
         body = {
@@ -42,13 +30,9 @@ class TestKeystoneRegions(TestKeystoneBase):
                 "description": "My subregion 3"
             }
         }
-        res = requests.patch(self.host + '/RegionOneSubRegion', json=body)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.patch(self.host + '/RegionOneSubRegion', json=body)
+        self.checkCode(200)
 
     def delete(self):
-        res = requests.delete(self.host + '/RegionOneSubRegion1')
-        self.checkCode(res, 204)
+        self.res = requests.delete(self.host + '/RegionOneSubRegion1')
+        self.checkCode(204)

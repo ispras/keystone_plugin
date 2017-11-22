@@ -14,29 +14,17 @@ class TestKeystoneServices(TestKeystoneBase):
                 "description": "Identity service"
             }
         }
-        res = requests.post(self.host, json=body)
-        self.checkCode(res, 201)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.post(self.host, json=body)
+        self.checkCode(201)
 
     def list(self):
-        res = requests.get(self.host)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host)
+        self.checkCode(200)
 
     def get_info(self):
         service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
-        res = requests.get(self.host + service_id)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host + service_id)
+        self.checkCode(200)
 
     def update(self):
         service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
@@ -45,14 +33,10 @@ class TestKeystoneServices(TestKeystoneBase):
             "description": "Block Storage Service V2"
             }
         }
-        res = requests.patch(self.host + service_id, json=body)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.patch(self.host + service_id, json=body)
+        self.checkCode(200)
 
     def delete(self):
         service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
-        res = requests.delete(self.host + service_id)
-        self.checkCode(res, 204)
+        self.res = requests.delete(self.host + service_id)
+        self.checkCode(204)

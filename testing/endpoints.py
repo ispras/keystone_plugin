@@ -15,29 +15,17 @@ class TestKeystoneEndpoints(TestKeystoneBase):
                 "service_id": "e2986b56-644d-43d3-92e0-2edf61796372"
             }
         }
-        res = requests.post(self.host, json = body)
-        self.checkCode(res, 201)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.post(self.host, json = body)
+        self.checkCode(201)
 
     def list(self):
-        res = requests.get(self.host)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host)
+        self.checkCode(200)
 
     def get_info(self):
         endpoint_id = '86012e94-55c2-4938-86c7-d3a4f467a1fa'
-        res = requests.get(self.host + endpoint_id)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host + endpoint_id)
+        self.checkCode(200)
 
     def update(self):
         endpoint_id = '86012e94-55c2-4938-86c7-d3a4f467a1fa'
@@ -48,14 +36,10 @@ class TestKeystoneEndpoints(TestKeystoneBase):
                 "service_id": "3c858b69-cd97-4d60-9678-64289d6c2389"
             }
         }
-        res = requests.patch(self.host + endpoint_id, json=body)
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        self.res = requests.patch(self.host + endpoint_id, json=body)
+        self.checkCode(200)
 
     def delete(self):
         endpoint_id = '4cbb72e5-f9a5-4837-b943-a06bcb3bae46'
-        res = requests.delete(self.host + endpoint_id)
-        self.checkCode(res, 204)
+        self.res = requests.delete(self.host + endpoint_id)
+        self.checkCode(204)

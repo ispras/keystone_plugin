@@ -22,21 +22,13 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                 }
             }
         }
-        res = requests.post(self.host + 'tokens', json = body)
-        self.checkCode(res, 201)
-
-        response = res.json()
-        for k, v in response['token'].items():
-            print(k, '\n\t', v)
+        self.res = requests.post(self.host + 'tokens', json = body)
+        self.checkCode(201)
 
     def get_catalog(self):
         token_id = ''
         headers = {
             "X-Auth_token" : token_id
         }
-        res = requests.get(self.host + 'catalog')
-        self.checkCode(res, 200)
-
-        response = res.json()
-        for k, v in response['token'].items():
-            print(k, '\n\t', v)
+        self.res = requests.get(self.host + 'catalog')
+        self.checkCode(200)
