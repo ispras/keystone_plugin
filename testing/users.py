@@ -81,7 +81,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         self.checkCode(res, 204)
 
     def get_info(self):
-        user_id = '730fbea0-ed5f-47f4-a86c-8296481422e7'
+        user_id = '6232b7f1-b6fd-418e-9a19-14b115164981'
         res = requests.get(self.host + user_id)
         self.checkCode(res, 200)
 
@@ -95,7 +95,7 @@ class TestKeystoneUsers(TestKeystoneBase):
                     print('\t', uk, '\t:\t', uv)
 
     def update(self):
-        user_id = 'bfeef63f-ff7e-446b-95a5-66b8a2c06710'
+        user_id = '6232b7f1-b6fd-418e-9a19-14b115164981'
         body = {
             "user" : {
                 'enabled': True,

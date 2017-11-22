@@ -26,7 +26,7 @@ local function update_params(params)
         params.project = params.domain
     end
     params.project.is_domain = true
-    params.domain = nil
+    params.domain = true
 end
 
 return {

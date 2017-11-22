@@ -249,7 +249,9 @@ function create_endpoint(self, dao_factory)
         end
     end
 
-    endpoint.id = utils.uuid()
+    if not endpoint.id then
+        endpoint.id = utils.uuid()
+    end
     local _, err = dao_factory.endpoint:insert(endpoint)
     if err then
         return responses.send_HTTP_CONFLICT(err)
@@ -356,7 +358,7 @@ ServiceAndEndpoint.get_endpoint_info = get_endpoint_info
 ServiceAndEndpoint.update_endpoint = update_endpoint
 ServiceAndEndpoint.delete_endpoint = delete_endpoint
 
-return {
+routes = {
     ["/v3/services"] = {
         GET = function(self, dao_factory)
             ServiceAndEndpoint.list_services(self, dao_factory)
@@ -396,3 +398,7 @@ return {
         end
     }
 }
+
+routes["/identity/v3/endpoints/"] = routes["/v3/endpoints"]
+
+return routes

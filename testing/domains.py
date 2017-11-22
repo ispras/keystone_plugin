@@ -47,3 +47,12 @@ class TestKeystoneDomains(TestKeystoneBase):
         response = res.json()
         for k, v in response.items():
             print(k, '\n\t', v)
+
+    def get_info(self):
+        domain_id = 'admin'
+        res = requests.get(self.host + domain_id)
+        self.checkCode(res, 200)
+
+        response = res.json()
+        for k, v in response.items():
+            print(k, '\n\t', v)

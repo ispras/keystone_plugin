@@ -107,7 +107,8 @@ local function create_project(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: project name must be in the request")
     end
 
-    local res, err = dao_factory.project:find_all({name=name})
+    local is_domain = kstn_utils.bool(request.project.is_domain) or false
+    local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
     if err then
         return responses.send_HTTP_BAD_REQUEST({error = err, func = "dao_factory.project:find_all"})
     end
@@ -116,7 +117,6 @@ local function create_project(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
     end
 
-    local is_domain = kstn_utils.bool(request.project.is_domain) or false
     local description = request.project.description or ''
     local domain_id = request.project.domain_id or kstn_utils.default_domain(dao_factory) --must be supplemented
     local enabled = kstn_utils.bool(request.project.enabled) or true
@@ -153,8 +153,17 @@ local function get_project_info(self, dao_factory)
     end
 
     local project, err = dao_factory.project:find({id=project_id})
+
     if err then
-        return responses.send_HTTP_NOT_FOUND("Error: bad project id")
+        return responses.send_HTTP_BAD_REQUEST("Error: bad project id")
+    end
+
+    if not project then
+        project, err = dao_factory.project:find_all({name=project_id})
+        if err or not next(project) then
+            return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+        end
+        project = project[1]
     end
 
     local project_obj = {
@@ -224,7 +233,19 @@ local function get_project_info(self, dao_factory)
         end
     end
 
-    local response = {project = project_obj}
+    local response
+    if not self.params.domain then
+        response = {project = project_obj }
+    else
+        response = {domain = {
+                                name = project_obj.name,
+                                description = project_obj.description,
+                                enabled = project_obj.enabled,
+                                id = project_obj.id,
+                                links = project_obj.links
+                            }
+        }
+    end
     return responses.send_HTTP_OK(response)
 end
 

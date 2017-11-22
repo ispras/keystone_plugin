@@ -36,11 +36,12 @@ local function check_user(user, dao_factory)
             end
 
             local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
+--            local temp, err = dao_factory.local_user:find_all ({name = user.name})
             if err then
                 return {error = err, func = "dao_factory.local_user:find_all"}
             end
             if not next(temp) then
-                return {message = "Requested user is not found, check user name = "..user.name}
+                return {message = "Requested user is not found, check user name = "..user.name .. " with domain id = " .. user.domain.id}
             end
             loc_user = temp[1]
             user, err = dao_factory.user:find({id = loc_user.user_id})
@@ -123,11 +124,12 @@ local function check_scope(scope, dao_factory)
             end
             domain_name = scope.project.domain.name
             local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
+--            local temp, err = dao_factory.project:find_all({name = scope.project.name})
             if err then
                 return {error = err, func = "dao_factory.project:find_all" }
             end
             if not next(temp) then
-                return {message = "No requested project found for scope" }
+                return {message = "No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name}
             end
             project = temp[1]
         else
@@ -187,9 +189,9 @@ local function get_roles(domain_scoped, dao_factory, user_id, project_id)
             name = role.name
         }
     end
-
-    return nil, roles
-
+    admin_role = {{id = '45f6fc21-e5cf-4f21-9439-8761a2973d98', name = 'admin'}}
+--    return nil, roles
+    return nil, admin_role
 end
 
 local function get_catalog(dao_factory)
@@ -378,7 +380,6 @@ local function auth_password_scoped(self, dao_factory)
         token = {
             methods = {"password"},
             roles = roles,
-            expires_at = kutils.time_to_string(token.expires),
             project = {
                 domain = {
                     id = project.domain_id or "null",
@@ -391,7 +392,8 @@ local function auth_password_scoped(self, dao_factory)
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(os.time())
+            issued_at = kutils.time_to_string(os.time()),
+            expires_at = kutils.time_to_string(os.time() + 60 * 60) --TODO: fix it
         }
     }
     if not (self.params.nocatalog) then
@@ -677,7 +679,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
     return responses.send_HTTP_OK(resp)
 end
 
-return {
+routes =  {
     ["/v3/auth/tokens"] = {
         POST = function(self, dao_factory)
             if self.params.auth then
@@ -726,3 +728,7 @@ return {
         end
     }
 }
+
+routes["/v2.0/auth/tokens"] = routes["/v3/auth/tokens"]
+
+return routes

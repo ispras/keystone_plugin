@@ -213,7 +213,7 @@ local function get_user_info(self, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-    if not next(user) then
+    if not user then
         return responses.send_HTTP_NOT_FOUND({message = "No user with id "..user_id})
     end
 

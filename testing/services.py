@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneServices(TestKeystoneBase):
@@ -9,9 +9,9 @@ class TestKeystoneServices(TestKeystoneBase):
     def create(self):
         body = {
             "service": {
-                "type": "compute",
-                "name": "compute2",
-                "description": "Compute service 2"
+                "type": "identity",
+                "name": "identity",
+                "description": "Identity service"
             }
         }
         res = requests.post(self.host, json=body)

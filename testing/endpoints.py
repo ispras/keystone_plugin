@@ -11,8 +11,8 @@ class TestKeystoneEndpoints(TestKeystoneBase):
             "endpoint": {
                 "interface": "public",
                 "region_id": "RegionOne",
-                "url": "http://example.com/identity/v3/endpoints/828384",
-                "service_id": "f056805f-9d9f-4168-ab8d-e45c31bff24b"
+                "url": "http://localhost:8001/v3/",
+                "service_id": "e2986b56-644d-43d3-92e0-2edf61796372"
             }
         }
         res = requests.post(self.host, json = body)
@@ -56,6 +56,6 @@ class TestKeystoneEndpoints(TestKeystoneBase):
             print(k, '\n\t', v)
 
     def delete(self):
-        endpoint_id = '86012e94-55c2-4938-86c7-d3a4f467a1fa'
+        endpoint_id = '4cbb72e5-f9a5-4837-b943-a06bcb3bae46'
         res = requests.delete(self.host + endpoint_id)
         self.checkCode(res, 204)

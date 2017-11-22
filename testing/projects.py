@@ -25,6 +25,15 @@ class TestKeystoneProjects(TestKeystoneBase):
             print(k, '\n\t', v)
 
     def list(self):
+        query = {
+            # 'domain_id' : 'domain_id',
+            # 'is_domain': 'true',
+            # 'idp_id': 'idp_id',
+            # 'name': 'name',
+            # 'password_expires_at': 'password_expires_at',
+            # 'protocol_id': 'protocol_id',
+            # 'unique_id': 'unique_id'
+        }
         res = requests.get(self.host)
         self.checkCode(res, 200)
 
@@ -33,7 +42,7 @@ class TestKeystoneProjects(TestKeystoneBase):
             print(k, '\n\t', v)
 
     def get_info(self):
-        project_id = 'ea0341a4-3640-4a27-9be6-fd8a78c5fefb'
+        project_id = '45f6fc21-e5cf-4f21-9439-8761a2973d98'
         res = requests.get(self.host + project_id)
         self.checkCode(res, 200)
 
