@@ -235,7 +235,7 @@ local function check_assignment(self, dao_factory, type)
         return responses.send_HTTP_BAD_REQUEST()
     end
 
-    local temp, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id})
+    local temp, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id})
     kutils.assert_dao_error(err, "assignment find_all")
     if not next(temp) then
         return responses.send(210)
