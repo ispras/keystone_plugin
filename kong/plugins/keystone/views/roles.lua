@@ -17,9 +17,7 @@ local function list_roles(self, dao_factory)
     }
     local args = (name or domain_id) and {name = name, domain_id = domain_id} or nil
     local roles, err = dao_factory.role:find_all(args)
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "dao_factory.role:find_all"})
-    end
+    kutils.assert_dao_error(err, "role find_all")
 
     for i = 1, #roles do
         resp.roles[i] = {
@@ -46,9 +44,7 @@ local function create_role(self, dao_factory)
     end
 
     local temp, err = dao_factory.role:find_all(role)
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "dao_factory.role:find_all"})
-    end
+    kutils.assert_dao_error(err, "role find_all")
     if next(temp) then
         return responses.send_HTTP_BAD_REQUEST("Role with specified name already exists in domain")
     end
@@ -60,9 +56,7 @@ local function create_role(self, dao_factory)
     }
 
     local role, err = dao_factory.role:insert(role)
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "dao_factory.role:insert"})
-    end
+    kutils.assert_dao_error(err, "role insert")
 
     local resp = {
         role = role
@@ -77,9 +71,7 @@ end
 local function get_role_info(self, dao_factory)
     local role_id = self.params.role_id
     local role, err = dao_factory.role:find({id = role_id})
-    if err then
-        return responses.send_CONFLICT({error = err, func = "role find"})
-    end
+    kutils.assert_dao_error(err, "role find")
     if not role then
         return responses.send_HTTP_BAD_REQUEST("Role is not found")
     end
@@ -97,26 +89,20 @@ end
 local function update_role(self, dao_factory)
     local role_id = self.params.role_id
     local role, err = dao_factory.role:find({id = role_id})
-    if err then
-        return responses.send_CONFLICT({error = err, func = "role find"})
-    end
+    kutils.assert_dao_error(err, "role find")
     if not role then
         return responses.send_HTTP_BAD_REQUEST("Role is not found")
     end
 
     if self.params.role and self.params.role.name then
         local temp, err = dao_factory.role:find_all({name = self.params.role.name, domain_id = role.domain_id})
-        if err then
-            return responses.send_HTTP_CONFLICT({error = err, func = "role find_all"})
-        end
+        kutils.assert_dao_error(err, "role find_all")
         if next(temp) then
             return responses.send_HTTP_BAD_REQUEST("Role with specified name is already exists in domain")
         end
 
         local _, err = dao_factory.role:update({name = self.params.role.name}, {id = role.id})
-        if err then
-            return responses.send_HTTP_CONFLICT({error = err, func = "role update"})
-        end
+        kutils.assert_dao_error(err, "role update")
         role.name = self.params.role.name
 
     end
@@ -134,44 +120,25 @@ end
 local function delete_role(self, dao_factory)
     local role_id = self.params.role_id
     local role, err = dao_factory.role:find({id = role_id})
-    if err then
-        return responses.send_CONFLICT({error = err, func = "role find"})
-    end
+    kutils.assert_dao_error(err, "role find")
     if not role then
         return responses.send_HTTP_BAD_REQUEST("Role is not found")
     end
 
     local _, err = dao_factory.role:delete({id = role.id})
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "role delete"})
-    end
+    kutils.assert_dao_error(err, "role delete")
 
     return responses.send_HTTP_NO_CONTENT()
 end
 
 local function list_role_assignments(self, dao_factory, type)
-    local actor_id, target_id
-    if type == "UserProject" then
-        actor_id = self.params.user_id
-        target_id = self.params.project_id
-    elseif type == "UserDomain" then
-        actor_id = self.params.user_id
-        target_id = self.params.domain_id
-    elseif type == "GroupProject" then
-        actor_id = self.params.group_id
-        target_id = self.params.project_id
-    elseif type == "GroupDomain" then
-        actor_id = self.params.group_id
-        target_id = self.params.domain_id
-    end
-    if type and not actor_id or not target_id then
-        return responses.send_BAD_HTTP_REQUEST("Incorrect type")
+    local actor_id, target_id = self.params.actor_id, self.params.target_id
+    if type and not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") and not actor_id or not target_id then
+        return responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
 
     local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type})
-    if err then
-        return responses.send_HTTP_CONFLICT({error = err, func = "assgnment find_all"})
-    end
+    kutils.assert_dao_error(err, "assignment find_all")
 
     local resp = {
         links = {
@@ -198,12 +165,83 @@ local function list_role_assignments(self, dao_factory, type)
     return responses.send_HTTP_OK(resp)
 end
 
+local function check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+    if type and not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") and not actor_id or not target_id then
+        return "Incorrect type"
+    end
+
+    local temp, err = dao_factory.role:find({id = role_id})
+    kutils.assert_dao_error(err, "role find")
+    if not temp then
+        return "No role found"
+    end
+    if type:match("User") then
+        temp, err = dao_factory.user:find({id = actor_id})
+        kutils.assert_dao_error(err, "user find")
+        if not temp then
+            return "No user found"
+        end
+    end
+    if type:match("Group") then
+        local temp, err = dao_factory.group:find({id = actor_id})
+        kutils.assert_dao_error(err, "group find")
+        if not temp then
+            return "No group found"
+        end
+    end
+    if type:match("Project") then
+        local temp, err = dao_factory.project:find({id = target_id})
+        kutils.assert_dao_error(err, "project find")
+        if not temp then
+            return "No project found"
+        end
+    end
+    if type:match("Domain") then
+        local temp, err = dao_factory.project:find({id = target_id})
+        kutils.assert_dao_error(err, "project find")
+        if not temp or not temp.is_domain then
+            return "No domain found"
+        end
+    end
+
+end
+
 local function assign_role(self, dao_factory, type)
-    return ''
+    local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
+
+    local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+    if err then
+        return responses.send_HTTP_BAD_REQUEST(err)
+    end
+
+    local assign = {
+        type = type,
+        actor_id = actor_id,
+        target_id = target_id,
+        role_id = role_id,
+        inherited = false
+    }
+    local _, err = dao_factory.assignment:insert(assign)
+    kutils.assert_dao_error(err, "assignment insert")
+
+    return responses.send_HTTP_NO_CONTENT()
 end
 
 local function check_assignment(self, dao_factory, type)
-    return ''
+    local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
+
+    local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+    if err then
+        return responses.send_HTTP_BAD_REQUEST()
+    end
+
+    local temp, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id})
+    kutils.assert_dao_error(err, "assignment find_all")
+    if not next(temp) then
+        return responses.send(210)
+    end
+
+    return responses.send_HTTP_NO_CONTENT()
 end
 
 local function unassign_role(self, dao_factory, type)
@@ -254,12 +292,12 @@ return {
             delete_role(self, dao_factory)
         end
     },
-    ["/v3/domains/:domain_id/groups/:group_id/roles"] = {
+    ["/v3/domains/:target_id/groups/:actor_id/roles"] = {
         GET = function(self, dao_factory)
             list_role_assignments(self, dao_factory, "GroupDomain")
         end
     },
-    ["/v3/domains/:domain_id/groups/:group_id/roles/:role_id"] = {
+    ["/v3/domains/:target_id/groups/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "GroupDomain")
         end,
@@ -270,12 +308,12 @@ return {
             unassign_role(self, dao_factory, "GroupDomain")
         end
     },
-    ["/v3/domains/:domain_id/users/:user_id/roles"] = {
+    ["/v3/domains/:target_id/users/:actor_id/roles"] = {
         GET = function(self, dao_factory)
             list_role_assignments(self, dao_factory, "UserDomain")
         end
     },
-    ["/v3/domains/:domain_id/users/:user_id/roles/:role_id"] = {
+    ["/v3/domains/:target_id/users/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "UserDomain")
         end,
@@ -286,12 +324,12 @@ return {
             unassign_role(self, dao_factory, "UserDomain")
         end
     },
-    ["/v3/projects/:project_id/groups/:group_id/roles"] = {
+    ["/v3/projects/:target_id/groups/:actor_id/roles"] = {
         GET = function(self, dao_factory)
             list_role_assignments(self, dao_factory, "GroupProject")
         end
     },
-    ["/v3/projects/:project_id/groups/:group_id/roles/:role_id"] = {
+    ["/v3/projects/:target_id/groups/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "GroupProject")
         end,
@@ -302,12 +340,12 @@ return {
             unassign_role(self, dao_factory, "GroupProject")
         end
     },
-    ["/v3/projects/:project_id/users/:user_id/roles"] = {
+    ["/v3/projects/:target_id/users/:actor_id/roles"] = {
         GET = function(self, dao_factory)
             list_role_assignments(self, dao_factory, "UserProject")
         end
     },
-    ["/v3/projects/:project_id/users/:user_id/roles/:role_id"] = {
+    ["/v3/projects/:target_id/users/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "UserProject")
         end,

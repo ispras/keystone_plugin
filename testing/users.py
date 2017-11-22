@@ -1,5 +1,6 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
+from pprint import pprint
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
@@ -19,16 +20,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         res = requests.get(self.host, params = query)
         self.checkCode(res, 200)
 
-        response = res.json()
-        for k, v in response.items():
-            if k != 'users':
-                print(k, '\n\t', v)
-            else:
-                print(k)
-                for user in v:
-                    for uk, uv in user.items():
-                        print('\t', uk, '\t:\t', uv)
-                    print()
+        pprint(res.json())
 
     def create_local(self):
         body = {

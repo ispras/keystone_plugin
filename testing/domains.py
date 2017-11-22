@@ -1,5 +1,6 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
+from pprint import pprint
 
 class TestKeystoneDomains(TestKeystoneBase):
     def setUp(self):
@@ -53,6 +54,4 @@ class TestKeystoneDomains(TestKeystoneBase):
         res = requests.get(self.host + domain_id)
         self.checkCode(res, 200)
 
-        response = res.json()
-        for k, v in response.items():
-            print(k, '\n\t', v)
+        pprint(res.json())

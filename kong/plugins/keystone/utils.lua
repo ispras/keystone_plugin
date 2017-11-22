@@ -14,11 +14,29 @@ return {
         return nil
     end,
     handle_dao_error = function(resp, err, func)
-        if not resp.errors then
-            resp.errors = {num = 0 }
+        if err then
+            if not resp.errors then
+                resp.errors = {num = 0 }
+            end
+            resp.errors.num = 1 + resp.errors.num
+            resp.errors[resp.errors.num] = {error = err, func = func }
         end
-        resp.errors.num = 1 + resp.errors.num
-        resp.errors[resp.errors.num] = {error = err, func = func }
+
+    end,
+    assert_dao_error = function(err, func)
+        if err then
+            if type(err) == "string" then
+                error("error = "..err..", func = "..func)
+            elseif err.message then
+                error("error = "..err.message..", func = "..func)
+            else
+                local e = 'error = {'
+                for k, v in pairs(err) do
+                    e = e.."\""..k.."\": \""..v.."\", "
+                end
+                e = e.."}, func = "..func
+            end
+        end
     end,
     time_to_string = function(timestamp)
         return timestamp and os.date("%Y-%m-%dT%X.000000Z", timestamp) or "null"
