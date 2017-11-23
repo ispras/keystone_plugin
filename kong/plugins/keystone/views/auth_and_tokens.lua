@@ -3,6 +3,8 @@ local utils = require "kong.tools.utils"
 local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
 
+--TODO A token without an explicit scope of authorization is issued if the user does not specify a project and does not have authorization on the project specified by their default project attribute
+
 local function check_user(user, dao_factory)
     local loc_user, domain
     if not (user.id or user.name and (user.domain.name or user.domain.id)) then
@@ -242,7 +244,6 @@ local function check_token_user (token, dao_factory, allow_expired, validate)
     }
     return nil, resp
 end
-
 
 local function auth_password_unscoped(self, dao_factory)
     local user = self.params.auth.identity.password and self.params.auth.identity.password.user
@@ -586,6 +587,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
             }
         end
     end
+
     if domain_scoped then
         resp.domains = projects
     else

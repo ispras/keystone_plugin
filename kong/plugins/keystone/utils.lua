@@ -75,4 +75,13 @@ return {
 
         return nil, storage
     end,
+    has_id = function(array, id, field)
+        for i = 1, #array do
+            if array[i] and (field and array[i][field] == id or array[i].id == id) then
+                return i
+            end
+        end
+
+        return false
+    end
 }
