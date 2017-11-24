@@ -137,7 +137,9 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         return responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
 
-    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type})
+    -- TODO check in cache
+
+    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type, inherited = false})
     kutils.assert_dao_error(err, "assignment find_all")
 
     local resp = {
@@ -151,17 +153,38 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
 
     for i = 1, #assigns do
         local role, err = dao_factory.role:find({id = assigns[i].role_id})
-        if err or not role then
-            kutils.handle_dao_error(resp, err or "no role", "role find")
+        kutils.assert_dao_error(err, "role:find")
+        if role then
+            resp.roles[i] = role
+            resp.roles[i].links = {
+                self = self:build_url(self.req.parsed_url.path..role.id)
+            }
         end
-        resp.roles[i] = {
-            role = role
-        }
-        resp.roles[i].role.links = {
-            self = self:build_url(self.req.parsed_url.path..role.id)
-        }
     end
 
+    if type:match("User") then
+        local user_groups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
+        kutils.assert_dao_error(err, "user_group_membership:find_all")
+        for _, user_group  in pairs(user_groups) do
+            local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type, inherited = false})
+            kutils.assert_dao_error(err, "assignment find_all")
+            for _, assign in pairs(assigns) do
+                if not kutils.has_id(resp.roles, assign.role_id) then
+                    local role, err = dao_factory.role:find({id = assign.role_id})
+                    kutils.assert_dao_error(err, "role:find")
+                    if role then
+                        local index = #resp.roles + 1
+                        resp.roles[index] = role
+                        resp.roles[index].links = {
+                            self = self:build_url(self.req.parsed_url.path..role.id)
+                        }
+                    end
+                end
+            end
+        end
+    end
+
+    --TODO cache result
     return responses.send_HTTP_OK(resp)
 end
 
@@ -194,6 +217,9 @@ local function check_actor_target_role_id(dao_factory, actor_id, target_id, role
         kutils.assert_dao_error(err, "project find")
         if not temp then
             return "No project found"
+        end
+        if temp.is_domain then
+            return "Requested project is domain"
         end
     end
     if type:match("Domain") then
@@ -235,13 +261,23 @@ local function check_assignment(self, dao_factory, type)
         return responses.send_HTTP_BAD_REQUEST()
     end
 
-    local temp, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id})
-    kutils.assert_dao_error(err, "assignment find_all")
-    if not next(temp) then
-        return responses.send_HTTP_BAD_REQUEST
+    local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
+    kutils.assert_dao_error(err, "assignment find")
+    if temp then
+        return responses.send_HTTP_NO_CONTENT()
+    elseif type:match("User") then
+        local ugroups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
+        for _, ugroup in pairs(ugroups) do
+            local temp, err = dao_factory.assignment:find({type = type:match("Project") and "GroupProject" or "GroupDomain",
+                actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = false})
+            kutils.assert_dao_error(err, "assignment:find")
+            if temp then
+                return responses.send_HTTP_NO_CONTENT()
+            end
+        end
     end
 
-    return responses.send_HTTP_NO_CONTENT()
+    return responses.send_HTTP_NOT_FOUND()
 end
 
 local function unassign_role(self, dao_factory, type)
@@ -252,7 +288,7 @@ local function unassign_role(self, dao_factory, type)
         return responses.send_HTTP_BAD_REQUEST(err)
     end
 
-    local assign, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id})
+    local assign, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
     kutils.assert_dao_error(err, "assignment find_all")
     for i = 1, #assign do
         local _, err = dao_factory.assignment:delete(assign[i])
@@ -357,7 +393,7 @@ local function confirm_role_inference_rule(self, dao_factory)
     local temp, err = dao_factory.implied_role:find({prior_role_id = prior_role_id, implied_role_id = implied_role_id})
     kutils.assert_dao_error(err, "implied_role find")
     if not temp then
-        return responses.send_HTTP_BAD_REQUEST()
+        return responses.send_HTTP_NOT_FOUND()
     end
 
     return responses.send_HTTP_NO_CONTENT()
@@ -385,7 +421,7 @@ end
 
 local function fill_assignment(dao_factory, role_assignments, type, actor_id, target_id, role_id, include_names)
     local k = #role_assignments
-    local assigns, err = dao_factory.assignments:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id})
+    local assigns, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
     kutils.assert_dao_error(err, "assignments find_all")
     for i = 1, #assigns do
         k = k + 1
@@ -438,7 +474,7 @@ local function fill_assignment(dao_factory, role_assignments, type, actor_id, ta
 end
 
 local function list_role_assignments(self, dao_factory, type)
-    local effective = self.params.effective -- TODO
+    local effective = self.params.effective -- TODO not implemented
     local include_names = self.params.include_names
     local include_subtree = self.params.include_subtree
     local group_id = self.params.group and self.params.group.id
@@ -460,6 +496,7 @@ local function list_role_assignments(self, dao_factory, type)
     fill_assignment(dao_factory, resp.role_assignments, "UserDomain", user_id, domain_id, role_id, include_names)
     fill_assignment(dao_factory, resp.role_assignments, "GroupProject", group_id, project_id, role_id, include_names)
     fill_assignment(dao_factory, resp.role_assignments, "GroupDomain", group_id, domain_id, role_id, include_names)
+
     for i = 1, #resp.role_assignments do
         resp.role_assignments[i].links.assignment = self:build_url(resp.role_assignments[i].links.assignment)
     end
@@ -500,25 +537,24 @@ local function list_role_inferences(self, dao_factory)
     local role_inferences, err = dao_factory.implied_role:find_all()
     kutils.assert_dao_error(err, "implied_role:find_all")
     for i = 1, #role_inferences do
-        if role_inferences[i] then
-            local index = #resp.role_inferences + 1
-            resp.role_inferences[index] = {
-                prior_role = {
-                    id = role_inferences[i].prior_role_id
-                },
-                implies = {
-                    {id = role_inferences[i].implied_role_id}
-                }
-            }
-            for j = i+1, #role_inferences do
-                if role_inferences[j] and role_inferences[j].prior_role_id == role_inferences[i].prior_role_id then
-                    local ind = #resp.role_inferences[index].implies + 1
-                    resp.role_inferences[index].implies[ind] = {
-                        id = role_inferences[j].implied_role_id
-                    }
-                    role_inferences[j] = nil
-                end
+        local index = #resp.role_inferences + 1
+        local prior_role_id = role_inferences[i].prior_role_id
+        resp.role_inferences[index] = {
+            prior_role = {
+                id = prior_role_id
+            },
+            implies = {}
+        }
+        while true do
+            local j = kutils.has_id(role_inferences, prior_role_id, "prior_role_id")
+            if not j then
+                break
             end
+            local ind = #resp.role_inferences[index].implies +1
+            resp.role_inferences[index].implies[ind] = {
+                id = role_inferences[j].implied_role_id
+            }
+            role_inferences[j] = nil
         end
     end
 
