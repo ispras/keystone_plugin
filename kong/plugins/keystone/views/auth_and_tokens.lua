@@ -29,8 +29,10 @@ local function check_user(user, dao_factory)
                 user.domain.id = domain.id
             end
 
-            local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
+--            local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
+            local temp, err = dao_factory.local_user:find_all ({name = user.name})
             kutils.assert_dao_error(err, "local_user find_all")
+
             if not next(temp) then
                 return {message = "Requested user is not found, check user name = "..user.name .. " with domain id = " .. user.domain.id}
             end
@@ -57,8 +59,8 @@ local function check_user(user, dao_factory)
     }
 
     return nil, resp, loc_user.id
-
 end
+
 local function check_password(upasswd, loc_user_id, dao_factory)
     local passwd, err = dao_factory.password:find_all ({local_user_id = loc_user_id})
     kutils.assert_dao_error(err, "password:find_all")
@@ -99,7 +101,9 @@ local function check_scope(scope, dao_factory)
                 kutils.assert_dao_error(err, "project:find")
             end
             domain_name = scope.project.domain.name
-            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
+
+--            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
+            local temp, err = dao_factory.project:find_all({name = scope.project.name})
             kutils.assert_dao_error(err, "project:find_all")
             if not next(temp) then
                 return {message = "No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name}

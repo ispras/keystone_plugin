@@ -9,7 +9,7 @@ return {
         end
     end,
     default_domain = function(dao_factory)
-        local domain, err = dao_factory.project:find_all({name = 'default_domain'})
+        local domain, err = dao_factory.project:find_all({name = 'Default'})
         if not err and next(domain) then return domain[1]['id'] end
         return nil
     end,

@@ -33,6 +33,7 @@ return {
     ["/v3/domains"] = {
         GET = function (self, dao_factory)
             self.params.is_domain = true
+            self.params.domain = true
             projects["/v3/projects"].GET(self, dao_factory)
         end,
         POST = function (self, dao_factory)

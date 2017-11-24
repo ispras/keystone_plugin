@@ -6,10 +6,6 @@ local kutils = require ("kong.plugins.keystone.utils")
 
 ServiceAndEndpoint = {}
 
-local available_service_types = {
-    compute = true, ec2 = true, identity = true, image = true, network = true, volume = true
-}
-
 local available_interface_types = {
     public = true, internal = true, admin = true
 }
@@ -62,7 +58,7 @@ function create_service(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Bad service name")
     end
 
-    if not service.type or not available_service_types[service.type] then
+    if not service.type then
         return responses.send_HTTP_BAD_REQUEST("Bad service type")
     end
 
@@ -113,12 +109,6 @@ function update_service(self, dao_factory)
 
     if not self.params.service then
         return responses.send_HTTP_BAD_REQUEST("Error: self.params.service is nil")
-    end
-
-    if self.params.service.type then
-        if not available_service_types[self.params.service.type] then
-            return responses.send_HTTP_BAD_REQUEST("Bad service type")
-        end
     end
 
     local updated_service, err = dao_factory.service:update(self.params.service, {id = service_id})
