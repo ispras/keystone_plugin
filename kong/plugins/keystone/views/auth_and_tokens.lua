@@ -2,6 +2,8 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
+local _,_,assignment,_ = require ("kong.plugins.keystone.views.roles")
+local _,service, endpoint = require("kong.plugins.keystone.views.services_and_endpoints")
 
 --TODO A token without an explicit scope of authorization is issued if the user does not specify a project and does not have authorization on the project specified by their default project attribute
 
@@ -107,6 +109,7 @@ local function check_scope(scope, dao_factory)
                 return {message = "No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name}
             end
             project = temp[1]
+            local temp, err = dao_factory.assignment:find_all({type = ""})
         else
             return {message = "Project needs to be identified unique" }
         end
@@ -141,50 +144,20 @@ local function check_scope(scope, dao_factory)
     return nil, project, domain_name
 end
 
-local function get_roles(domain_scoped, dao_factory, user_id, project_id)
-
-    local roles = {}
-    local temp, err = dao_factory.assignment:find_all ({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user_id, target_id = project_id})
-    kutils.assert_dao_error(err, "assignment find_all")
-    for i = 1, #temp do
-        local role, err = dao_factory.role:find({id = temp[i].role_id})
-        kutils.assert_dao_error(err, "role find")
-        roles[i] = {
-            id = role.id,
-            name = role.name
-        }
-    end
-    local admin_role = {{id = '45f6fc21-e5cf-4f21-9439-8761a2973d98', name = 'admin'}}
---    return nil, roles
-    return nil, admin_role
-end
-
-local function get_catalog(dao_factory)
-    local catalog = {}
-    local servs, err = dao_factory.service:find_all()
-    kutils.assert_dao_error(err, "service:find_all")
-    for i = 1, #servs do
-        catalog[i] = {
-            endpoints = {},
-            type = servs[i].type,
-            id = servs[i].id,
-            name = servs[i].name
-        }
-        local endps, err = dao_factory.endpoint:find_all({service_id = servs[i].id})
-        kutils.assert_dao_error(err, "endpoint:find_all")
-        for j = 1, #endps do
-            catalog[i].endpoints[j] = {
-                region_id = endps[j].region_id or "null",
-                url = endps[j].url,
-                region = "null",
-                interface = endps[j].interface,
-                id = endps[j].id
-            }
-            if endps[j].region_id then
-                local region, err = dao_factory.region:find({id = endps[j].region_id})
-                kutils.assert_dao_error(err, "region:find")
-                catalog[i].endpoints[j].region = region.description
-            end
+local function get_catalog(self,dao_factory)
+    local temp = service.list(self,dao_factory, true)
+    local catalog = temp.services
+    for i = 1, #catalog do
+        catalog[i].description = nil
+        catalog[i].links = nil
+        catalog[i].enabled = nil
+        self.params.service_id = catalog[i].id
+        local temp = endpoint.list(self, dao_factory, true)
+        catalog[i].endpoints = temp.endpoints
+        for j = 1, #catalog[i].endpoints do
+            catalog[i].endpoints[j].enabled = nil
+            catalog[i].endpoints[j].service_id = nil
+            catalog[i].endpoints[j].links = nil
         end
     end
 
@@ -268,6 +241,8 @@ local function auth_password_unscoped(self, dao_factory)
     }
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
+    local token, err = dao_factory.token:find({id = token.id})
+    kutils.assert_dao_error(err, "token:find")
 
     local resp = {
         token = {
@@ -303,9 +278,11 @@ local function auth_password_scoped(self, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-
-    local err, roles = get_roles(scope.domain and true or false, dao_factory, user.id, project.id)
-    kutils.handle_dao_error(resp, err, "get_roles")
+    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
+    if not next(temp.roles) then
+        return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
+    end
+    local roles = temp.roles
 
     local token = {
         id = utils.uuid(),
@@ -337,11 +314,20 @@ local function auth_password_scoped(self, dao_factory)
         }
     }
     if not (self.params.nocatalog) then
-        local err, catalog = get_catalog(dao_factory)
+        local err, catalog = get_catalog(self, dao_factory)
         kutils.handle_dao_error(resp, err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
 
+    local cache = {
+        token_id = token.id,
+        scope_id = project.id,
+        roles = kutils.roles_to_string(roles)
+    }
+    local _,err = dao_factory.cache:insert(cache)
+    kutils.assert_dao_error(err)
+
+--TODO cache
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
@@ -389,9 +375,11 @@ local function auth_token_scoped(self, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-
-    local err, roles = get_roles(scope.domain and true or false, dao_factory, user.id, project.id)
-    kutils.handle_dao_error (resp, err, "get_roles")
+    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
+    if not next(temp.roles) then
+        return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
+    end
+    local roles = temp.roles
 
     local token = {
         id = utils.uuid(),
@@ -423,11 +411,19 @@ local function auth_token_scoped(self, dao_factory)
         }
     }
     if not (self.params.nocatalog) then
-        local err, catalog = get_catalog(dao_factory)
+        local err, catalog = get_catalog(self, dao_factory)
         kutils.handle_dao_error(resp, err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
-
+    local cache = {
+        token_id = token.id,
+        scope_id = project.id,
+        roles = kutils.roles_to_string(roles)
+    }
+    local _,err = dao_factory.cache:insert(cache)
+    kutils.assert_dao_error(err)
+    
+-- TODO cache
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
@@ -477,7 +473,7 @@ local function get_token_info(self, dao_factory)
     end
 
     if not (self.params.nocatalog) then
-        local err, catalog = get_catalog(dao_factory)
+        local err, catalog = get_catalog(self,dao_factory)
         kutils.handle_dao_error(resp, err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
@@ -510,6 +506,7 @@ local function check_token(self, dao_factory)
 end
 
 local function revoke_token(self, dao_factory)
+    -- TODO revocation event?
     local subj_token = self.req.headers["X-Subject-Token"]
     if not subj_token then
         return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
@@ -543,7 +540,7 @@ local function get_service_catalog(self, dao_factory)
         }
     }
 
-    local err, catalog = get_catalog(dao_factory)
+    local err, catalog = get_catalog(self,dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end

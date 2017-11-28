@@ -30,7 +30,7 @@ local function list_roles(self, dao_factory)
         }
     end
 
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
 local function create_role(self, dao_factory)
@@ -83,7 +83,7 @@ local function get_role_info(self, dao_factory)
         self = self:build_url(self.req.parsed_url.path..role.id)
     }
 
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
 local function update_role(self, dao_factory)
@@ -185,7 +185,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
     end
 
     --TODO cache result
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
 local function check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
@@ -264,7 +264,7 @@ local function check_assignment(self, dao_factory, type)
     local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
     kutils.assert_dao_error(err, "assignment find")
     if temp then
-        return responses.send_HTTP_NO_CONTENT()
+        return
     elseif type:match("User") then
         local ugroups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
         for _, ugroup in pairs(ugroups) do
@@ -272,7 +272,7 @@ local function check_assignment(self, dao_factory, type)
                 actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = false})
             kutils.assert_dao_error(err, "assignment:find")
             if temp then
-                return responses.send_HTTP_NO_CONTENT()
+                return
             end
         end
     end
@@ -334,7 +334,7 @@ local function list_implied_roles(self, dao_factory)
         }
     end
 
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
 local function get_role_inference_rule(self, dao_factory, if_create)
@@ -373,7 +373,11 @@ local function get_role_inference_rule(self, dao_factory, if_create)
         kutils.assert_dao_error(err)
     end
 
-    return if_create and responses.send_HTTP_CREATED(resp) or responses.send_HTTP_OK(resp)
+    return resp
+end
+
+local function create_role_inference_rule(self, dao_factory)
+    return responses.send_HTTP_CREATED(get_role_inference_rule(self, dao_factory, true))
 end
 
 local function confirm_role_inference_rule(self, dao_factory)
@@ -396,7 +400,7 @@ local function confirm_role_inference_rule(self, dao_factory)
         return responses.send_HTTP_NOT_FOUND()
     end
 
-    return responses.send_HTTP_NO_CONTENT()
+    return
 end
 
 local function delete_role_inference_rule(self, dao_factory)
@@ -523,7 +527,7 @@ local function list_role_assignments(self, dao_factory, type)
         resp.subtree = subtree
     end
 
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
 local function list_role_inferences(self, dao_factory)
@@ -575,13 +579,27 @@ local function list_role_inferences(self, dao_factory)
         end
     end
 
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
-
-return {
+local Role = {
+    list = list_roles,
+    get_info = get_role_info
+}
+local Assignment = {
+    list = list_role_assignments_for_actor_on_target,
+    list_all = list_role_assignments,
+    check = check_assignment
+}
+local Inference_rule = {
+    list = list_implied_roles,
+    get_info = get_role_inference_rule,
+    check = confirm_role_inference_rule,
+    list_all = list_role_inferences
+}
+local routes = {
     ["/v3/roles/"] = {
         GET = function(self, dao_factory)
-            list_roles(self, dao_factory)
+            responses.send_HTTP_OK(list_roles(self, dao_factory))
         end,
         POST = function(self, dao_factory)
             create_role(self, dao_factory)
@@ -589,7 +607,7 @@ return {
     },
     ["/v3/roles/:role_id"] = {
         GET = function(self, dao_factory)
-            get_role_info(self, dao_factory)
+            responses.send_HTTP_OK(get_role_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
             update_role(self, dao_factory)
@@ -600,7 +618,7 @@ return {
     },
     ["/v3/domains/:target_id/groups/:actor_id/roles"] = {
         GET = function(self, dao_factory)
-            list_role_assignments_for_actor_on_target(self, dao_factory, "GroupDomain")
+            responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "GroupDomain"))
         end
     },
     ["/v3/domains/:target_id/groups/:actor_id/roles/:role_id"] = {
@@ -608,7 +626,7 @@ return {
             assign_role(self, dao_factory, "GroupDomain")
         end,
         HEAD = function (self, dao_factory)
-            check_assignment(self, dao_factory, "GroupDomain")
+            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupDomain"))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupDomain")
@@ -616,7 +634,7 @@ return {
     },
     ["/v3/domains/:target_id/users/:actor_id/roles"] = {
         GET = function(self, dao_factory)
-            list_role_assignments_for_actor_on_target(self, dao_factory, "UserDomain")
+            responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "UserDomain"))
         end
     },
     ["/v3/domains/:target_id/users/:actor_id/roles/:role_id"] = {
@@ -624,7 +642,7 @@ return {
             assign_role(self, dao_factory, "UserDomain")
         end,
         HEAD = function (self, dao_factory)
-            check_assignment(self, dao_factory, "UserDomain")
+            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserDomain"))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserDomain")
@@ -632,7 +650,7 @@ return {
     },
     ["/v3/projects/:target_id/groups/:actor_id/roles"] = {
         GET = function(self, dao_factory)
-            list_role_assignments_for_actor_on_target(self, dao_factory, "GroupProject")
+            responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "GroupProject"))
         end
     },
     ["/v3/projects/:target_id/groups/:actor_id/roles/:role_id"] = {
@@ -640,7 +658,7 @@ return {
             assign_role(self, dao_factory, "GroupProject")
         end,
         HEAD = function (self, dao_factory)
-            check_assignment(self, dao_factory, "GroupProject")
+            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupProject"))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupProject")
@@ -648,7 +666,7 @@ return {
     },
     ["/v3/projects/:target_id/users/:actor_id/roles"] = {
         GET = function(self, dao_factory)
-            list_role_assignments_for_actor_on_target(self, dao_factory, "UserProject")
+            responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "UserProject"))
         end
     },
     ["/v3/projects/:target_id/users/:actor_id/roles/:role_id"] = {
@@ -656,7 +674,7 @@ return {
             assign_role(self, dao_factory, "UserProject")
         end,
         HEAD = function (self, dao_factory)
-            check_assignment(self, dao_factory, "UserProject")
+            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserProject"))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserProject")
@@ -664,18 +682,18 @@ return {
     },
     ["/v3/roles/:prior_role_id/implies"] = {
         GET = function(self, dao_factory)
-            list_implied_roles(self, dao_factory)
+            responses.send_HTTP_OK(list_implied_roles(self, dao_factory))
         end
     },
     ["/v3/roles/:prior_role_id/implies/:implied_role_id"] = {
         PUT = function(self, dao_factory)
-            get_role_inference_rule(self, dao_factory, true)
+            create_role_inference_rule(self, dao_factory)
         end,
         GET = function(self, dao_factory)
-            get_role_inference_rule(self, dao_factory)
+            responses.send_HTTP_OK(get_role_inference_rule(self, dao_factory))
         end,
         HEAD = function(self, dao_factory)
-            confirm_role_inference_rule(self, dao_factory)
+            responses.send_HTTP_NO_CONTENT(confirm_role_inference_rule(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
             delete_role_inference_rule(self, dao_factory)
@@ -683,13 +701,14 @@ return {
     },
     ["/v3/role_assigments"] = {
         GET = function(self, dao_factory)
-            list_role_assignments(self, dao_factory)
+            responses.send_HTTP_OK(list_role_assignments(self, dao_factory))
         end
     },
     ["/v3/role_inferences"] = {
         GET = function(self, dao_factory)
-            list_role_inferences(self, dao_factory)
+            responses.send_HTTP_OK(list_role_inferences(self, dao_factory))
         end
     }
-
 }
+
+return routes, Role, Assignment, Inference_rule

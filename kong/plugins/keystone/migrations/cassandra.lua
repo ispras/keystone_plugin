@@ -392,7 +392,12 @@ return {
         PRIMARY KEY (domain_id, group, option)
       );
 
-
+      CREATE TABLE IF NOT EXISTS cache(
+        token_id varchar,
+        scope_id varchar,
+        roles text,
+        PRIMARY KEY (token_id)
+      );
 
     ]],
     down = [[
@@ -435,6 +440,7 @@ return {
       DROP TABLE user_group_membership;
       DROP TABLE user_option;
       DROP TABLE whitelisted_config;
+      DROP TABLE cache;
     ]]
   }
 }

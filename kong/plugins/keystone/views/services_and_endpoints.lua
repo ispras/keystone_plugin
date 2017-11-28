@@ -4,7 +4,7 @@ local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 
-ServiceAndEndpoint = {}
+local ServiceAndEndpoint = {}
 
 local available_service_types = {
     compute = true, ec2 = true, identity = true, image = true, network = true, volume = true
@@ -14,7 +14,7 @@ local available_interface_types = {
     public = true, internal = true, admin = true
 }
 
-function list_services(self, dao_factory)
+local function list_services(self, dao_factory, enabled)
     local resp = {
         links = {
             next = "null",
@@ -26,17 +26,10 @@ function list_services(self, dao_factory)
 
     local services = {}
     local err
-    if self.params.type then
-        services, err = dao_factory.service:find_all({type = self.params.type})
-    else
-        services, err = dao_factory.service:find_all()
-    end
+    local args = (self.params.type or enabled) and {type = self.params.type, enabled = enabled} or nil
+    services, err = dao_factory.service:find_all(args)
 
     kutils.assert_dao_error(err, "service find_all")
-
-    if not next(services) then
-        return responses.send_HTTP_OK(resp)
-    end
 
     for i = 1, #services do
         resp.services[i] = {}
@@ -49,10 +42,10 @@ function list_services(self, dao_factory)
         resp.services[i].name = services[i].name
         resp.services[i].type = services[i].type
     end
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
-function create_service(self, dao_factory)
+local function create_service(self, dao_factory)
     local service = self.params.service
     if not service then
         return responses.send_HTTP_BAD_REQUEST("Service is nil, check self.params")
@@ -81,7 +74,7 @@ function create_service(self, dao_factory)
     return responses.send_HTTP_CREATED({service = service})
 end
 
-function get_service_info(self, dao_factory)
+local function get_service_info(self, dao_factory)
     local service_id = self.params.service_id
     if not service_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
@@ -96,10 +89,10 @@ function get_service_info(self, dao_factory)
     service.links = {
                 self = self:build_url(self.req.parsed_url.path)
             }
-    return responses.send_HTTP_OK({service = service})
+    return {service = service}
 end
 
-function update_service(self, dao_factory)
+local function update_service(self, dao_factory)
     local service_id = self.params.service_id
     if not service_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
@@ -131,7 +124,7 @@ function update_service(self, dao_factory)
     return responses.send_HTTP_OK({service = updated_service})
 end
 
-function delete_service(self, dao_factory)
+local function delete_service(self, dao_factory)
     local service_id = self.params.service_id
     if not service_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
@@ -155,7 +148,7 @@ function delete_service(self, dao_factory)
     return responses.send_HTTP_NO_CONTENT()
 end
 
-function list_endpoints(self, dao_factory)
+local function list_endpoints(self, dao_factory, enabled)
     local resp = {
         links = {
             next = "null",
@@ -165,7 +158,7 @@ function list_endpoints(self, dao_factory)
         endpoints = {}
     }
 
-    local args = {}
+    local args = {enabled = enabled}
     if self.params.interface then
         if not available_interface_types[self.params.interface] then
             return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
@@ -192,10 +185,6 @@ function list_endpoints(self, dao_factory)
 
     kutils.assert_dao_error(err, "endpoint find_all")
 
-    if not next(endpoints) then
-        return responses.send_HTTP_OK(resp)
-    end
-
     for i = 1, #endpoints do
         resp.endpoints[i] = {}
         resp.endpoints[i].region_id = endpoints[i].region_id
@@ -208,10 +197,10 @@ function list_endpoints(self, dao_factory)
         resp.endpoints[i].interface = endpoints[i].interface
         resp.endpoints[i].service_id = endpoints[i].service_id
     end
-    return responses.send_HTTP_OK(resp)
+    return resp
 end
 
-function create_endpoint(self, dao_factory)
+local function create_endpoint(self, dao_factory)
     local endpoint = self.params.endpoint
     if not endpoint then
         return responses.send_HTTP_BAD_REQUEST("endpoint is nil, check self.params")
@@ -260,7 +249,7 @@ function create_endpoint(self, dao_factory)
     return responses.send_HTTP_CREATED({endpoint = endpoint})
 end
 
-function get_endpoint_info(self, dao_factory)
+local function get_endpoint_info(self, dao_factory)
     local endpoint_id = self.params.endpoint_id
     if not endpoint_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
@@ -275,10 +264,10 @@ function get_endpoint_info(self, dao_factory)
     endpoint.links = {
                 self = self:build_url(self.req.parsed_url.path)
             }
-    return responses.send_HTTP_OK({endpoint = endpoint})
+    return {endpoint = endpoint}
 end
 
-function update_endpoint(self, dao_factory)
+local function update_endpoint(self, dao_factory)
     local endpoint_id = self.params.endpoint_id
     if not endpoint_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
@@ -328,7 +317,7 @@ function update_endpoint(self, dao_factory)
     return responses.send_HTTP_OK({endpoint = updated_endpoint})
 end
 
-function delete_endpoint(self, dao_factory)
+local function delete_endpoint(self, dao_factory)
     local endpoint_id = self.params.endpoint_id
     if not endpoint_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
@@ -346,6 +335,15 @@ function delete_endpoint(self, dao_factory)
     return responses.send_HTTP_NO_CONTENT()
 end
 
+local Service = {
+    list = list_services,
+    get_info = get_service_info
+}
+local Endpoint = {
+    list = list_endpoints,
+    get_info = get_endpoint_info
+}
+
 ServiceAndEndpoint.list_services = list_services
 ServiceAndEndpoint.create_service = create_service
 ServiceAndEndpoint.get_service_info = get_service_info
@@ -358,10 +356,10 @@ ServiceAndEndpoint.get_endpoint_info = get_endpoint_info
 ServiceAndEndpoint.update_endpoint = update_endpoint
 ServiceAndEndpoint.delete_endpoint = delete_endpoint
 
-routes = {
+local routes = {
     ["/v3/services"] = {
         GET = function(self, dao_factory)
-            ServiceAndEndpoint.list_services(self, dao_factory)
+            responses.send_HTTP_OK(ServiceAndEndpoint.list_services(self, dao_factory))
         end,
         POST = function(self, dao_factory)
             ServiceAndEndpoint.create_service(self, dao_factory)
@@ -369,7 +367,7 @@ routes = {
     },
     ["/v3/services/:service_id"] = {
         GET = function(self, dao_factory)
-            ServiceAndEndpoint.get_service_info(self, dao_factory)
+            responses.send_HTTP_OK(ServiceAndEndpoint.get_service_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
             ServiceAndEndpoint.update_service(self, dao_factory)
@@ -380,7 +378,7 @@ routes = {
     },
     ["/v3/endpoints"] = {
         GET = function(self, dao_factory)
-            ServiceAndEndpoint.list_endpoints(self, dao_factory)
+            responses.send_HTTP_OK(ServiceAndEndpoint.list_endpoints(self, dao_factory))
         end,
         POST = function(self, dao_factory)
             ServiceAndEndpoint.create_endpoint(self, dao_factory)
@@ -388,7 +386,7 @@ routes = {
     },
     ["/v3/endpoints/:endpoint_id"] = {
         GET = function(self, dao_factory)
-            ServiceAndEndpoint.get_endpoint_info(self, dao_factory)
+            responses.send_HTTP_OK(ServiceAndEndpoint.get_endpoint_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
             ServiceAndEndpoint.update_endpoint(self, dao_factory)
@@ -401,4 +399,4 @@ routes = {
 
 routes["/identity/v3/endpoints/"] = routes["/v3/endpoints"]
 
-return routes
+return routes, Service, Endpoint

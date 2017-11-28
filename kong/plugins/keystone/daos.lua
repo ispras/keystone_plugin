@@ -456,6 +456,16 @@ local WHITELISTED_CONFIG_SCHEMA = {
     }
 }
 
+local CACHE_SCHEMA = {
+    primary_key = {"token_id"},
+    table = "cache",
+    fields = {
+        token_id = { type = "string", required = true },
+        scope_id = { type = "string", required = true },
+        roles = { type = "string", required = true }
+    }
+}
+
 return {
     access_token = ACCESS_TOKEN_SCHEMA,
     assignment = ASSIGNMENT_SCHEMA,
@@ -495,5 +505,6 @@ return {
     user = USER_SCHEMA,
     user_group_membership = USER_GROUP_MEMBERSHIP_SCHEMA,
     user_option = USER_OPTION_SCHEMA,
-    whitelisted_config = WHITELISTED_CONFIG_SCHEMA
+    whitelisted_config = WHITELISTED_CONFIG_SCHEMA,
+    cache = CACHE_SCHEMA
 }
