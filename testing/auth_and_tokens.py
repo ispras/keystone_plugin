@@ -16,7 +16,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                             'domain' : {
                                 'name' : 'default_domain'
                             },
-                            'password' : 'new_tester'
+                            'password' : 'myadminpass'
                         }
                     }
                 }

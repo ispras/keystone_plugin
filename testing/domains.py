@@ -5,10 +5,12 @@ class TestKeystoneDomains(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneDomains, self).setUp()
         self.host = self.host + '/v3/domains/'
+        self.domain_id = ''
+
     def create(self):
         body = {
             "domain" : {
-                "name": "admin",
+                "name": "default_domain",
                 "description" : "admin domain for testing",
                 "enabled" :  True
             }
@@ -17,19 +19,17 @@ class TestKeystoneDomains(TestKeystoneBase):
         self.checkCode(201)
 
     def delete(self):
-        domain_id = '85220b62-f5cf-4fc7-adce-823e320592f4'
-        self.res = requests.delete(self.host + domain_id)
+        self.res = requests.delete(self.host + self.domain_id)
         self.checkCode(204)
 
     def update (self):
-        domain_id = '85220b62-f5cf-4fc7-adce-823e320592f4'
         body = {
         "domain": {
             "description": "My updated domain",
             "name": "myUpdatedDomain"
             }
         }
-        self.res = requests.patch(self.host + domain_id, json=body)
+        self.res = requests.patch(self.host + self.domain_id, json=body)
         self.checkCode(200)
 
     def list(self):
@@ -37,6 +37,5 @@ class TestKeystoneDomains(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        domain_id = 'admin'
-        self.res = requests.get(self.host + domain_id)
+        self.res = requests.get(self.host + self.domain_id)
         self.checkCode(200)

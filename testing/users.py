@@ -25,7 +25,7 @@ class TestKeystoneUsers(TestKeystoneBase):
                 "enabled": "true",
                 "name": "admin",
                 "password": "myadminpass",
-                "domain_id": "db680c6e-d4e1-4a59-af41-8b30ea8dce6d",
+                # "domain_id": "db680c6e-d4e1-4a59-af41-8b30ea8dce6d",
             }
         }
         self.res = requests.post(self.host, json = body)
