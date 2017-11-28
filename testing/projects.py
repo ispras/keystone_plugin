@@ -34,7 +34,7 @@ class TestKeystoneProjects(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        project_id = '45f6fc21-e5cf-4f21-9439-8761a2973d98'
+        project_id = 'Default'
         self.res = requests.get(self.host + project_id)
         self.checkCode(200)
 

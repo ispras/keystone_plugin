@@ -9,10 +9,10 @@ class TestKeystoneDomains(TestKeystoneBase):
 
     def create(self):
         body = {
-            "domain" : {
-                "name": "default_domain",
-                "description" : "admin domain for testing",
-                "enabled" :  True
+            "domain": {
+                "name": "Default",
+                "description": "Default domain for testing",
+                "enabled":  True
             }
         }
         self.res = requests.post(self.host, json = body)

@@ -95,6 +95,12 @@ local function list_users(self, dao_factory, helpers)
                 },
                 password_expires_at = users_info[i].password_expires_at
             }
+            if users_info[i].default_project_id then
+                resp.users[num].default_project_id = users_info[i].default_project_id
+--                resp.users[num].default_project_id = '029a3ae4-9950-459c-933e-c90876576ea3'
+            else
+                resp.users[num].default_project_id = users_info[i].project_id
+            end
         end
     end
 
@@ -240,7 +246,7 @@ local function update_user(self, dao_factory)
     local user_id = self.params.user_id
     local user, err = dao_factory.user:find({id = user_id})
     kutils.assert_dao_error(err, "user:find")
-    if user then
+    if not user then
         return responses.send_HTTP_BAD_REQUEST({message = "No user found, check id = "..user_id})
     end
 

@@ -38,15 +38,6 @@ local function get_subtree_as_ids(self, dao_factory, project) --not tested
 end
 
 local function list_projects(self, dao_factory)
-    local resp = {
-        links = {
-            next = "null",
-            previous = "null",
-            self = self:build_url(self.req.parsed_url.path)
-        },
-        projects = {}
-    }
-
     local domain_id = self.params.domain_id
     local enabled = kutils.bool(self.params.enabled)
     local is_domain = kutils.bool(self.params.is_domain)
@@ -55,27 +46,67 @@ local function list_projects(self, dao_factory)
 
     local args = ( domain_id ~= nil or enabled ~= nil or is_domain ~= nil or name ~= nil or parent_id ~= nil ) and
             { domain_id = domain_id, enabled = enabled, is_domain = is_domain, name = name, parent_id = parent_id } or nil
-    local projects, err = dao_factory.project:find_all(args)
-    kutils.assert_dao_error(err, "project:find_all")
-    if not next(projects) then
-        return responses.send_HTTP_OK(resp)
-    end
 
-    for i = 1, #projects do
-        resp.projects[i] = {}
-        resp.projects[i].description = projects[i].description
-        resp.projects[i].domain_id = projects[i].domain_id
-        resp.projects[i].enabled = projects[i].enabled
-        resp.projects[i].id = projects[i].id
-        resp.projects[i].name = projects[i].name
-        resp.projects[i].parent_id = projects[i].parent_id
-        resp.projects[i].links = {
-            self = resp.links.self..'/'..resp.projects[i].id
+    local resp
+    if not self.params.domain then
+        resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+            },
+            projects = {}
         }
-        resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
-        kutils.handle_dao_error(resp, err, "project_tag:find_all")
-    end
 
+        local projects, err = dao_factory.project:find_all(args)
+        kutils.assert_dao_error(err, "project:find_all")
+        if not next(projects) then
+            return responses.send_HTTP_OK(resp)
+        end
+
+        for i = 1, #projects do
+            resp.projects[i] = {}
+            resp.projects[i].description = projects[i].description
+            resp.projects[i].domain_id = projects[i].domain_id
+            resp.projects[i].enabled = projects[i].enabled
+            resp.projects[i].id = projects[i].id
+            resp.projects[i].name = projects[i].name
+            resp.projects[i].is_domain = projects[i].is_domain
+            resp.projects[i].parent_id = projects[i].parent_id
+            resp.projects[i].links = {
+                self = resp.links.self..'/'..resp.projects[i].id
+            }
+            resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
+            kutils.handle_dao_error(resp, err, "project_tag:find_all")
+
+        end
+    else
+        resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+            },
+            domains = {}
+        }
+
+        local domains, err = dao_factory.project:find_all(args)
+        kutils.assert_dao_error(err, "project:find_all")
+        if not next(domains) then
+            return responses.send_HTTP_OK(resp)
+        end
+
+        for i = 1, #domains do
+            resp.domains[i] = {}
+            resp.domains[i].description = domains[i].description
+            resp.domains[i].enabled = domains[i].enabled
+            resp.domains[i].id = domains[i].id
+            resp.domains[i].name = domains[i].name
+            resp.domains[i].links = {
+                self = resp.links.self..'/'..resp.domains[i].id
+            }
+        end
+    end
     return responses.send_HTTP_OK(resp)
 
 end
@@ -128,7 +159,19 @@ local function create_project(self, dao_factory)
                 self = self:build_url(self.req.parsed_url.path)
             }
 
-    local response = {project = project_obj}
+    local response
+    if not self.params.domain then
+        response = {project = project_obj }
+    else
+        response = {domain = {
+                                name = project_obj.name,
+                                description = project_obj.description,
+                                enabled = project_obj.enabled,
+                                id = project_obj.id,
+                                links = project_obj.links
+                            }
+        }
+    end
     return responses.send_HTTP_CREATED(response)
 end
 
@@ -258,7 +301,19 @@ local function update_project(self, dao_factory)
     local updated_project, err = dao_factory.project:update(request.project, {id=project.id})
     kutils.assert_dao_error(err, "project update")
 
-    local response = {project = updated_project}
+    local response
+    if not self.params.domain then
+        response = {project = updated_project}
+    else
+        response = {domain = {
+                                name = updated_project.name,
+                                description = updated_project.description,
+                                enabled = updated_project.enabled,
+                                id = updated_project.id,
+                                links = updated_project.links
+                            }
+        }
+    end
     return responses.send_HTTP_OK(response)
 end
 
