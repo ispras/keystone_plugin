@@ -10,18 +10,13 @@ return {
     end,
     default_domain = function(dao_factory)
         local domain, err = dao_factory.project:find_all({name = 'Default'})
-        if not err and next(domain) then return domain[1]['id'] end
-        return nil
-    end,
-    handle_dao_error = function(resp, err, func)
         if err then
-            if not resp.errors then
-                resp.errors = {num = 0 }
-            end
-            resp.errors.num = 1 + resp.errors.num
-            resp.errors[resp.errors.num] = {error = err, func = func }
+            error(err)
         end
-
+        if not next(domain) then
+            error("No default domain")
+        end
+        return domain[1]['id']
     end,
     assert_dao_error = function(err, func)
         if err then

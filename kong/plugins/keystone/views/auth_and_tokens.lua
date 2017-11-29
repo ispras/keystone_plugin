@@ -333,7 +333,7 @@ local function auth_password_scoped(self, dao_factory)
     }
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(self, dao_factory)
-        kutils.handle_dao_error(resp, err, "get_catalog")
+        kutils.assert_dao_error(err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
 
@@ -433,7 +433,7 @@ local function auth_token_scoped(self, dao_factory)
     }
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(self, dao_factory)
-        kutils.handle_dao_error(resp, err, "get_catalog")
+        kutils.assert_dao_error(err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
     local cache = {
@@ -479,11 +479,11 @@ local function get_token_info(self, dao_factory)
             issued_at = kutils.time_to_string(os.time())
         }
     }
-    local temp, err = dao_factory.assignment:find_all({actor_id = user.id})
-    kutils.handle_dao_error(resp, err, "assignments:find_all")
+    local temp, err = dao_factory.assignments:find_all({actor_id = user.id})
+    kutils.assert_dao_error(err, "assignments:find_all")
     for i = 1, #temp do
         local role, err = dao_factory.role:find({id = temp[i].role_id})
-        kutils.handle_dao_error(resp, err, "role:find")
+        kutils.assert_dao_error(err, "role:find")
         if not role then
             resp.token.roles[i] = {
                 id = role.id,
@@ -495,7 +495,7 @@ local function get_token_info(self, dao_factory)
 
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(self,dao_factory)
-        kutils.handle_dao_error(resp, err, "get_catalog")
+        kutils.assert_dao_error(err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
 

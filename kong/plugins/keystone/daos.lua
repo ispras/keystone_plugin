@@ -7,7 +7,7 @@ local ACCESS_TOKEN_SCHEMA = {
         access_secret = { type = "string", required = true },
         authorizing_user_id = { type = "string", required = true, queryable = true },
         project_id = { type = "string", required = true },
-        role_ids = { type = "array", required = true },
+        role_ids = { type = "string", required = true },
         consumer_id = { type = "string", required = true, queryable = true },
         expires_at = { type = "string" },
     }
@@ -41,7 +41,7 @@ local CONSUMER_SCHEMA = {
         id = { type = "string", required = true },
         description = { type = "string" },
         secret = { type = "string", required = true },
-        extra = { type = "table" }
+        extra = { type = "string" }
     }
 }
 
@@ -53,7 +53,7 @@ local CREDENTIAL_SCHEMA = {
         user_id = { type = "string", required = true },
         project_id = { type = "string" },
         type = { type = "string", required = true },
-        extra = { type = "table" },
+        extra = { type = "string" },
         key_hash = { type = "string", required = true },
         encrypted_blob = { type = "string", required = true }
     }
@@ -68,7 +68,7 @@ local ENDPOINT_SCHEMA = {
         interface = { type = "string", required = true },
         service_id = { type = "string", required = true, queryable = true },
         url = { type = "url", required = true },
-        extra = { type = "table" },
+        extra = { type = "string" },
         enabled = { type = "boolean", required = true },
         region_id = { type = "string", queryable = true }
     }
@@ -81,7 +81,7 @@ local ENDPOINT_GROUP_SCHEMA = {
         id = { type = "string", required = true },
         name = { type = "string", required = true },
         description = { type = "string" },
-        filters = { type = "array", required = true }
+        filters = { type = "string", required = true }
     }
 }
 
@@ -116,7 +116,7 @@ local GROUP_SCHEMA = {
         domain_id = { type = "string", required = true, queryable = true },
         name = { type = "string", required = true },
         description = { type = "string" },
-        extra = { type = "table" }
+        extra = { type = "string" }
     }
 }
 
@@ -223,7 +223,7 @@ local POLICY_SCHEMA = {
         id = { type = "string", required = true },
         type = { type = "string", required = true },
         blob = { type = "string", required = true },
-        extra = { type = "table" }
+        extra = { type = "string" }
     }
 }
 
@@ -245,7 +245,7 @@ local PROJECT_SCHEMA = {
     fields = {
         id = { type = "string", required = true },
         name = { type = "string", required = true },
-        extra = { type = "table" },
+        extra = { type = "string" },
         description = { type = "string" },
         enabled = { type = "boolean" },
         domain_id = { type = "string", queryable = true },
@@ -288,7 +288,7 @@ local REGION_SCHEMA = {
         id = { type = "string", required = true },
         description = { type = "string", required = true },
         parent_region_id = { type = "string" },
-        extra = { type = "table" }
+        extra = { type = "string" }
     }
 }
 
@@ -301,7 +301,7 @@ local REQUEST_TOKEN_SCHEMA = {
         verifier = { type = "string" },
         authorizing_user_id = { type = "string" },
         requested_project_id = { type = "string", required = true },
-        role_ids = { type = "array" },
+        role_ids = { type = "string" },
         consumer_id = { type = "string", required = true },
         expires_at = { type = "string" }
     }
@@ -333,7 +333,7 @@ local ROLE_SCHEMA = {
     fields = {
         id = { type = "string", required = true },
         name = { type = "string", required = true },
-        extra = { type = "table" },
+        extra = { type = "string" },
         domain_id = { type = "string", required = true }
     }
 }
@@ -399,7 +399,7 @@ local TRUST_SCHEMA = {
         deleted_at = { type = "timestamp" },
         expires_at = { type = "timestamp" },
         remaining_uses = { type = "number" },
-        extra = { type = "table" }
+        extra = { type = "string" }
     }
 }
 
@@ -417,7 +417,7 @@ local USER_SCHEMA = {
     table = "user",
     fields = {
         id = { type = "string", required = true },
-        extra = { type = "table" },
+        extra = { type = "string" },
         enabled = { type = "boolean" },
         default_project_id = { type = "string" },
         created_at = { type = "timestamp" },
@@ -461,7 +461,7 @@ local CACHE_SCHEMA = {
     table = "cache",
     fields = {
         token_id = { type = "string", required = true },
-        scope_id = { type = "string", required = true },
+        scope_id = { type = "string", required = true }, --project/domain
         roles = { type = "string", required = true }
     }
 }

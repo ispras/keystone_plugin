@@ -77,7 +77,7 @@ local function list_projects(self, dao_factory)
                 self = resp.links.self..'/'..resp.projects[i].id
             }
             resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
-            kutils.handle_dao_error(resp, err, "project_tag:find_all")
+            kutils.assert_dao_error(err, "project_tag:find_all")
 
         end
     else
@@ -137,7 +137,10 @@ local function create_project(self, dao_factory)
     end
 
     local description = request.project.description or ''
-    local domain_id = request.project.domain_id or kutils.default_domain(dao_factory) --must be supplemented
+    local domain_id = request.project.domain_id
+    if not domain_id and not is_domain then
+        domain_id = kutils.default_domain(dao_factory)
+    end
     local enabled = kutils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
     local id = utils.uuid()
@@ -153,7 +156,8 @@ local function create_project(self, dao_factory)
     }
 
     local res, err = dao_factory.project:insert(project_obj)
-    kutils.assert_dao_error(err, "project:insert")
+--    kutils.assert_dao_error(err, "project:insert")
+    kutils.assert_dao_error(err, domain_id)
 
     project_obj.links = {
                 self = self:build_url(self.req.parsed_url.path)
