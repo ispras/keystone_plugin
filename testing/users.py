@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
