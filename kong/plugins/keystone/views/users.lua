@@ -430,20 +430,20 @@ local function delete_user(self, dao_factory)
             end
         end
 
-        kutils.assert_dao_error(err1, "dao_factory.credential:find_all")
-        kutils.assert_dao_error(err2, "dao_factory.credential:delete")
-        kutils.assert_dao_error(err3, "dao_factory.federated_user:find_all")
-        kutils.assert_dao_error(err4, "dao_factory.federated_user:delete")
-        kutils.assert_dao_error(err5, "dao_factory.local_user:find_all")
-        kutils.assert_dao_error(err6, "dao_factory.local_user:delete")
-        kutils.assert_dao_error(err7, "dao_factory.password:find_all")
-        kutils.assert_dao_error(err8, "dao_factory.password:delete")
-        kutils.assert_dao_error(err9, "dao_factory.nonlocal_user:find_all")
-        kutils.assert_dao_error(err10, "dao_factory.nonlocsl_user:delete")
-        kutils.assert_dao_error(err11, "dao_factory.user_group_membership:find_all")
-        kutils.assert_dao_error(err12, "dao_factory.user_group_membership:delete")
-        kutils.assert_dao_error(err13, "dao_factory.user_option:find_all")
-        kutils.assert_dao_error(err14, "dao_factory.user_option:delete")
+        kutils.assert_dao_error(err1, "credential:find_all")
+        kutils.assert_dao_error(err2, "credential:delete")
+        kutils.assert_dao_error(err3, "federated_user:find_all")
+        kutils.assert_dao_error(err4, "federated_user:delete")
+        kutils.assert_dao_error(err5, "local_user:find_all")
+        kutils.assert_dao_error(err6, "local_user:delete")
+        kutils.assert_dao_error(err7, "password:find_all")
+        kutils.assert_dao_error(err8, "password:delete")
+        kutils.assert_dao_error(err9, "nonlocal_user:find_all")
+        kutils.assert_dao_error(err10, "nonlocsl_user:delete")
+        kutils.assert_dao_error(err11, "user_group_membership:find_all")
+        kutils.assert_dao_error(err12, "user_group_membership:delete")
+        kutils.assert_dao_error(err13, "user_option:find_all")
+        kutils.assert_dao_error(err14, "user_option:delete")
 
     return responses.send_HTTP_NO_CONTENT(resp)
 end
@@ -468,7 +468,7 @@ local function list_user_groups(self, dao_factory)
     kutils.assert_dao_error(err, "user_group_membership:find_all")
     for i = 1, #groups do
         local group, err = dao_factory.group:find({id = groups[i].group_id})
-        kutils.assert_dao_error(err, "dao_factory.group:find")
+        kutils.assert_dao_error(err, "group:find")
         resp.groups[i] = group
         resp.groups.extra = nil
         resp.groups[i].links.self =  self:build_url("/v3/groups/"..group.id)
@@ -498,19 +498,22 @@ local function list_user_projects(self, dao_factory)
     kutils.assert_dao_error(err, "assignment:find_all")
 
     for i = 1, #temp do
-        local project, err = dao_factory.project:find({id = temp[i].target_id})
-        kutils.assert_dao_error(err, "dao_factory.project:find")
-        resp.projects[i] = {
-            description = project.description or "null",
-            domain_id = project.domain_id or "null",
-            enabled = project.enabled or "null",
-            id = project.id,
-            links = {
-                self = self:build_url('/v3/projects/'..project.id)
-            },
-            name = project.name,
-            parent_id = project.parent_id or "null"
-        }
+        if not kutils.has_id(resp.projects, temp[i].target_id) then
+            local project, err = dao_factory.project:find({id = temp[i].target_id})
+            kutils.assert_dao_error(err, "dao_factory.project:find")
+            local index = #resp.projects + 1
+            resp.projects[index] = {
+                description = project.description or "null",
+                domain_id = project.domain_id or "null",
+                enabled = project.enabled or "null",
+                id = project.id,
+                links = {
+                    self = self:build_url('/v3/projects/'..project.id)
+                },
+                name = project.name,
+                parent_id = project.parent_id or "null"
+            }
+        end
     end
 
     return responses.send_HTTP_OK(resp)
