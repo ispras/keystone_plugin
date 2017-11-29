@@ -2,8 +2,11 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
-local _,_,assignment,_ = require ("kong.plugins.keystone.views.roles")
-local _,service, endpoint = require("kong.plugins.keystone.views.services_and_endpoints")
+local roles = require ("kong.plugins.keystone.views.roles")
+local assignment = roles.assignment
+local services_and_endpoints = require("kong.plugins.keystone.views.services_and_endpoints")
+local service = services_and_endpoints.services
+local endpoint = services_and_endpoints.endpoints
 
 --TODO A token without an explicit scope of authorization is issued if the user does not specify a project and does not have authorization on the project specified by their default project attribute
 
@@ -169,38 +172,45 @@ local function get_catalog(self,dao_factory)
 end
 
 local function check_token_auth(token, dao_factory, allow_expired, validate)
+    local err
     if not token or not token.id then
-        return {message = "Token id is required"}
+        err = {message = "Token id is required"}
     end
 
     local temp, err = dao_factory.token:find({id = token.id})
     kutils.assert_dao_error(err, "token:find")
     if not temp then
-        return {message = "No token found" }
+        err = {message = "No token found" }
+        return token, err
     end
     token = temp
     if not validate then
         if token.valid == false then
-            return {message = "Token is not valid" }
+            err = {message = "Token is not valid" }
+            return token, err
         end
     elseif not token.valid then
         token, err = dao_factory.token:update({valid = true}, {id = token.id})
         kutils.assert_dao_error(err, "token:update")
     end
     if not allow_expired then
-        if token.expires and token.expires > os.time() then
-            return {message = "Token is expired" }
+        if token.expires and token.expires < os.time() then
+            err =  {message = "Token is expired" }
+            return token, err
         end
     end
-
+    return token, err
 end
 
 local function check_token_user (token, dao_factory, allow_expired, validate)
-    local err = check_token_auth(token, dao_factory, allow_expired, validate)
+    local token, err = check_token_auth(token, dao_factory, allow_expired, validate)
     if err then
         return err
     end
 
+    if not token.user_id then
+        return responses.send_HTTP_NOT_FOUND("Error: token.user_id is nil")
+    end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
     local domain, err = dao_factory.project:find({id = user.domain_id})
@@ -282,7 +292,11 @@ local function auth_password_scoped(self, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
+
+    self.params.actor_id = user.id
+    self.params.target_id = project.domain_id
+
+    local temp = assignment.list(self, dao_factory, "UserDomain") --scope.project and "UserProject" or
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
     end
@@ -379,6 +393,9 @@ local function auth_token_scoped(self, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
+    --TODO:
+    --self.params.actor_id =
+    --self.params.target_id =
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
@@ -438,7 +455,7 @@ local function get_token_info(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local err = check_token_auth(token, dao_factory)
+    local token, err = check_token_auth(token, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
@@ -462,7 +479,7 @@ local function get_token_info(self, dao_factory)
             issued_at = kutils.time_to_string(os.time())
         }
     }
-    local temp, err = dao_factory.assignments:find_all({actor_id = user.id})
+    local temp, err = dao_factory.assignment:find_all({actor_id = user.id})
     kutils.handle_dao_error(resp, err, "assignments:find_all")
     for i = 1, #temp do
         local role, err = dao_factory.role:find({id = temp[i].role_id})
@@ -492,14 +509,14 @@ local function check_token(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local err = check_token_auth(token, dao_factory)
+    local token, err = check_token_auth(token, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
     token = {
         id = subj_token
     }
-    local err = check_token_auth(token, dao_factory, self.params.allow_expired, true)
+    local token, err = check_token_auth(token, dao_factory, self.params.allow_expired, true)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
@@ -530,7 +547,7 @@ local function get_service_catalog(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local err = check_token_auth(token, dao_factory)
+    local token, err = check_token_auth(token, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end

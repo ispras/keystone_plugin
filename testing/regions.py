@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneRegions(TestKeystoneBase):

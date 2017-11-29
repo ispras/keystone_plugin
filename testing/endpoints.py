@@ -9,10 +9,10 @@ class TestKeystoneEndpoints(TestKeystoneBase):
     def create(self):
         body = {
             "endpoint": {
-                "interface": "public",
+                "interface": "internal",
                 "region_id": "RegionOne",
                 "url": "http://localhost:8001/v3/",
-                "service_id": "e2986b56-644d-43d3-92e0-2edf61796372"
+                "service_id": "305abfd1-2d57-4094-91c8-ec7a9cd4a8dd"
             }
         }
         self.res = requests.post(self.host, json = body)

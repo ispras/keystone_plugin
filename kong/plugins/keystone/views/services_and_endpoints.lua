@@ -79,7 +79,12 @@ local function get_service_info(self, dao_factory)
     local service, err = dao_factory.service:find({id = service_id})
     kutils.assert_dao_error(err, "service find")
     if not service then
-        return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
+        service, err = dao_factory.service:find_all({name=service_id})
+        kutils.assert_dao_error(err, "service find_all")
+        if not next(service) then
+            return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
+        end
+        service = service[1]
     end
 
     service.links = {
@@ -389,4 +394,4 @@ local routes = {
 
 routes["/identity/v3/endpoints/"] = routes["/v3/endpoints"]
 
-return routes, Service, Endpoint
+return {routes = routes, services = Service, endpoints = Endpoint}

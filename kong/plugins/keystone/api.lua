@@ -37,10 +37,10 @@ local regions = require ('kong.plugins.keystone.views.regions')
 add_routes(regions)
 
 local roles = require ('kong.plugins.keystone.views.roles')
-add_routes(roles)
+add_routes(roles.routes)
 
 local services_and_endpoints = require ('kong.plugins.keystone.views.services_and_endpoints')
-add_routes(services_and_endpoints)
+add_routes(services_and_endpoints.routes)
 
 local users = require ('kong.plugins.keystone.views.users')
 add_routes(users)

@@ -11,7 +11,7 @@ class TestKeystoneServices(TestKeystoneBase):
             "service": {
                 "type": "identity",
                 "name": "identity",
-                "description": "Identity service"
+                "description": "identity service"
             }
         }
         self.res = requests.post(self.host, json=body)
@@ -22,7 +22,7 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
+        service_id = 'identity'
         self.res = requests.get(self.host + service_id)
         self.checkCode(200)
 

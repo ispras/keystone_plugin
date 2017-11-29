@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneAuthAndTokens(TestKeystoneBase):
@@ -31,4 +31,14 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
             "X-Auth_token" : token_id
         }
         self.res = requests.get(self.host + 'catalog')
+        self.checkCode(200)
+
+    def get_token(self):
+        self.host = self.host + '/v3/auth/tokens'
+        token_id = ''
+        headers = {
+            "X-Auth_token" : "9c06f542-61d3-43ce-8b46-9526c574d8b6",
+            "X-Subject-Token": "4e4290aa-e89a-4906-b82e-f012a86616bd"
+        }
+        self.res = requests.get(self.host)
         self.checkCode(200)

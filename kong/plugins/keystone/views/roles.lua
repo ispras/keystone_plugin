@@ -139,7 +139,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
 
     -- TODO check in cache
 
-    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type, inherited = false})
+    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type}) --, inherited = false
     kutils.assert_dao_error(err, "assignment find_all")
 
     local resp = {
@@ -585,6 +585,7 @@ local Role = {
     list = list_roles,
     get_info = get_role_info
 }
+
 local Assignment = {
     list = list_role_assignments_for_actor_on_target,
     list_all = list_role_assignments,
@@ -711,4 +712,4 @@ local routes = {
     }
 }
 
-return routes, Role, Assignment, Inference_rule
+return {routes = routes, roles = Role, assignment = Assignment, inference_rule = Inference_rule}
