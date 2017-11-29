@@ -5,6 +5,7 @@ class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
         self.host = self.host + '/v3/users/'
+        self.user_id = "fa0435c0-884b-46f5-a5e8-ea45cd5fc8c1"
 
     def list(self):
         query = {
@@ -39,41 +40,37 @@ class TestKeystoneUsers(TestKeystoneBase):
         }
         self.res = requests.post(self.host, json = body)
         self.checkCode(201)
+        self.user_id = self.res.json()['user']['id']
 
     def delete(self):
-        user_id = 'bfeef63f-ff7e-446b-95a5-66b8a2c06710'
-        self.res = requests.delete(self.host + user_id)
+        self.res = requests.delete(self.host + self.user_id)
         self.checkCode(204)
 
     def get_info(self):
-        user_id = '6232b7f1-b6fd-418e-9a19-14b115164981'
-        self.res = requests.get(self.host + user_id)
+        self.res = requests.get(self.host + self.user_id)
         self.checkCode(200)
 
     def update(self):
-        user_id = '6232b7f1-b6fd-418e-9a19-14b115164981'
+        # self.create_nonlocal()
         body = {
             "user" : {
                 'enabled': True,
-                'name' : 'check',
+                'name' : 'local_user',
                 'password' : 'secret2'
             }
         }
-        self.res = requests.patch(self.host + user_id, json = body)
+        self.res = requests.patch(self.host + self.user_id, json = body)
         self.checkCode(200)
 
     def list_groups(self):
-        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
-        self.res = requests.get(self.host + user_id + '/groups')
+        self.res = requests.get(self.host + self.user_id + '/groups')
         self.checkCode(200)
 
     def list_projects(self):
-        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
-        self.res = requests.get(self.host + user_id + '/projects')
+        self.res = requests.get(self.host + self.user_id + '/projects')
         self.checkCode(200)
 
     def change_password(self):
-        user_id = '51672d4d-4cd0-417c-88f4-37f3364f2c7a'
         body = {
             'user' : {
                 'password' : 'new_tester',
