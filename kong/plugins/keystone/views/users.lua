@@ -2,6 +2,8 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
+local roles = require ("kong.plugins.keystone.views.roles")
+local assignment = roles.assignment
 
 local function list_users(self, dao_factory, helpers)
     local resp = {
@@ -127,6 +129,24 @@ local function check_user_domain(dao_factory, domain_id, uname)
 
 end
 
+local function check_user_project(dao_factory, project_id)
+    local temp, err = dao_factory.project:find({id = project_id})
+    kutils.assert_dao_error(err, "projects:find")
+    if not temp then
+        return responses.send_HTTP_BAD_REQUEST("Invalid default project ID")
+    end
+
+end
+
+local function assign_default_role(dao_factory, user)
+    local self = {}
+    self.params = {}
+    self.params.actor_id = user.id
+    self.params.target_id = user.domain_id
+    self.params.role_id = kutils.default_role(dao_factory)
+    assignment.assign(self, dao_factory, "UserDomain")
+end
+
 local function create_local_user(self, dao_factory)
     local user = self.params.user
     if not user.name then
@@ -154,7 +174,13 @@ local function create_local_user(self, dao_factory)
         created_at = created_time,
         domain_id = loc_user.domain_id
     }
+
     check_user_domain(dao_factory, loc_user.domain_id, loc_user.name)
+
+    if user.default_project_id then
+        check_user_project(dao_factory, user.default_project_id)
+    end
+
     local passwd, err = dao_factory.password:insert(passwd)
     kutils.assert_dao_error(err, "password:insert")
     local _, err = dao_factory.local_user:insert(loc_user)
@@ -168,6 +194,8 @@ local function create_local_user(self, dao_factory)
         dao_factory.password:delete({id = passwd.id})
         kutils.assert_dao_error(err, "user:insert")
     end
+
+    assign_default_role(dao_factory, user)
 
     local resp = {
         user = {
@@ -206,6 +234,11 @@ local function create_nonlocal_user(self, dao_factory)
         domain_id = nonloc_user.domain_id
     }
     check_user_domain(dao_factory, nonloc_user.domain_id, nonloc_user.name)
+
+    if user.default_project_id then
+        check_user_project(dao_factory, user.default_project_id)
+    end
+
     local _, err = dao_factory.nonlocal_user:insert(nonloc_user)
     kutils.assert_dao_error(err, "local_user:insert")
     local user, err = dao_factory.user:insert(user)
@@ -213,6 +246,8 @@ local function create_nonlocal_user(self, dao_factory)
         dao_factory.local_user:delete({id = nonloc_user.id})
         kutils.assert_dao_error(err, "user:insert")
     end
+
+    assign_default_role(dao_factory, user)
 
     local resp = {
         user = {
@@ -323,6 +358,11 @@ local function update_user(self, dao_factory)
 
     if next(uupdate) then
         local err
+
+        if uupdate.default_project_id then
+            check_user_project(dao_factory, uupdate.default_project_id)
+        end
+
         user, err = dao_factory.user:update(uupdate, {id = user_id})
         kutils.assert_dao_error(err, "user:update")
     end

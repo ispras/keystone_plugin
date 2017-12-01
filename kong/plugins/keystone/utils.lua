@@ -13,6 +13,11 @@ return {
         if not err and next(domain) then return domain[1]['id'] end
         return nil
     end,
+    default_role = function(dao_factory)
+        local role, err = dao_factory.role:find_all({name = 'Default'})
+        if not err and next(role) then return role[1]['id'] end
+        return nil
+    end,
     handle_dao_error = function(resp, err, func)
         if err then
             if not resp.errors then

@@ -22,15 +22,14 @@ class TestKeystoneProjects(TestKeystoneBase):
 
     def list(self):
         query = {
-            # 'domain_id' : 'domain_id',
-            # 'is_domain': 'true',
+             'domain_id' : '14ad23de-d411-4b72-9295-cee25cfaee09'
             # 'idp_id': 'idp_id',
             # 'name': 'name',
             # 'password_expiself.res_at': 'password_expiself.res_at',
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
         }
-        self.res = requests.get(self.host)
+        self.res = requests.get(self.host, params=query)
         self.checkCode(200)
 
     def get_info(self):

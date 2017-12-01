@@ -67,7 +67,7 @@ local function list_projects(self, dao_factory)
         for i = 1, #projects do
             resp.projects[i] = {}
             resp.projects[i].description = projects[i].description
-            resp.projects[i].domain_id = projects[i].domain_id
+            resp.projects[i].domain_id = projects[i].domain_id or projects[i].id
             resp.projects[i].enabled = projects[i].enabled
             resp.projects[i].id = projects[i].id
             resp.projects[i].name = projects[i].name
@@ -181,16 +181,44 @@ local function get_project_info(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
 
-    local project, err = dao_factory.project:find({id=project_id})
-    kutils.assert_dao_error(err, "project find")
+    local project, err
 
-    if not project then
-        project, err = dao_factory.project:find_all({name=project_id})
+    if self.params.domain then
+        project, err = dao_factory.project:find_all({id=project_id, is_domain = True})
         kutils.assert_dao_error(err, "project find_all")
+
         if not next(project) then
-            return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+            project, err = dao_factory.project:find_all({name=project_id, is_domain = True})
+            kutils.assert_dao_error(err, "project find_all")
+            if not next(project) then
+                return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+            end
         end
-        project = project[1]
+
+        local domain = False
+        for i = 1, #project do
+            if project[i].is_domain then
+                domain = True
+                project = project[i]
+                break
+            end
+        end
+
+        if domain ~= True then
+            return responses.send_HTTP_BAD_REQUEST("No such domain in the system")
+        end
+    else
+        project, err = dao_factory.project:find({id=project_id})
+        kutils.assert_dao_error(err, "project find")
+
+        if not project then
+            project, err = dao_factory.project:find_all({name=project_id})
+            kutils.assert_dao_error(err, "project find_all")
+            if not next(project) then
+                return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+            end
+            project = project[1]
+        end
     end
 
     local project_obj = {
