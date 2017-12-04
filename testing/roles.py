@@ -5,7 +5,7 @@ class TestKeystoneRoles(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneRoles, self).setUp()
         self.url = self.host + '/v3/roles/'
-        self.role_id = '1066e0a9-797d-4216-941e-0e1ebedeb1df'
+        self.role_id = '34227124-011d-440d-856b-9bf0e464bb18'
         self.domain_id = 'ffb8809c-e262-4703-b1ba-8af5c9f8a134'
         self.user_id = '4f0547bd-f1b2-4506-b9e6-9c9dea3c0476'
 
@@ -20,7 +20,7 @@ class TestKeystoneRoles(TestKeystoneBase):
     def create(self):
         body = {
             'role' : {
-                'name' : 'admin',
+                'name' : 'Default',
                 'domain_id' : 'ffb8809c-e262-4703-b1ba-8af5c9f8a134'
             }
         }

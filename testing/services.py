@@ -27,10 +27,10 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def update(self):
-        service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
+        service_id = '305abfd1-2d57-4094-91c8-ec7a9cd4a8dd'
         body = {
         "service": {
-            "description": "Block Storage Service V2"
+            "enabled": True
             }
         }
         self.res = requests.patch(self.host + service_id, json=body)

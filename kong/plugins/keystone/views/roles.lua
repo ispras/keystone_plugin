@@ -249,8 +249,6 @@ local function assign_role(self, dao_factory, type)
     }
     local _, err = dao_factory.assignment:insert(assign)
     kutils.assert_dao_error(err, "assignment insert")
-
-    return responses.send_HTTP_NO_CONTENT()
 end
 
 local function check_assignment(self, dao_factory, type)
@@ -589,7 +587,8 @@ local Role = {
 local Assignment = {
     list = list_role_assignments_for_actor_on_target,
     list_all = list_role_assignments,
-    check = check_assignment
+    check = check_assignment,
+    assign = assign_role
 }
 local Inference_rule = {
     list = list_implied_roles,
@@ -625,6 +624,7 @@ local routes = {
     ["/v3/domains/:target_id/groups/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "GroupDomain")
+            responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
             responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupDomain"))
@@ -641,6 +641,7 @@ local routes = {
     ["/v3/domains/:target_id/users/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "UserDomain")
+            responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
             responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserDomain"))
@@ -657,6 +658,7 @@ local routes = {
     ["/v3/projects/:target_id/groups/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "GroupProject")
+            responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
             responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupProject"))
@@ -673,6 +675,7 @@ local routes = {
     ["/v3/projects/:target_id/users/:actor_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
             assign_role(self, dao_factory, "UserProject")
+            responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
             responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserProject"))

@@ -10,13 +10,13 @@ return {
     end,
     default_domain = function(dao_factory)
         local domain, err = dao_factory.project:find_all({name = 'Default'})
-        if err then
-            error(err)
-        end
-        if not next(domain) then
-            error("No default domain")
-        end
-        return domain[1]['id']
+        if not err and next(domain) then return domain[1]['id'] end
+        return nil
+    end,
+    default_role = function(dao_factory)
+        local role, err = dao_factory.role:find_all({name = 'Default'})
+        if not err and next(role) then return role[1]['id'] end
+        return nil
     end,
     assert_dao_error = function(err, func)
         if err then

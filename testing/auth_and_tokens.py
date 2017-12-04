@@ -28,9 +28,10 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
     def get_catalog(self):
         token_id = ''
         headers = {
-            "X-Auth_token" : token_id
+            "X-Auth_token" : '3482f312-51b1-4383-93d3-7651149074fc'
+
         }
-        self.res = requests.get(self.host + 'catalog')
+        self.res = requests.get(self.host + 'catalog', headers=headers)
         self.checkCode(200)
 
     def get_token(self):
