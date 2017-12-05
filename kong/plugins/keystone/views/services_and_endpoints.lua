@@ -41,6 +41,14 @@ local function list_services(self, dao_factory, enabled)
     return resp
 end
 
+local function check_service(dao_factory, name, type)
+    local res, err = dao_factory.service:find_all({name = name, type = type})
+    kutils.assert_dao_error(err, "service find_all")
+    if next(res) then
+         return responses.send_HTTP_BAD_REQUEST("Error: service with this name and type already exists")
+    end
+end
+
 local function create_service(self, dao_factory)
     local service = self.params.service
     if not service then
@@ -61,6 +69,7 @@ local function create_service(self, dao_factory)
 
     service.id = utils.uuid()
 
+    check_service(dao_factory, service.name, service.type)
     local _, err = dao_factory.service:insert(service)
     kutils.assert_dao_error(err, "service insert")
 
@@ -108,6 +117,16 @@ local function update_service(self, dao_factory)
     if not self.params.service then
         return responses.send_HTTP_BAD_REQUEST("Error: self.params.service is nil")
     end
+
+    if not self.params.service.name then
+        self.service.params.name = service.name
+    end
+
+    if not self.params.service.type then
+        self.params.service.type = service.type
+    end
+
+    check_service(dao_factory, self.params.service.name, self.params.service.type)
 
     local updated_service, err = dao_factory.service:update(self.params.service, {id = service_id})
     kutils.assert_dao_error(err, "service update")
@@ -195,6 +214,15 @@ local function list_endpoints(self, dao_factory, enabled)
     return resp
 end
 
+local function check_endpoint(dao_factory, interface, service_id, region_id)
+    local res, err = dao_factory.endpoint:find_all({interface = interface, service_id = service_id, region_id = region_id})
+    kutils.assert_dao_error(err, "endpoint find_all")
+
+    if next(res) then
+        return responses.send_HTTP_BAD_REQUEST("Error: endpoint with this service ID, region ID and interface already exists")
+    end
+end
+
 local function create_endpoint(self, dao_factory)
     local endpoint = self.params.endpoint
     if not endpoint then
@@ -230,6 +258,8 @@ local function create_endpoint(self, dao_factory)
             return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
         end
     end
+
+    check_endpoint(dao_factory, endpoint.interface, endpoint.service_id, endpoint.region_id)
 
     if not endpoint.id then
         endpoint.id = utils.uuid()
@@ -279,8 +309,12 @@ local function update_endpoint(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("endpoint is nil, check self.params")
     end
 
-    if new_endpoint.interface and not available_interface_types[new_endpoint.interface] then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
+    if new_endpoint.interface then
+        if not available_interface_types[new_endpoint.interface] then
+            return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint interface")
+        end
+    else
+        new_endpoint.interface = endpoint.interface
     end
 
     if new_endpoint.service_id then
@@ -289,6 +323,8 @@ local function update_endpoint(self, dao_factory)
         if not service then
             return responses.send_HTTP_BAD_REQUEST("Error: no such service in the system")
         end
+    else
+        new_endpoint.service_id = endpoint.service_id
     end
 
     if new_endpoint.region_id then
@@ -297,8 +333,11 @@ local function update_endpoint(self, dao_factory)
         if not region then
             return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
         end
+    else
+        new_endpoint.region_id = endpoint.region_id
     end
 
+    check_endpoint(dao_factory, new_endpoint.interface, new_endpoint.service_id, new_endpoint.region_id)
     local updated_endpoint, err = dao_factory.endpoint:update(new_endpoint, {id = endpoint_id})
     kutils.assert_dao_error(err, "endpoint update")
 

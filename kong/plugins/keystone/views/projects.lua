@@ -111,6 +111,40 @@ local function list_projects(self, dao_factory)
 
 end
 
+local function check_project_name(dao_factory,name, is_domain, domain_id)
+    if is_domain then
+        local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
+        kutils.assert_dao_error(err, "project:find_all")
+
+        if next(res) then
+            return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
+        end
+    else
+        local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain, domain_id = domain_id})
+        kutils.assert_dao_error(err, "project:find_all")
+
+        if next(res) then
+            return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
+        end
+    end
+end
+
+local function check_project_domain(dao_factory, domain_id)
+    local res, err = dao_factory.project:find({id = domain_id})
+    kutils.assert_dao_error(err, "project:find")
+    if not res or not res.is_domain then
+        return responses.send_HTTP_BAD_REQUEST("Error: domain with this ID does not exist")
+    end
+end
+
+local function check_project_parent(dao_factory, parent_id, domain_id)
+    local res, err = dao_factory.project:find({id = parent_id})
+    kutils.assert_dao_error(err, "project:find")
+    if not res or res.domain_id ~= domain_id then
+        return responses.send_HTTP_BAD_REQUEST("Error: parent project with this ID does not exist")
+    end
+end
+
 local function create_project(self, dao_factory)
 --    if true then
 --        return responses.send_HTTP_BAD_REQUEST({params = self.params, request = self.req}) end -- TODO why self.params.domain not null?
@@ -129,20 +163,24 @@ local function create_project(self, dao_factory)
     end
 
     local is_domain = kutils.bool(request.project.is_domain) or false
-    local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
-    kutils.assert_dao_error(err, "project:find_all")
-
-    if next(res) then
-        return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
-    end
-
-    local description = request.project.description or ''
     local domain_id = request.project.domain_id
-    if not domain_id and not is_domain then
+
+    if domain_id then
+        check_project_domain(dao_factory, domain_id)
+    else
         domain_id = kutils.default_domain(dao_factory)
     end
+
+    check_project_name(dao_factory, name, is_domain, domain_id)
+
+    local description = request.project.description or ''
+
     local enabled = kutils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
+    if parent_id then
+        check_project_parent(dao_factory, parent_id, domain_id)
+    end
+
     local id = utils.uuid()
 
     local project_obj = {
@@ -328,6 +366,10 @@ local function update_project(self, dao_factory)
     local request = self.params
     if not request.project then
          return responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
+    end
+
+    if request.project.name then
+        check_project_name(dao_factory, name, project.is_domain, project.domain_id)
     end
 
     local updated_project, err = dao_factory.project:update(request.project, {id=project.id})

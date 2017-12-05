@@ -12,7 +12,7 @@ class TestKeystoneEndpoints(TestKeystoneBase):
                 "interface": "internal",
                 "region_id": "RegionOne",
                 "url": "http://localhost:8001/v3/",
-                "service_id": "305abfd1-2d57-4094-91c8-ec7a9cd4a8dd"
+                "service_id": "bd4e7e49-ddcb-414f-ab88-1871a7c256fc"
             }
         }
         self.res = requests.post(self.host, json = body)

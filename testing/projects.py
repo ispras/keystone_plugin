@@ -10,11 +10,11 @@ class TestKeystoneProjects(TestKeystoneBase):
     def create(self):
         body = {
         "project": {
-            "description": "New admin project",
+            "description": "Test2 domain",
+            # "is_domain": True,
             "enabled": True,
-            "is_domain": False,
-            "name": "admin",
-            "domain_id": "ffb8809c-e262-4703-b1ba-8af5c9f8a134"
+            "name": "test2",
+            "domain_id": "33606fac-6309-4b8d-8341-d8218c5c180f"
             }
         }
         self.res = requests.post(self.host, json = body)
@@ -33,7 +33,7 @@ class TestKeystoneProjects(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        project_id = 'Default'
+        project_id = 'test1'
         self.res = requests.get(self.host + project_id)
         self.checkCode(200)
 

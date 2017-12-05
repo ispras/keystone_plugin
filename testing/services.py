@@ -9,9 +9,9 @@ class TestKeystoneServices(TestKeystoneBase):
     def create(self):
         body = {
             "service": {
-                "type": "identity",
-                "name": "identity",
-                "description": "identity service"
+                "type": "test1",
+                "name": "test1",
+                "description": "test2 service"
             }
         }
         self.res = requests.post(self.host, json=body)
