@@ -248,7 +248,7 @@ local PROJECT_SCHEMA = {
         extra = { type = "string" },
         description = { type = "string" },
         enabled = { type = "boolean" },
-        domain_id = { type = "string", queryable = true },
+        domain_id = { type = "string", required = true, queryable = true },
         parent_id = { type = "string", queryable = true },
         is_domain = { type = "boolean", required = true }
     }
