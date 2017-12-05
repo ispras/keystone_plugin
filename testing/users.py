@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
@@ -6,6 +6,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         super(TestKeystoneUsers, self).setUp()
         self.host = self.host + '/v3/users/'
         self.user_id = "fa0435c0-884b-46f5-a5e8-ea45cd5fc8c1"
+        self.domain_id = 'ea87a71f-a7bc-486c-9373-9a26ef681760'
 
     def list(self):
         query = {
@@ -26,7 +27,7 @@ class TestKeystoneUsers(TestKeystoneBase):
                 "enabled": "true",
                 "name": "admin",
                 "password": "myadminpass",
-                "domain_id": "ffb8809c-e262-4703-b1ba-8af5c9f8a134",
+                # "domain_id": self.domain_id,
             }
         }
         self.res = requests.post(self.host, json = body)

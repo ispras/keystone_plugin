@@ -172,22 +172,19 @@ local function get_catalog(self,dao_factory)
 end
 
 local function check_token_auth(token, dao_factory, allow_expired, validate)
-    local err
     if not token or not token.id then
-        err = {message = "Token id is required"}
+        return responses.send_HTTP_BAD_REQUEST("Token id is required")
     end
 
     local temp, err = dao_factory.token:find({id = token.id})
     kutils.assert_dao_error(err, "token:find")
     if not temp then
-        err = {message = "No token found" }
-        return token, err
+        return responses.send_HTTP_BAD_REQUEST("No token found")
     end
     token = temp
     if not validate then
         if token.valid == false then
-            err = {message = "Token is not valid" }
-            return token, err
+            return responses.send_HTTP_BAD_REQUEST("Token is not valid")
         end
     elseif not token.valid then
         token, err = dao_factory.token:update({valid = true}, {id = token.id})
@@ -195,21 +192,17 @@ local function check_token_auth(token, dao_factory, allow_expired, validate)
     end
     if not allow_expired then
         if token.expires and token.expires < os.time() then
-            err =  {message = "Token is expired" }
-            return token, err
+            return responses.send_HTTP_BAD_REQUEST("Token is expired" )
         end
     end
-    return token, err
+    return token
 end
 
 local function check_token_user (token, dao_factory, allow_expired, validate)
-    local token, err = check_token_auth(token, dao_factory, allow_expired, validate)
-    if err then
-        return err
-    end
+    local token = check_token_auth(token, dao_factory, allow_expired, validate)
 
     if not token.user_id then
-        return responses.send_HTTP_NOT_FOUND("Error: token.user_id is nil")
+        return responses.send_HTTP_NOT_FOUND("Error: user id is required")
     end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
@@ -229,7 +222,7 @@ local function check_token_user (token, dao_factory, allow_expired, validate)
         name = user.name,
         password_expires_at = kutils.time_to_string(password[1].expires_at)
     }
-    return nil, resp
+    return resp
 end
 
 local function auth_password_unscoped(self, dao_factory)
@@ -294,9 +287,9 @@ local function auth_password_scoped(self, dao_factory)
     end
 
     self.params.actor_id = user.id
-    self.params.target_id = project.domain_id
+    self.params.target_id = project.id
 
-    local temp = assignment.list(self, dao_factory, "UserDomain") --scope.project and "UserProject" or
+    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
     end
@@ -311,10 +304,20 @@ local function auth_password_scoped(self, dao_factory)
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
+    local cache = {
+        token_id = token.id,
+        scope_id = project.id,
+        roles = kutils.roles_to_string(roles),
+        issued_at = os.time()
+    }
+    local _,err = dao_factory.cache:insert(cache) -- TODO cache
+    kutils.assert_dao_error(err)
+
     resp = {
         token = {
             methods = {"password"},
             roles = roles,
+            expires_at = kutils.time_to_string(token.expires),
             project = {
                 domain = {
                     id = project.domain_id or "null",
@@ -327,8 +330,7 @@ local function auth_password_scoped(self, dao_factory)
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(os.time()),
-            expires_at = kutils.time_to_string(os.time() + 60 * 60) --TODO: fix it
+            issued_at = kutils.time_to_string(cache.issued_at)
         }
     }
     if not (self.params.nocatalog) then
@@ -337,24 +339,12 @@ local function auth_password_scoped(self, dao_factory)
         resp.token.catalog = catalog or {}
     end
 
-    local cache = {
-        token_id = token.id,
-        scope_id = project.id,
-        roles = kutils.roles_to_string(roles)
-    }
-    local _,err = dao_factory.cache:insert(cache)
-    kutils.assert_dao_error(err)
-
---TODO cache
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
 local function auth_token_unscoped(self, dao_factory)
     local token = self.params.auth.identity.token
-    local err, user = check_token_user(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local user = check_token_user(token, dao_factory)
 
     local token = {
         id = utils.uuid(),
@@ -383,19 +373,15 @@ local function auth_token_scoped(self, dao_factory)
     local resp = {}
 
     local token = self.params.auth.identity.token
-    local err, user = check_token_user(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local user = check_token_user(token, dao_factory)
 
     local scope = self.params.auth.scope
     local err, project, domain_name = check_scope(scope, dao_factory)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
-    --TODO:
-    --self.params.actor_id =
-    --self.params.target_id =
+    self.params.actor_id = user.id
+    self.params.target_id = project.id
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
@@ -411,15 +397,24 @@ local function auth_token_scoped(self, dao_factory)
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
+    local cache = {
+        token_id = token.id,
+        scope_id = project.id,
+        roles = kutils.roles_to_string(roles),
+        issued_at = os.time()
+    }
+    local _,err = dao_factory.cache:insert(cache) -- TODO cache
+    kutils.assert_dao_error(err)
+
     resp = {
         token = {
             methods = {"token"},
             roles = roles,
             expires_at = kutils.time_to_string(token.expires),
             project = {
-                domain = {
-                    id = project.domain_id or "null",
-                    name = domain_name or "null"
+                domain = project.domain_id and {
+                    id = project.domain_id,
+                    name = domain_name
                 },
                 id = project.id,
                 name = project.name
@@ -428,7 +423,7 @@ local function auth_token_scoped(self, dao_factory)
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(os.time())
+            issued_at = kutils.time_to_string(cache.issued_at)
         }
     }
     if not (self.params.nocatalog) then
@@ -436,15 +431,7 @@ local function auth_token_scoped(self, dao_factory)
         kutils.assert_dao_error(err, "get_catalog")
         resp.token.catalog = catalog or {}
     end
-    local cache = {
-        token_id = token.id,
-        scope_id = project.id,
-        roles = kutils.roles_to_string(roles)
-    }
-    local _,err = dao_factory.cache:insert(cache)
-    kutils.assert_dao_error(err)
-    
--- TODO cache
+
     return responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
@@ -455,43 +442,46 @@ local function get_token_info(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local token, err = check_token_auth(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local token = check_token_auth(token, dao_factory)
     token = {
         id = subj_token
     }
-    local err, user = check_token_user(token, dao_factory, self.params.allow_expired, true)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
+    local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
+
+    local cache, err = dao_factory.cache:find({token_id = token.id})
+    kutils.assert_dao_error(err, "cache:find")
+    if not cache then
+        local _, err = dao_factory.token:update({valid = false}, {id = token.id})
+        kutils.assert_dao_error(err, "token:update")
+        return responses.send_HTTP_CONFLICT("No scope info for token")
+    end
+    local temp, err = dao_factory.project:find({id = cache.scope_id})
+    kutils.assert_dao_error(err, "project:find")
+    local project = {
+        id = temp.id,
+        name = temp.name,
+        domain = (temp.domain_id) and {
+            id = temp.domain_id
+        }
+    }
+    if temp.domain_id then
+        local temp, err = dao_factory.project:find({id = temp.domain_id})
+        kutils.assert_dao_error(err, "project:find")
+        project.domain.name = temp.name
     end
 
     local resp = {
         token = {
             methods = {"token"},
-            roles = {},
+            roles = kutils.string_to_roles(cache.roles),
             expires_at = kutils.time_to_string(token.expires),
-            project = {}, -- TODO
+            project = project,
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(os.time())
+            issued_at = kutils.time_to_string(cache.issued_at)
         }
     }
-    local temp, err = dao_factory.assignments:find_all({actor_id = user.id})
-    kutils.assert_dao_error(err, "assignments:find_all")
-    for i = 1, #temp do
-        local role, err = dao_factory.role:find({id = temp[i].role_id})
-        kutils.assert_dao_error(err, "role:find")
-        if not role then
-            resp.token.roles[i] = {
-                id = role.id,
-                name = role.name
-            }
-        end
-
-    end
 
     if not (self.params.nocatalog) then
         local err, catalog = get_catalog(self,dao_factory)
@@ -509,17 +499,11 @@ local function check_token(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local token, err = check_token_auth(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local token = check_token_auth(token, dao_factory)
     token = {
         id = subj_token
     }
-    local token, err = check_token_auth(token, dao_factory, self.params.allow_expired, true)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local token = check_token_auth(token, dao_factory, self.params.allow_expired, true)
 
     -- TODO Identity API?
 
@@ -547,10 +531,7 @@ local function get_service_catalog(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local token, err = check_token_auth(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local token = check_token_auth(token, dao_factory)
 
     local resp = {
         catalog = {},
@@ -575,10 +556,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
     local token = {
         id = auth_token
     }
-    local err, user = check_token_user(token, dao_factory)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
-    end
+    local user = check_token_user(token, dao_factory)
 
     local resp = {
         links = {
@@ -590,8 +568,29 @@ local function get_scopes(self, dao_factory, domain_scoped)
     local projects = {}
     local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user.id})
     kutils.assert_dao_error(err, "assignment:find_all")
-    for i = 1, #temp do
-        local project, err = dao_factory.project:find({id = temp[i].target_id})
+    for _,v in ipairs(temp) do
+        if not kutils.has_id(projects, v.target_id) then
+            projects[#projects + 1] = {
+                id = v.target_id
+            }
+        end
+    end
+    local groups, err = dao_factory.user_group_membership:find_all({user_id = user.id})
+    kutils.assert_dao_error(err, "user_group_membership:find_all")
+    for _,v1 in ipairs(groups) do
+        local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "GroupDomain" or "GroupProject", actor_id = v1.temp_id})
+        kutils.assert_dao_error(err, "assignment:find_all")
+
+        for _,v2 in ipairs(temp) do
+            if not kutils.has_id(projects, v2.target_id) then
+                projects[#projects + 1] = {
+                    id = v2.target_id
+                }
+            end
+        end
+    end
+    for i = 1, #projects do
+        local project, err = dao_factory.project:find({id = projects[i].id})
         kutils.assert_dao_error(err, "project:find")
         if project then
             projects[i] = {

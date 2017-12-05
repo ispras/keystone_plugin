@@ -1,11 +1,11 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneDomains(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneDomains, self).setUp()
         self.host = self.host + '/v3/domains/'
-        self.domain_id = 'admin'
+        self.domain_id = ''
 
     def create(self):
         body = {

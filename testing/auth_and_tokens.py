@@ -1,10 +1,15 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneAuthAndTokens(TestKeystoneBase):
+    #requires domain, role and user be created in given order
+
     def setUp(self):
         super(TestKeystoneAuthAndTokens, self).setUp()
-        self.host = self.host + '/v3/auth/'
+        self.url = self.host + '/v3/auth/'
+        self.auth = ''
+        self.token = ''
+
     def password_unscoped(self):
         body = {
             'auth' : {
@@ -14,7 +19,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                         'user' : {
                             'name' : 'admin',
                             'domain' : {
-                                'name' : 'default_domain'
+                                'name' : 'Default'
                             },
                             'password' : 'myadminpass'
                         }
@@ -22,24 +27,52 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                 }
             }
         }
-        self.res = requests.post(self.host + 'tokens', json = body)
+        self.res = requests.post(self.url + 'tokens', json = body)
         self.checkCode(201)
+        self.auth = self.res.headers['X-Subject-Token']
+
+    def token_scoped(self):
+        body = {
+            'auth' : {
+                'identity' : {
+                    'methods' : [ 'token' ],
+                    'token' : {
+                        'id' : self.auth
+                    }
+                },
+                'scope' : {
+                    'domain' : {
+                        'name' : 'Default'
+                    }
+                }
+            }
+        }
+        self.res = requests.post(self.url + 'tokens', json = body)
+        self.checkCode(201)
+        self.token = self.res.headers['X-Subject-Token']
 
     def get_catalog(self):
-        token_id = ''
         headers = {
-            "X-Auth_token" : '3482f312-51b1-4383-93d3-7651149074fc'
+            "X-Auth_token" : self.auth
 
         }
-        self.res = requests.get(self.host + 'catalog', headers=headers)
+        self.res = requests.get(self.url + 'catalog', headers=headers)
         self.checkCode(200)
 
     def get_token(self):
-        self.host = self.host + '/v3/auth/tokens'
-        token_id = ''
+        self.password_unscoped()
+        self.token_scoped()
         headers = {
-            "X-Auth_token" : "9c06f542-61d3-43ce-8b46-9526c574d8b6",
-            "X-Subject-Token": "4e4290aa-e89a-4906-b82e-f012a86616bd"
+            "X-Auth-Token" : self.auth,
+            "X-Subject-Token": self.token
         }
-        self.res = requests.get(self.host)
+        self.res = requests.get(self.url + 'tokens', headers = headers)
+        self.checkCode(200)
+
+    def get_scopes(self):
+        self.password_unscoped()
+        headers = {
+            "X-Auth-Token" : self.auth
+        }
+        self.res = requests.get(self.url + 'domains', headers = headers)
         self.checkCode(200)

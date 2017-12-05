@@ -462,7 +462,8 @@ local CACHE_SCHEMA = {
     fields = {
         token_id = { type = "string", required = true },
         scope_id = { type = "string", required = true }, --project/domain
-        roles = { type = "string", required = true }
+        roles = { type = "string", required = true },
+        issued_at = { type = "timestamp", required = true }
     }
 }
 

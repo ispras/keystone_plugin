@@ -396,6 +396,7 @@ return {
         token_id varchar,
         scope_id varchar,
         roles text,
+        issued_at timestamp,
         PRIMARY KEY (token_id)
       );
 

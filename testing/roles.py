@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneRoles(TestKeystoneBase):
@@ -21,7 +21,7 @@ class TestKeystoneRoles(TestKeystoneBase):
         body = {
             'role' : {
                 'name' : 'Default',
-                'domain_id' : 'ffb8809c-e262-4703-b1ba-8af5c9f8a134'
+                # 'domain_id' : self.domain_id
             }
         }
         self.res = requests.post(self.url, json = body)
