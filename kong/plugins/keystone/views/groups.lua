@@ -36,12 +36,14 @@ local function create_group(self, dao_factory)
         id = utils.uuid(),
         description = self.params.group.description,
         domain_id = self.params.group.domain_id or kutils.default_domain(dao_factory),
-        name = self.params.group.domain_id
+        name = self.params.group.name
     }
     local _, err = dao_factory.group:insert(group)
     kutils.assert_dao_error(err, "group:insert")
-    local resp = group
-    resp.links = {
+    local resp = {
+        group = group
+    }
+    resp.group.links = {
         self = self:build_url(self.req.parsed_url.path..group.id)
     }
     return responses.send_HTTP_CREATED(resp)
@@ -54,8 +56,10 @@ local function get_group_info(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Group ID is not found")
     end
 
-    local resp = group
-    resp.links = {
+    local resp = {
+        group = group
+    }
+    resp.group.links = {
         self = self:build_url(self.req.parsed_url.path..group.id)
     }
 
@@ -98,7 +102,7 @@ local function delete_group(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Group ID is not found")
     end
 
-    return responses.send_HTTP_NO_CONTENT
+    return responses.send_HTTP_NO_CONTENT()
 end
 
 local function list_group_users(self, dao_factory)
@@ -125,7 +129,7 @@ local function list_group_users(self, dao_factory)
         kutils.assert_dao_error(err, "local_user:find_all")
         if next(temp) then
             uname = temp[1].name
-            local passwd, err = dao_factory.passwrod:find_all({local_user_id = temp[1].id})
+            local passwd, err = dao_factory.password:find_all({local_user_id = temp[1].id})
             kutils.assert_dao_error(err, "password:find_all")
             expires = passwd[1] and passwd[1].expires_at
         else

@@ -19,7 +19,7 @@ local domains = require ('kong.plugins.keystone.views.domains')
 add_routes(domains)
 
 local groups = require ('kong.plugins.keystone.views.groups')
---add_routes(groups)
+add_routes(groups)
 
 local os_inherit_api = require ('kong.plugins.keystone.views.os_inherit_api')
 --add_routes(os_inherit_api)
