@@ -116,7 +116,6 @@ local function check_scope(scope, dao_factory)
                 return {message = "No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name}
             end
             project = temp[1]
-            local temp, err = dao_factory.assignment:find_all({type = ""})
         else
             return {message = "Project needs to be identified unique" }
         end
@@ -566,7 +565,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
         }
     }
     local projects = {}
-    local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user.id})
+    local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "UserDomain" or "UserProject", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
     for _,v in ipairs(temp) do
         if not kutils.has_id(projects, v.target_id) then
@@ -578,7 +577,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
     local groups, err = dao_factory.user_group_membership:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "user_group_membership:find_all")
     for _,v1 in ipairs(groups) do
-        local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "GroupDomain" or "GroupProject", actor_id = v1.temp_id})
+        local temp, err = dao_factory.assignment:find_all({type = domain_scoped and "GroupDomain" or "GroupProject", actor_id = v1.temp_id, inherited = false})
         kutils.assert_dao_error(err, "assignment:find_all")
 
         for _,v2 in ipairs(temp) do

@@ -13,7 +13,7 @@ local credentials = require ("kong.plugins.keystone.views.credentials")
 --add_routes(credentials)
 
 local domain_configuration = require ("kong.plugins.keystone.views.domain_configuration")
---add_routes(domain_configuration)
+add_routes(domain_configuration)
 
 local domains = require ('kong.plugins.keystone.views.domains')
 add_routes(domains)
@@ -22,7 +22,7 @@ local groups = require ('kong.plugins.keystone.views.groups')
 add_routes(groups)
 
 local os_inherit_api = require ('kong.plugins.keystone.views.os_inherit_api')
---add_routes(os_inherit_api)
+add_routes(os_inherit_api)
 
 local os_pki_api = require ('kong.plugins.keystone.views.os_pki_api')
 --add_routes(os_pki_api)

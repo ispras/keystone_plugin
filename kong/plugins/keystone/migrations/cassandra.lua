@@ -22,8 +22,11 @@ return {
         target_id varchar,
         role_id varchar,
         inherited boolean,
-        PRIMARY KEY (type, actor_id, target_id, role_id, inherited)
+        PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
       );
+
+      CREATE INDEX IF NOT EXISTS ON assignment(target_id);
+      CREATE INDEX IF NOT EXISTS ON assignment(role_id);
 
       CREATE TABLE IF NOT EXISTS config_register(
         type varchar,

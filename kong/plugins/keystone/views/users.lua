@@ -534,7 +534,7 @@ local function list_user_projects(self, dao_factory)
         projects = {}
     }
 
-    local temp, err = dao_factory.assignment:find_all({type = "UserProject", actor_id = user.id})
+    local temp, err = dao_factory.assignment:find_all({type = "UserProject", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
 
     for i = 1, #temp do

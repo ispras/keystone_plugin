@@ -19,8 +19,8 @@ local ASSIGNMENT_SCHEMA = {
     fields = {
         type = { type = "string", enum = {"UserProject", "UserDomain", "GroupProject", "GroupDomain"}, required = true },
         actor_id = { type = "string", required = true },
-        target_id = { type = "string", required = true },
-        role_id = { type = "string", required = true },
+        target_id = { type = "string", required = true, queryable = true },
+        role_id = { type = "string", required = true, queryable = true },
         inherited = { type = "boolean", required = true }
     }
 }
