@@ -10,7 +10,7 @@ local auth_and_tokens = require ("kong.plugins.keystone.views.auth_and_tokens")
 add_routes(auth_and_tokens)
 
 local credentials = require ("kong.plugins.keystone.views.credentials")
---add_routes(credentials)
+add_routes(credentials.routes)
 
 local domain_configuration = require ("kong.plugins.keystone.views.domain_configuration")
 --add_routes(domain_configuration)
