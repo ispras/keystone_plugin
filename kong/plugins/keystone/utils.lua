@@ -107,5 +107,28 @@ return {
         end
 
         return roles
+    end,
+    subtree = function (dao_factory, project_id, include_names)
+        local subtree = {}
+        local parent_id = project_id
+        local a = 0
+        while parent_id do
+            local projects, err = dao_factory.project:find_all ({parent_id = parent_id})
+            if err then
+                return nil, err
+            end
+            for j = 1, #projects do
+                local index = #subtree + 1
+                subtree[index] = {
+                    id = projects[j].id,
+                    name = include_names and projects[j].name
+                }
+            end
+
+            a = a + 1
+            parent_id = subtree[a] and subtree[a].id
+        end
+        return subtree
+
     end
 }
