@@ -62,8 +62,6 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(200)
 
     def list_2(self):
-        self.check_assign()
-        self.check_assign()
         self.res = requests.get(self.host + "/v3/role_assigments")
         self.checkCode(200)
 
