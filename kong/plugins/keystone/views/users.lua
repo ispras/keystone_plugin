@@ -138,13 +138,23 @@ local function check_user_project(dao_factory, project_id)
 
 end
 
-local function assign_default_role(dao_factory, user)
+local function assign_default_role(dao_factory, user) --TODO check domain/project
     local self = {}
     self.params = {}
     self.params.actor_id = user.id
     self.params.target_id = user.domain_id
     self.params.role_id = kutils.default_role(dao_factory)
     assignment.assign(self, dao_factory, "UserDomain", false, true)
+
+    if user.default_project_id then
+        local self = {}
+        self.params = {}
+        self.params.actor_id = user.id
+        self.params.target_id = user.default_project_id
+        self.params.role_id = kutils.default_role(dao_factory)
+        assignment.assign(self, dao_factory, "UserProject", false, true)
+    end
+
 end
 
 local function create_local_user(self, dao_factory)

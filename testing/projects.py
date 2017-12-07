@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 
@@ -8,13 +8,13 @@ class TestKeystoneProjects(TestKeystoneBase):
         self.url = self.host + '/v3/projects/'
 
     def create(self):
-        body = {
-        "project": {
-            "description": "Test2 domain",
-            "is_domain": False,
-            "enabled": True,
-            "name": "test2",
-            # "domain_id": "33606fac-6309-4b8d-8341-d8218c5c180f"
+        body = body = {
+            "project": {
+                "name": "admin",
+                "description": "Admin project for testing",
+                "enabled": True,
+                "is_domain": False,
+                "domain_id": self.admin_domain_id
             }
         }
         self.res = requests.post(self.url, json = body)
@@ -22,7 +22,7 @@ class TestKeystoneProjects(TestKeystoneBase):
 
     def list(self):
         query = {
-             'domain_id' : '14ad23de-d411-4b72-9295-cee25cfaee09'
+            # 'domain_id' : '14ad23de-d411-4b72-9295-cee25cfaee09'
             # 'idp_id': 'idp_id',
             # 'name': 'name',
             # 'password_expiself.res_at': 'password_expiself.res_at',
@@ -49,6 +49,6 @@ class TestKeystoneProjects(TestKeystoneBase):
         self.checkCode(200)
 
     def delete(self):
-        project_id = 'cc207ed2-61e4-4e7b-ab33-6e65acc8f76c'
+        project_id =  '03a51cb1-fd22-4282-89a2-8e6b53f88fda'
         self.res = requests.delete(self.url + project_id)
         self.checkCode(204)

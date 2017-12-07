@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneAuthAndTokens(TestKeystoneBase):
@@ -52,9 +52,9 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.token = self.res.headers['X-Subject-Token']
 
     def get_catalog(self):
+        self.password_unscoped()
         headers = {
-            "X-Auth_token" : self.auth
-
+            "X-Auth-Token" : self.auth
         }
         self.res = requests.get(self.url + 'catalog', headers=headers)
         self.checkCode(200)

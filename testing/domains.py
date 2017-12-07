@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneDomains(TestKeystoneBase):
@@ -19,7 +19,7 @@ class TestKeystoneDomains(TestKeystoneBase):
         self.checkCode(201)
 
     def delete(self):
-        self.res = requests.delete(self.host + self.domain_id)
+        self.res = requests.delete(self.host + 'e039085c-416c-4b2f-9c52-e4706c87bec4')
         self.checkCode(204)
 
     def update (self):

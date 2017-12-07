@@ -1,19 +1,19 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 class TestKeystoneRoles(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneRoles, self).setUp()
         self.url = self.host + '/v3/roles/'
-        self.domain_id = '7bba3639-1d1e-4999-9b14-d8392b6a025d'
-        self.project_id = ''
-        self.user_id = '4fac7222-87d2-41cc-9445-4e89487bfd46'
+        self.domain_id = '075895d8-7134-4c92-989a-c413b181236f'
+        self.project_id = 'd890d7e8-b951-4133-8045-0a8493c059c8'
+        self.user_id = '1ce60175-8d39-4c73-b247-2da9675fc094'
         self.group_id = ''
-        self.role_id = '51c79219-bd1a-4b83-8d78-8cb27abb92ca'
+        self.role_id = 'a490cc5a-9a6f-49c5-b8c9-24d865a23017'
 
     def list(self):
         query = {
-            # 'name' : 'admin',
+            # 'use' : 'admin',
             # 'domain_id' : 'domain'
         }
         self.res = requests.get(self.url, params = query)
@@ -22,8 +22,8 @@ class TestKeystoneRoles(TestKeystoneBase):
     def create(self):
         body = {
             'role' : {
-                'name' : 'Default',
-                # 'domain_id' : self.domain_id
+                'name' : 'admin',
+                'domain_id' : self.domain_id
             }
         }
         self.res = requests.post(self.url, json = body)
@@ -48,12 +48,12 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(204)
 
     def check_assign(self):
-        # self.res = requests.put(self.host + '/v3/projects/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}) #json object is required
+         self.res = requests.put(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}) #json object is required
         # self.checkCode(400)
         # self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
+         self.checkCode(204)
+        # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
         # self.checkCode(204)
-        self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
-        self.checkCode(204)
         # self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
         # self.checkCode(204)
         # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
@@ -64,9 +64,13 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(200)
 
     def list_2(self):
-        self.res = requests.get(self.host + "/v3/role_assigments", params = query)
+        self.res = requests.get(self.host + "/v3/role_assigments")
         self.checkCode(200)
 
     def list_inferences(self):
         self.res = requests.get(self.host + "/v3/role_inferences")
+        self.checkCode(200)
+
+    def list_as(self):
+        self.res = requests.get(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles')
         self.checkCode(200)

@@ -369,7 +369,7 @@ local function update_project(self, dao_factory)
     end
 
     if request.project.name then
-        check_project_name(dao_factory, name, project.is_domain, project.domain_id)
+        check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
     end
 
     local updated_project, err = dao_factory.project:update(request.project, {id=project.id})

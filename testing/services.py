@@ -9,8 +9,8 @@ class TestKeystoneServices(TestKeystoneBase):
     def create(self):
         body = {
             "service": {
-                "type": "test1",
-                "name": "test1",
+                "type": "identity",
+                "name": "keystone",
                 "description": "test2 service"
             }
         }
@@ -27,7 +27,7 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def update(self):
-        service_id = '305abfd1-2d57-4094-91c8-ec7a9cd4a8dd'
+        service_id = 'a9a31a2d-bd4f-4ac3-9361-1c8fe5eb1f57'
         body = {
         "service": {
             "enabled": True
@@ -37,6 +37,6 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def delete(self):
-        service_id = '63f7baeb-b038-4883-8c2a-e6414d58b758'
+        service_id = '5c826a59-9619-491e-b700-296b77fd5cd1'
         self.res = requests.delete(self.host + service_id)
         self.checkCode(204)

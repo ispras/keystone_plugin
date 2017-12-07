@@ -225,7 +225,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
                 end
             end
         end
-        if not inherited then --TODO cache
+        if not inherited and next(resp.roles) then --TODO cache
             local cache = {
                 user_id = actor_id,
                 scope_id = target_id,
