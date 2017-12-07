@@ -7,7 +7,7 @@ class TestKeystoneGroups(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneGroups, self).setUp()
         self.url = self.host + '/v3/groups/'
-        self.user_id = '407560f3-b938-4c30-a9b4-5d2138677286'
+        self.user_id = '3daf3fca-d165-4059-a71a-fd1617d9e9cb'
         self.group_id = ''
 
     def list(self):
@@ -53,7 +53,10 @@ class TestKeystoneGroups(TestKeystoneBase):
         self.checkCode(204)
 
     def list_users(self):
-        self.res = requests.get(self.url + self.group_id + '/users/')
+        query = {
+            'password_expires_at' : 'gt:2017-12-08T13:00:00Z'
+        }
+        self.res = requests.get(self.url + self.group_id + '/users/', params = query)
         self.checkCode(200)
 
     def add_user(self):
@@ -70,13 +73,13 @@ class TestKeystoneGroups(TestKeystoneBase):
 
     def all(self):
         self.create()
-        self.list()
-        self.get_info()
-        pprint(self.res.json())
+        # self.list()
+        # self.get_info()
+        # pprint(self.res.json())
         self.add_user()
         self.check_user()
         self.list_users()
         pprint(self.res.json())
         self.remove_user()
-        self.update()
+        # self.update()
         self.delete()

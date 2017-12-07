@@ -64,7 +64,10 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(200)
 
     def list_2(self):
-        self.res = requests.get(self.host + "/v3/role_assigments")
+        query = {
+
+        }
+        self.res = requests.get(self.host + "/v3/role_assigments", params = query)
         self.checkCode(200)
 
     def list_inferences(self):
