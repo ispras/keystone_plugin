@@ -25,7 +25,7 @@ class TestKeystoneBase(unittest.TestCase):
         p = ['domain_id', 'project_id', 'user_id', 'group_id', 'role_id']
         for k in p:
             if self.__getattribute__(k) != '':
-                print('self.' + k + ' = '+ self.__getattribute__(k))
+                print('self.' + k + ' = \''+ self.__getattribute__(k) + '\'')
 
 
     def init(self):

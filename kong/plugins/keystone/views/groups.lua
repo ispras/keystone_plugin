@@ -127,20 +127,33 @@ local function list_group_users(self, dao_factory)
         users = {}
     }
 
--- TODO password_expires_at={operator}:{timestamp}, no parsing by the operator
-    local password_expires_at = self.params.password_expires_at
+    local password_expires_at, op = kutils.string_to_time(self.params.password_expires_at)
 
     for _, v in ipairs(user_group) do
         local user, err = dao_factory.user:find({id = v.user_id})
         kutils.assert_dao_error(err, "user:find")
-        local uname, expires
+        local uname, exp
         local temp, err = dao_factory.local_user:find_all({user_id = user.id})
         kutils.assert_dao_error(err, "local_user:find_all")
-        if next(temp) then
-            uname = temp[1].name
-            local passwd, err = dao_factory.password:find_all({local_user_id = temp[1].id})
+        local loc_user = temp[1]
+        local fit = true
+        if loc_user then
+            uname = loc_user.name
+            local passwd, err = dao_factory.password:find_all({local_user_id = loc_user.id})
             kutils.assert_dao_error(err, "password:find_all")
-            expires = passwd[1] and passwd[1].expires_at
+            exp = passwd[1] and passwd[1].expires_at
+            if password_expires_at then
+                if not exp or op == 'lt' and exp >= password_expires_at or
+                        op == 'lte' and exp > password_expires_at or
+                            op == 'gt' and exp <= password_expires_at or
+                                op == 'gte' and exp < password_expires_at or
+                                    op == 'eq' and exp ~= password_expires_at or
+                                        op == 'neq' and exp == password_expires_at then
+                    fit = false
+                end
+            end
+        elseif password_expires_at then
+            fit = false
         else
             local temp, err = dao_factory.nonlocal_user:find_all({user_id = user.id})
             kutils.assert_dao_error(err, "nonlocal_user:find_all")
@@ -148,7 +161,7 @@ local function list_group_users(self, dao_factory)
                 uname = temp[1].name
             end
         end
-        resp.users[#resp.users + 1] = {
+        resp.users[#resp.users + 1] = fit and {
             domain_id = user.domain_id,
             description = user.description,
             enabled = kutils.bool(user.enabled),
@@ -157,8 +170,8 @@ local function list_group_users(self, dao_factory)
             links = {
                 self = self:build_url("/v3/users/"..user.id)
             },
-            password_expires_at = expires and kutils.time_to_string(expires)
-        }
+            password_expires_at = loc_user and kutils.time_to_string(exp)
+        } or nil
     end
 
     return responses.send_HTTP_OK(resp)
