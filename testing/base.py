@@ -19,13 +19,13 @@ class TestKeystoneBase(unittest.TestCase):
     def tearDown(self):
         try:
             pprint(self.res.json())
-            print()
-            p = ['domain_id', 'project_id', 'user_id', 'group_id', 'role_id']
-            for k in p:
-                if self.__getattribute__(k) != '':
-                    print('self.' + k + ' = '+ self.__getattribute__(k))
         except:
             pass
+        print()
+        p = ['domain_id', 'project_id', 'user_id', 'group_id', 'role_id']
+        for k in p:
+            if self.__getattribute__(k) != '':
+                print('self.' + k + ' = '+ self.__getattribute__(k))
 
 
     def init(self):
@@ -37,8 +37,21 @@ class TestKeystoneBase(unittest.TestCase):
             }
         }
         self.res = requests.post(self.host + '/v3/domains', json = body)
-        self.checkCode(201)
-        self.domain_id = self.res.json()['domain']['id']
+        if self.res.text != "{\"message\":\"Error: project with this name exists\"}\n":
+            self.checkCode(201)
+            self.domain_id = self.res.json()['domain']['id']
+
+        body = {
+        "project": {
+            "description": "Admin project",
+            "enabled": True,
+            "name": "Admin",
+            }
+        }
+        self.res = requests.post(self.host + '/v3/projects', json = body)
+        if self.res.text != "{\"message\":\"Error: project with this name exists\"}\n":
+            self.checkCode(201)
+            self.project_id = self.res.json()['project']['id']
 
         body = {
             'role' : {
@@ -46,8 +59,19 @@ class TestKeystoneBase(unittest.TestCase):
             }
         }
         self.res = requests.post(self.host + '/v3/roles', json = body)
-        self.checkCode(201)
-        self.role_id = self.res.json()['role']['id']
+        if self.res.text != "{\"message\":\"Role with specified name already exists in domain\"}\n":
+            self.checkCode(201)
+            self.role_id = self.res.json()['role']['id']
+
+        body = {
+            'role': {
+                'name': 'Admin'
+            }
+        }
+        self.res = requests.post(self.host + '/v3/roles', json=body)
+        if self.res.text != "{\"message\":\"Role with specified name already exists in domain\"}\n":
+            self.checkCode(201)
+            self.role_id = self.res.json()['role']['id']
 
         body = {
             "user": {
@@ -57,5 +81,6 @@ class TestKeystoneBase(unittest.TestCase):
             }
         }
         self.res = requests.post(self.host + '/v3/users', json = body)
-        self.checkCode(201)
-        self.user_id = self.res.json()['user']['id']
+        if self.res.text != "{\"message\":\"Local user with this name is already exists\"}\n":
+            self.checkCode(201)
+            self.user_id = self.res.json()['user']['id']

@@ -1,23 +1,23 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 
 class TestKeystoneProjects(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneProjects, self).setUp()
-        self.host = self.host + '/v3/projects/'
+        self.url = self.host + '/v3/projects/'
 
     def create(self):
         body = {
         "project": {
             "description": "Test2 domain",
-            # "is_domain": True,
+            "is_domain": False,
             "enabled": True,
             "name": "test2",
-            "domain_id": "33606fac-6309-4b8d-8341-d8218c5c180f"
+            # "domain_id": "33606fac-6309-4b8d-8341-d8218c5c180f"
             }
         }
-        self.res = requests.post(self.host, json = body)
+        self.res = requests.post(self.url, json = body)
         self.checkCode(201)
 
     def list(self):
@@ -29,12 +29,12 @@ class TestKeystoneProjects(TestKeystoneBase):
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
         }
-        self.res = requests.get(self.host, params=query)
+        self.res = requests.get(self.url, params=query)
         self.checkCode(200)
 
     def get_info(self):
         project_id = 'test1'
-        self.res = requests.get(self.host + project_id)
+        self.res = requests.get(self.url + project_id)
         self.checkCode(200)
 
     def update(self):
@@ -45,10 +45,10 @@ class TestKeystoneProjects(TestKeystoneBase):
             "name": "myUpdatedProject"
             }
         }
-        self.res = requests.patch(self.host + project_id, json=body)
+        self.res = requests.patch(self.url + project_id, json=body)
         self.checkCode(200)
 
     def delete(self):
         project_id = 'cc207ed2-61e4-4e7b-ab33-6e65acc8f76c'
-        self.res = requests.delete(self.host + project_id)
+        self.res = requests.delete(self.url + project_id)
         self.checkCode(204)

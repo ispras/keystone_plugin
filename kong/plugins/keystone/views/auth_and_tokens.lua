@@ -303,14 +303,8 @@ local function auth_password_scoped(self, dao_factory)
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
-    local cache = {
-        token_id = token.id,
-        scope_id = project.id,
-        roles = kutils.roles_to_string(roles),
-        issued_at = os.time()
-    }
-    local _,err = dao_factory.cache:insert(cache) -- TODO cache
-    kutils.assert_dao_error(err)
+    local cache,err = dao_factory.cache:update({token_id = token.id, issued_at = os.time()},{user_id = user.id, scope_id = project.id}) -- TODO cache
+    kutils.assert_dao_error(err, "cache:update")
 
     resp = {
         token = {
@@ -396,14 +390,8 @@ local function auth_token_scoped(self, dao_factory)
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
-    local cache = {
-        token_id = token.id,
-        scope_id = project.id,
-        roles = kutils.roles_to_string(roles),
-        issued_at = os.time()
-    }
-    local _,err = dao_factory.cache:insert(cache) -- TODO cache
-    kutils.assert_dao_error(err)
+    local cache,err = dao_factory.cache:update({token_id = token.id, issued_at = os.time()},{user_id = user.id, scope_id = project.id}) -- TODO cache
+    kutils.assert_dao_error(err, "cache:update")
 
     resp = {
         token = {
@@ -447,7 +435,7 @@ local function get_token_info(self, dao_factory)
     }
     local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
 
-    local cache, err = dao_factory.cache:find({token_id = token.id})
+    local cache, err = dao_factory.cache:find({token_id = token.id}) --TODO cache
     kutils.assert_dao_error(err, "cache:find")
     if not cache then
         local _, err = dao_factory.token:update({valid = false}, {id = token.id})

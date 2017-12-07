@@ -114,19 +114,50 @@ local function update_role(self, dao_factory)
         self = self:build_url(self.req.parsed_url.path..role.id)
     }
 
+    local temp, err = dao_factory.cache:find_all()
+    for _, v in ipairs(temp) do
+        local roles = kutils.string_to_roles(v.roles)
+        local i = kutils.has_id(roles, role_id)
+        if i then
+            roles[i].name = role.name
+            dao_factory.cache:update({roles = kutils.roles_to_string(roles)}, {user_id = v.user_id, scope_id = v.scope_id})
+        end
+    end
+
     return responses.send_HTTP_OK(resp)
 end
 
 local function delete_role(self, dao_factory)
     local role_id = self.params.role_id
-    local role, err = dao_factory.role:find({id = role_id})
-    kutils.assert_dao_error(err, "role find")
-    if not role then
+
+    local temp, err = dao_factory.role:delete({id = role_id})
+    kutils.assert_dao_error(err, "role delete")
+    if not temp then
         return responses.send_HTTP_BAD_REQUEST("Role is not found")
     end
-
-    local _, err = dao_factory.role:delete({id = role.id})
-    kutils.assert_dao_error(err, "role delete")
+        temp, err = dao_factory.cache:find_all()
+        for _, v in ipairs(temp) do
+            local roles = kutils.string_to_roles(v.roles)
+            if kutils.has_id(roles, role_id) then
+                dao_factory.cache:delete({user_id = v.user_id, scope_id = v.scope_id})
+            end
+        end
+        temp = dao_factory.assignment:find_all({role_id = role_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.implied_role:find_all({prior_role_id = role_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.implied_role:find_all({implied_role_id = role_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.trust_role:find_all({role_id = role_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
 
     return responses.send_HTTP_NO_CONTENT()
 end
@@ -137,11 +168,6 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         return responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
 
-    -- TODO check in cache
-
-    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type, inherited = inherited})
-    kutils.assert_dao_error(err, "assignment find_all")
-
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
@@ -151,13 +177,30 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         roles = {}
     }
 
+    if not inherited then --TODO cache
+        local temp, err = dao_factory.cache:find({user_id = actor_id, scope_id = target_id})
+        kutils.assert_dao_error(err, "cache:find")
+        if temp then
+            resp.roles = kutils.string_to_roles(temp.roles)
+            for i = 1, #resp.roles do
+                resp.roles[i].links = {
+                    self = self:build_url('/v3/roles/'..resp.roles[i].id)
+                }
+            end
+            return resp
+        end
+    end
+
+    local assigns, err = dao_factory.assignment:find_all({actor_id = actor_id, target_id = target_id, type = type, inherited = inherited})
+    kutils.assert_dao_error(err, "assignment find_all")
+
     for i = 1, #assigns do
         local role, err = dao_factory.role:find({id = assigns[i].role_id})
         kutils.assert_dao_error(err, "role:find")
         if role then
-            resp.roles[i] = role
-            resp.roles[i].links = {
-                self = self:build_url(self.req.parsed_url.path..role.id)
+            resp.roles[i] = {
+                id = role.id,
+                name = role.name
             }
         end
     end
@@ -174,17 +217,29 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
                     kutils.assert_dao_error(err, "role:find")
                     if role then
                         local index = #resp.roles + 1
-                        resp.roles[index] = role
-                        resp.roles[index].links = {
-                            self = self:build_url(self.req.parsed_url.path..role.id)
+                        resp.roles[index] = {
+                            id = role.id,
+                            name = role.name
                         }
                     end
                 end
             end
         end
+        if not inherited then --TODO cache
+            local cache = {
+                user_id = actor_id,
+                scope_id = target_id,
+                roles = kutils.roles_to_string(resp.roles)
+            }
+            local _, err = dao_factory.cache:insert(cache)
+            kutils.assert_dao_error(err, "cache:insert")
+        end
     end
 
-    --TODO cache result
+    for i = 1, #resp.roles do
+        resp.roles[i].links = self:build_url('/v3/roles/'..resp.roles[i].id)
+    end
+
     return resp
 end
 
@@ -232,12 +287,14 @@ local function check_actor_target_role_id(dao_factory, actor_id, target_id, role
 
 end
 
-local function assign_role(self, dao_factory, type, inherited)
+local function assign_role(self, dao_factory, type, inherited, checked)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
-    local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
-    if err then
-        return responses.send_HTTP_BAD_REQUEST(err)
+    if not checked then
+        local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+        if err then
+            return responses.send_HTTP_BAD_REQUEST(err)
+        end
     end
 
     local assign = {
@@ -249,6 +306,11 @@ local function assign_role(self, dao_factory, type, inherited)
     }
     local _, err = dao_factory.assignment:insert(assign)
     kutils.assert_dao_error(err, "assignment insert")
+
+    if type:match("User") and not inherited then
+        local _, err = dao_factory.cache:delete({user_id = actor_id, scope_id = target_id})
+        kutils.assert_dao_error(err, "cache:delete")
+    end
 end
 
 local function check_assignment(self, dao_factory, type, inherited)
@@ -259,7 +321,20 @@ local function check_assignment(self, dao_factory, type, inherited)
         return responses.send_HTTP_BAD_REQUEST()
     end
 
-    local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
+    if not inherited and type:match("User") then -- TODO cache
+        local temp, err = dao_factory.cache:find({user_id = actor_id, scope_id = target_id})
+        kutils.assert_dao_error(err, "cache:find")
+        if temp then
+            local roles = kutils.string_to_roles(temp.roles)
+            if kutils.has_id(roles, role_id) then
+                return
+            else
+                return responses.send_HTTP_NOT_FOUND()
+            end
+        end
+    end
+
+    local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
     kutils.assert_dao_error(err, "assignment find")
     if temp then
         return
@@ -267,7 +342,7 @@ local function check_assignment(self, dao_factory, type, inherited)
         local ugroups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
         for _, ugroup in pairs(ugroups) do
             local temp, err = dao_factory.assignment:find({type = type:match("Project") and "GroupProject" or "GroupDomain",
-                actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = false})
+                actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = inherited})
             kutils.assert_dao_error(err, "assignment:find")
             if temp then
                 return
@@ -286,11 +361,16 @@ local function unassign_role(self, dao_factory, type, inherited)
         return responses.send_HTTP_BAD_REQUEST(err)
     end
 
-    local assign, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = false})
+    local assign, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
     kutils.assert_dao_error(err, "assignment find_all")
     for i = 1, #assign do
         local _, err = dao_factory.assignment:delete(assign[i])
         kutils.assert_dao_error(err, "assignment delete")
+    end
+
+    if not inherited and type:match("User") then -- TODO cache
+        local _, err = dao_factory.cache:delete({user_id = actor_id, scope_id = target_id})
+        kutils.assert_dao_error(err, "cache:delete")
     end
 
     return responses.send_HTTP_NO_CONTENT()
@@ -479,8 +559,6 @@ local function fill_assignment(dao_factory, role_assignments, type, actor_id, ta
 end
 
 local function list_role_assignments(self, dao_factory)
-    local temp, err = dao_factory.assignment:find_all({type = 'UserDomain', inherited = false, role_id = '1'})
-kutils.assert_dao_error(err, "assignment:find_all")
     local effective = self.params.effective and true or false
     local include_names = self.params.include_names
     local include_subtree = self.params.include_subtree
@@ -489,7 +567,7 @@ kutils.assert_dao_error(err, "assignment:find_all")
     local project_id = self.params.scope and self.params.scope.project and self.params.scope.project.id
     local domain_id = self.params.scope and self.params.scope.domain and self.params.scope.domain.id
     local user_id = self.params.user and self.params.user.id
-    local inherited = (self.params.scope and self.params.scope['OS-INHERIT'].inherited_to) and true or false
+    local inherited = (self.params.scope and self.params.scope['OS-INHERIT'] and self.params.scope['OS-INHERIT'].inherited_to) and true or false
     if inherited and self.params.scope['OS-INHERIT'].inherited_to ~= 'projects' then
         return responses.send_HTTP_BAD_REQUEST("The only value of inherited_to that is currently supported is projects")
     end
@@ -518,7 +596,8 @@ kutils.assert_dao_error(err, "assignment:find_all")
                 fill_assignment(dao_factory, resp.role_assignments, "GroupProject", v.group_id, project_id, role_id, include_names, inherited)
             end
         end
-    elseif not group_id and not project_id then
+    end
+    if not group_id and not project_id then
         fill_assignment(dao_factory, resp.role_assignments, "UserDomain", user_id, domain_id, role_id, include_names, inherited)
         if user_id then
             local groups, err = dao_factory.user_group_membership:find_all({user_id = user_id})
@@ -527,9 +606,11 @@ kutils.assert_dao_error(err, "assignment:find_all")
                 fill_assignment(dao_factory, resp.role_assignments, "GroupDomain", v.group_id, domain_id, role_id, include_names, inherited)
             end
         end
-    elseif not user_id and not domain_id then
+    end
+    if not user_id and not domain_id then
         fill_assignment(dao_factory, resp.role_assignments, "GroupProject", group_id, project_id, role_id, include_names, inherited)
-    elseif not user_id and not project_id then
+    end
+    if not user_id and not project_id then
         fill_assignment(dao_factory, resp.role_assignments, "GroupDomain", group_id, domain_id, role_id, include_names, inherited)
     end
 
@@ -562,25 +643,9 @@ kutils.assert_dao_error(err, "assignment:find_all")
     end
 
     if include_subtree and include_subtree ~= 0 and project_id then
-        local subtree = {}
-        local parent_id = project_id
-        local a = 0
-        while parent_id do
-            local projects, err = dao_factory.project:find_all ({parent_id = parent_id})
-            kutils.assert_dao_error(err, "project find_all")
-            for j = 1, #projects do
-                local index = #subtree + 1
-                subtree[index] = {
-                    id = projects[j].id,
-                    name = include_names and projects[j].name
-                }
-            end
-
-            a = a + 1
-            parent_id = subtree[a] and subtree[a].id
-        end
-
-        resp.subtree = subtree
+        local err
+        resp.subtree, err = kutils.subtree(dao_factory, project_id, include_names)
+        kutils.assert_dao_error(err, "subtree")
     end
 
     return resp

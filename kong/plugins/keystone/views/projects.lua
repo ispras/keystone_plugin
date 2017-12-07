@@ -188,7 +188,7 @@ local function create_project(self, dao_factory)
         name = name,
         description = description,
         enabled = enabled,
-        domain_id = domain_id,
+        domain_id = domain_id or id,
         parent_id = parent_id,
         is_domain = is_domain
     }

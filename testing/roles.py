@@ -5,9 +5,11 @@ class TestKeystoneRoles(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneRoles, self).setUp()
         self.url = self.host + '/v3/roles/'
-        self.role_id = '34227124-011d-440d-856b-9bf0e464bb18'
-        self.domain_id = 'ffb8809c-e262-4703-b1ba-8af5c9f8a134'
-        self.user_id = '4f0547bd-f1b2-4506-b9e6-9c9dea3c0476'
+        self.domain_id = '7bba3639-1d1e-4999-9b14-d8392b6a025d'
+        self.project_id = ''
+        self.user_id = '4fac7222-87d2-41cc-9445-4e89487bfd46'
+        self.group_id = ''
+        self.role_id = '51c79219-bd1a-4b83-8d78-8cb27abb92ca'
 
     def list(self):
         query = {
@@ -48,10 +50,10 @@ class TestKeystoneRoles(TestKeystoneBase):
     def check_assign(self):
         # self.res = requests.put(self.host + '/v3/projects/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}) #json object is required
         # self.checkCode(400)
-        self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
-        self.checkCode(204)
-        # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
+        # self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
         # self.checkCode(204)
+        self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
+        self.checkCode(204)
         # self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
         # self.checkCode(204)
         # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
@@ -62,7 +64,7 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(200)
 
     def list_2(self):
-        self.res = requests.get(self.host + "/v3/role_assigments")
+        self.res = requests.get(self.host + "/v3/role_assigments", params = query)
         self.checkCode(200)
 
     def list_inferences(self):

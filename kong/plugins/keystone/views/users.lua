@@ -144,7 +144,7 @@ local function assign_default_role(dao_factory, user)
     self.params.actor_id = user.id
     self.params.target_id = user.domain_id
     self.params.role_id = kutils.default_role(dao_factory)
-    assignment.assign(self, dao_factory, "UserDomain")
+    assignment.assign(self, dao_factory, "UserDomain", false, true)
 end
 
 local function create_local_user(self, dao_factory)
@@ -421,6 +421,22 @@ local function delete_user(self, dao_factory)
     local _, err = dao_factory.user:delete({id = user_id})
     kutils.assert_dao_error(err, "user delete")
 
+        temp = dao_factory.assignment:find_all({type = 'UserDomain', inherited = false, actor_id = user_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.assignment:find_all({type = 'UserProject', inherited = false, actor_id = user_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.assignment:find_all({type = 'UserDomain', inherited = true, actor_id = user_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
+        temp = dao_factory.assignment:find_all({type = 'UserProject', inherited = true, actor_id = user_id})
+        for _, v in ipairs(temp) do
+            dao_factory.assignment:delete(v)
+        end
         temp, err1 = dao_factory.credential:find_all({user_id = user_id})
         if not err1 then
             for i = 1, #temp do

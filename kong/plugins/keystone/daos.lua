@@ -457,13 +457,14 @@ local WHITELISTED_CONFIG_SCHEMA = {
 }
 
 local CACHE_SCHEMA = {
-    primary_key = {"token_id"},
+    primary_key = {"user_id", "scope_id"},
     table = "cache",
     fields = {
-        token_id = { type = "string", required = true },
+        user_id = {type = "string", requires = true},
+        token_id = { type = "string" },
         scope_id = { type = "string", required = true }, --project/domain
         roles = { type = "string", required = true },
-        issued_at = { type = "timestamp", required = true }
+        issued_at = { type = "timestamp" }
     }
 }
 

@@ -1,11 +1,11 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
         self.host = self.host + '/v3/users/'
-        self.user_id = "fa0435c0-884b-46f5-a5e8-ea45cd5fc8c1"
+        self.user_id = '4fac7222-87d2-41cc-9445-4e89487bfd46'
         self.domain_id = 'ea87a71f-a7bc-486c-9373-9a26ef681760'
 
     def list(self):
@@ -32,6 +32,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         }
         self.res = requests.post(self.host, json = body)
         self.checkCode(201)
+        self.user_id = self.res.json()['user']['id']
 
     def create_nonlocal(self):
         body = {
