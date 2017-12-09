@@ -137,7 +137,7 @@ local function check_user_project(dao_factory, project_id)
 
 end
 
-local function assign_default_role(dao_factory, user) --TODO check domain/project
+local function assign_default_role(dao_factory, user)
     local self = {}
     self.params = {}
     self.params.actor_id = user.id

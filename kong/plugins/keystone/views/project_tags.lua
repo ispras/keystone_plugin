@@ -1,34 +1,101 @@
-ProjectTag = {}
+local responses = require "kong.tools.responses"
+local utils = require "kong.tools.utils"
+local kutils = require ("kong.plugins.keystone.utils")
 
-function list_project_tags(self, dao_factory)
-    return ''
+local function list_project_tags(self, dao_factory)
+    local tags = {}
+    local temp, err = dao_factory.project_tag:find_all({project_id = self.params.project_id})
+    kutils.assert_dao_error(err, "project_tag:find_all")
+    for i = 1, #temp do
+        tags[i] = temp[i].name
+    end
+
+    return {tags = tags}
 end
 
-function check_project_tag(self, dao_factory)
-    return ''
+local function check_project_tag(self, dao_factory)
+    local temp, err = dao_factory.project_tag:find({project_id = self.params.project_id, name = self.params.tag})
+    kutils.assert_dao_error(err, "project_tag:find")
+    if not temp then
+        responses.send_HTTP_NOT_FOUND()
+    end
+    responses.send_HTTP_NO_CONTENT()
 end
 
-function add_project_tag(self, dao_factory)
-    return ''
+local function add_project_tag(self, dao_factory)
+    local _, err = dao_factory.project_tag:insert({project_id = self.params.project_id, name = self.params.tag})
+    kutils.assert_dao_error(err, "project_tag:insert")
+
+
+    responses.send_HTTP_CREATED(list_project_tags(self, dao_factory))
 end
 
-function modify_project_tag(self, dao_factory)
-    return ''
+local function modify_project_tag(self, dao_factory)
+    local new_tags = self.params.tags
+    local tags, err = dao_factory.project_tag:find_all({project_id = self.params.project_id})
+    kutils.assert_dao_error(err, "project_tag:find_all")
+    for i = 1, #new_tags do
+        local j = kutils.has_id(tags, new_tags[i], 'name')
+        if j then
+            new_tags[i] = nil
+            tags[j] = nil
+        end
+    end
+
+    for _, v  in pairs(new_tags) do
+        local _, err = dao_factory.project_tag:insert({project_id = self.params.project_id, name = v})
+        kutils.assert_dao_error(err, "project_tag:insert")
+    end
+
+    for _, v in pairs(tags) do
+        local _, err = dao_factory.project_tag:delete(v)
+        kutils.assert_dao_error(err, "project_tag:delete")
+    end
+
+    responses.send_HTTP_OK({tags = new_tags})
 end
 
-function delete_project_tag(self, dao_factory)
-    return ''
+local function delete_project_tag(self, dao_factory)
+    local _, err = dao_factory.project_tag:delete({project_id = self.params.project_id, name = self.params.tag})
+    kutils.assert_dao_error(err, "project_tag:delete")
+
+    responses.send_HTTP_NO_CONTENT()
 end
 
-function remove_all_project_tags(self, dao_factory)
-    return ''
+local function remove_all_project_tags(self, dao_factory)
+    local tags, err = dao_factory.project_tag:find_all({project_id = self.params.project_id})
+    kutils.assert_dao_error(err, "project_tag:find_all")
+
+    for _, v in pairs(tags) do
+        local _, err = dao_factory.project_tag:delete(v)
+        kutils.assert_dao_error(err, "project_tag:delete")
+    end
+
+    responses.send_HTTP_NO_CONTENT()
 end
 
-ProjectTag.list_project_tags = list_project_tags
-ProjectTag.check_project_tag = check_project_tag
-ProjectTag.add_project_tag = add_project_tag
-ProjectTag.modify_project_tag = modify_project_tag
-ProjectTag.delete_project_tag = delete_project_tag
-ProjectTag.remove_all_project_tags = remove_all_project_tags
-
-return ProjectTag
+local routes = {
+    ['/v3/projects/:project_id/tags'] = {
+        GET = function (self, dao_factory)
+            responses.send_HTTP_OK(list_project_tags(self, dao_factory))
+        end,
+        PUT = function(self, dao_factory)
+            modify_project_tag(self, dao_factory)
+        end,
+        DELETE = function(self, dao_factory)
+            remove_all_project_tags(self, dao_factory)
+        end
+    },
+    ['/v3/projects/:project_id/tags/:tag'] = {
+        GET = function(self, dao_factory)
+            check_project_tag(self, dao_factory)
+        end,
+        PUT = function(self, dao_factory)
+            add_project_tag(self, dao_factory)
+        end,
+        DELETE = function(self, dao_factory)
+            delete_project_tag(self, dao_factory)
+        end
+    }
+}
+return routes

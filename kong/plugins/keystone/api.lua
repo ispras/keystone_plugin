@@ -28,7 +28,7 @@ local os_pki_api = require ('kong.plugins.keystone.views.os_pki_api')
 --add_routes(os_pki_api)
 
 local project_tags = require ('kong.plugins.keystone.views.project_tags')
---add_routes(project_tags)
+add_routes(project_tags)
 
 local projects = require ('kong.plugins.keystone.views.projects')
 add_routes(projects)

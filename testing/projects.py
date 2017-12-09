@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 
@@ -6,9 +6,10 @@ class TestKeystoneProjects(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneProjects, self).setUp()
         self.url = self.host + '/v3/projects/'
+        self.project_id = '899f724c-80ad-456a-a584-040d3748a5b8'
 
     def create(self):
-        body = body = {
+        body = {
             "project": {
                 "name": "admin",
                 "description": "Admin project for testing",
@@ -33,22 +34,38 @@ class TestKeystoneProjects(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        project_id = 'test1'
-        self.res = requests.get(self.url + project_id)
+        self.res = requests.get(self.url + self.project_id)
         self.checkCode(200)
 
     def update(self):
-        project_id = 'ea0341a4-3640-4a27-9be6-fd8a78c5fefb'
         body = {
         "project": {
             "description": "My updated project",
             "name": "myUpdatedProject"
             }
         }
-        self.res = requests.patch(self.url + project_id, json=body)
+        self.res = requests.patch(self.url + self.project_id, json=body)
         self.checkCode(200)
 
     def delete(self):
-        project_id =  '03a51cb1-fd22-4282-89a2-8e6b53f88fda'
-        self.res = requests.delete(self.url + project_id)
+        self.res = requests.delete(self.url + self.project_id)
+        self.checkCode(204)
+
+    def tags(self):
+        tag = 'keystone'
+        self.res = requests.put(self.url + self.project_id + '/tags/' + tag, json={})
+        self.checkCode(201)
+        self.res = requests.get(self.url + self.project_id + '/tags/' + tag)
+        self.checkCode(204)
+        self.res = requests.delete(self.url + self.project_id + '/tags/' + tag)
+        self.checkCode(204)
+
+        body = {
+            'tags' : ['keystone', 'admin']
+        }
+        self.res = requests.put(self.url + self.project_id + '/tags/', json = body)
+        self.checkCode(200)
+        self.res = requests.get(self.url + self.project_id + '/tags/')
+        self.checkCode(200)
+        self.res = requests.delete(self.url + self.project_id + '/tags/')
         self.checkCode(204)
