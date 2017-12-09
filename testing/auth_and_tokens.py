@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneAuthAndTokens(TestKeystoneBase):
@@ -9,6 +9,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.url = self.host + '/v3/auth/'
         self.auth = ''
         self.token = ''
+        self.user_id = '62260c42-4ccb-41ec-a631-998bfb0119d4'
 
     def password_unscoped(self):
         body = {
@@ -17,10 +18,11 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                     'methods' : [ 'password' ],
                     'password' : {
                         'user' : {
-                            'name' : 'admin',
-                            'domain' : {
-                                'name' : 'Default'
-                            },
+                            # 'name' : 'admin',
+                            # 'domain' : {
+                            #     'name' : 'Default'
+                            # },
+                            'id' : self.user_id,
                             'password' : 'myadminpass'
                         }
                     }
@@ -61,10 +63,10 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
 
     def get_token(self):
         self.password_unscoped()
-        self.token_scoped()
+        # self.token_scoped()
         headers = {
             "X-Auth-Token" : self.auth,
-            "X-Subject-Token": self.token
+            "X-Subject-Token": self.auth
         }
         self.res = requests.get(self.url + 'tokens', headers = headers)
         self.checkCode(200)

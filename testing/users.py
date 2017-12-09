@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
@@ -7,6 +7,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         self.url = self.host + '/v3/users/'
         self.user_id = '3daf3fca-d165-4059-a71a-fd1617d9e9cb'
         self.domain_id = '7bba3639-1d1e-4999-9b14-d8392b6a025d'
+        self.project_id = '899f724c-80ad-456a-a584-040d3748a5b8'
 
     def list(self):
         query = {
@@ -14,7 +15,7 @@ class TestKeystoneUsers(TestKeystoneBase):
             'enabled': 'true',
             # 'idp_id': 'idp_id',
             # 'name': 'name',
-            'password_expires_at': 'lte:2017-12-08T13:00:00Z',
+            # 'password_expires_at': 'lte:2017-12-08T13:00:00Z',
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
         }
@@ -25,8 +26,9 @@ class TestKeystoneUsers(TestKeystoneBase):
         body = {
             "user": {
                 "enabled": "true",
-                "name": "test_expire_password",
+                "name": "test_default_project",
                 "password": "myadminpass",
+                'default_project_id': self.project_id
                 # "domain_id": self.domain_id,
             }
         }

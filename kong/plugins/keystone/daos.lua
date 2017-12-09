@@ -460,8 +460,8 @@ local CACHE_SCHEMA = {
     primary_key = {"user_id", "scope_id"},
     table = "cache",
     fields = {
-        user_id = {type = "string", requires = true},
-        token_id = { type = "string" },
+        user_id = {type = "string", required = true},
+        token_id = { type = "string", unique = true },
         scope_id = { type = "string", required = true }, --project/domain
         roles = { type = "string", required = true },
         issued_at = { type = "timestamp" }

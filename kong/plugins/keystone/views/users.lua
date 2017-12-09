@@ -95,13 +95,9 @@ local function list_users(self, dao_factory, helpers)
                 links = {
                     self = resp.links.self .. '/' .. user_info.id
                 },
-                password_expires_at = user_info.password_expires_at
+                password_expires_at = user_info.password_expires_at,
+                default_project_id = user_info.default_project_id
             }
-            if user_info.default_project_id then
-                resp.users[num].default_project_id = user_info.default_project_id
-            else
-                resp.users[num].default_project_id = user_info.project_id
-            end
         end
     end
 
