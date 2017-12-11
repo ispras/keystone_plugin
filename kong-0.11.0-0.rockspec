@@ -231,7 +231,6 @@ build = {
     ["kong.plugins.keystone.views.regions"] = "kong/plugins/keystone/views/regions.lua",
     ["kong.plugins.keystone.views.projects"] = "kong/plugins/keystone/views/projects.lua",
     ["kong.plugins.keystone.views.project_tags"] = "kong/plugins/keystone/views/project_tags.lua",
-    ["kong.plugins.keystone.views.policies"] = "kong/plugins/keystone/views/policies.lua",
     ["kong.plugins.keystone.views.os_pki_api"] = "kong/plugins/keystone/views/os_pki_api.lua",
     ["kong.plugins.keystone.views.os_inherit_api"] = "kong/plugins/keystone/views/os_inherit_api.lua",
     ["kong.plugins.keystone.views.groups"] = "kong/plugins/keystone/views/groups.lua",
