@@ -1,12 +1,14 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
-local sha512 = require('sha512')
+local sha512 = require("kong.plugins.keystone.sha512")
 local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
 local assignment = roles.assignment
 local services_and_endpoints = require("kong.plugins.keystone.views.services_and_endpoints")
 local service = services_and_endpoints.services
 local endpoint = services_and_endpoints.endpoints
+local redis = require ("kong.plugins.keystone.redis")
+local cjson = require "cjson"
 
 local function check_user(user, dao_factory)
     local loc_user, domain
@@ -274,8 +276,17 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
-    local cache,err = dao_factory.cache:update({token_id = token.id, issued_at = os.time()},{user_id = user.id, scope_id = project.id}) -- TODO cache
-    kutils.assert_dao_error(err, "cache:update")
+    local red, err = redis.connect() -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local temp, err = red:get(user.id..'&'..project.id)
+    kutils.assert_dao_error(err, "redis get")
+    local issued_at = os.time()
+    temp = cjson.decode(temp)
+    temp.issued_at = issued_at
+    local _, err = red:set(user.id..'&'..project.id, cjson.encode(temp))
+    kutils.assert_dao_error(err, "redis set")
+    local _, err = red:set(token.id, user.id..'&'..project.id)
+    kutils.assert_dao_error(err, "redis set")
 
     local resp = {
         token = {
@@ -294,7 +305,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(cache.issued_at)
+            issued_at = kutils.time_to_string(issued_at)
         }
     }
     if not (self.params.nocatalog) then
@@ -371,8 +382,17 @@ local function auth_token_scoped(self, dao_factory, user)
     local token, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
-    local cache,err = dao_factory.cache:update({token_id = token.id, issued_at = os.time()},{user_id = user.id, scope_id = project.id}) -- TODO cache
-    kutils.assert_dao_error(err, "cache:update")
+    local red, err = redis.connect() -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local temp, err = red:get(user.id..'&'..project.id)
+    kutils.assert_dao_error(err, "redis get")
+    local issued_at = os.time()
+    temp = cjson.decode(temp)
+    temp.issued_at = issued_at
+    local _, err = red:set(user.id..'&'..project.id, cjson.encode(temp))
+    kutils.assert_dao_error(err, "redis set")
+    local _, err = red:set(token.id, user.id..'&'..project.id)
+    kutils.assert_dao_error(err, "redis set")
 
     local resp = {
         token = {
@@ -391,7 +411,7 @@ local function auth_token_scoped(self, dao_factory, user)
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
-            issued_at = kutils.time_to_string(cache.issued_at)
+            issued_at = kutils.time_to_string(issued_at)
         }
     }
     if not (self.params.nocatalog) then
@@ -433,14 +453,21 @@ local function get_token_info(self, dao_factory)
     }
     local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
 
-    local temp, err = dao_factory.cache:find_all({token_id = token.id}) --TODO cache
-    kutils.assert_dao_error(err, "cache:find_all")
-    local cache = temp[1]
-    if not cache then
+    local red, err = redis.connect() -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local key, err = red:get(token.id)
+    kutils.assert_dao_error(err, "redis get")
+    local temp, err = red:get(key)
+    kutils.assert_dao_error(err, "redis get")
+    if temp == ngx.null then
         local _, err = dao_factory.token:update({valid = false}, {id = token.id})
         kutils.assert_dao_error(err, "token:update")
         return responses.send_HTTP_CONFLICT("No scope info for token")
     end
+    local cache = cjson.decode(temp)
+    cache.user_id, cache.scope_id = key:match("(.*)&(.*)")
+    cache.issued_at = tonumber(cache.issued_at)
+
     local temp, err = dao_factory.project:find({id = cache.scope_id})
     kutils.assert_dao_error(err, "project:find")
     local project = {

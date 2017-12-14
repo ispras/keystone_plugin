@@ -1,8 +1,6 @@
 local responses = require "kong.tools.responses"
-local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
-local sha512 = require('sha512')
 
 Credential = {}
 

@@ -1,6 +1,6 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
-local sha512 = require('sha512')
+local sha512 = require("kong.plugins.keystone.sha512")
 local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
 local assignment = roles.assignment

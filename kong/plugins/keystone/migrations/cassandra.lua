@@ -395,17 +395,6 @@ return {
         PRIMARY KEY (domain_id, group, option)
       );
 
-      CREATE TABLE IF NOT EXISTS cache(
-        user_id varchar,
-        token_id varchar,
-        scope_id varchar,
-        roles text,
-        issued_at timestamp,
-        PRIMARY KEY (user_id, scope_id)
-      );
-
-      CREATE INDEX IF NOT EXISTS ON cache(token_id);
-
     ]],
     down = [[
       DROP TABLE acess_token;

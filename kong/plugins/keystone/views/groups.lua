@@ -1,6 +1,5 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
-local sha512 = require('sha512')
 local kutils = require ("kong.plugins.keystone.utils")
 
 local function list_groups(self, dao_factory)
