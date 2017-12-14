@@ -2,7 +2,7 @@ local redis = require "resty.redis"
 
 local function config_from_file()
     local conf = {}
-    local f, err = loadfile("/etc/kong/redis.conf", "t", conf)
+    local f, err = loadfile("/etc/kong/kong-redis.conf", "t", conf)
     if f then
         f()
     else
