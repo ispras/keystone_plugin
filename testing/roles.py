@@ -75,5 +75,19 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(200)
 
     def list_as(self):
-        self.res = requests.get(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles')
-        self.checkCode(200)
+        # self.res = requests.get(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles')
+        # self.checkCode(200)
+        self.admin_domain_id = '075895d8-7134-4c92-989a-c413b181236f'
+        self.admin_user_id = '1ce60175-8d39-4c73-b247-2da9675fc094'
+        self.admin_role_id = 'a490cc5a-9a6f-49c5-b8c9-24d865a23017'
+        # self.res = requests.put(self.host + '/v3/domains/' + self.admin_domain_id + '/users/'
+        #                        + self.admin_user_id + '/roles/' + self.admin_role_id,
+        #                        json={})  # json object is required
+        # self.checkCode(204)
+        # self.res = requests.get(self.host + '/v3/domains/' + self.admin_domain_id + '/users/' + self.admin_user_id + '/roles')
+        # self.checkCode(200)
+        self.admin_project_id = 'd890d7e8-b951-4133-8045-0a8493c059c8'
+        self.res = requests.put(
+            self.host + '/v3/projects/' + self.admin_project_id + '/users/' + self.admin_user_id + '/roles/' + self.admin_role_id,
+            json={})  # json object is required
+        self.checkCode(204)

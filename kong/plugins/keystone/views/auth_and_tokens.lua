@@ -486,7 +486,7 @@ local function get_token_info(self, dao_factory)
     local resp = {
         token = {
             methods = {"token"},
-            roles = kutils.string_to_roles(cache.roles),
+            roles = cache.roles, --kutils.string_to_roles(cache.roles)
             expires_at = kutils.time_to_string(token.expires),
             project = project,
             extras = token.extra,

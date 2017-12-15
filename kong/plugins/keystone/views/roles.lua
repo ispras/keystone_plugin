@@ -839,7 +839,7 @@ local routes = {
             delete_role_inference_rule(self, dao_factory)
         end
     },
-    ["/v3/role_assigments"] = {
+    ["/v3/role_assignments"] = {
         GET = function(self, dao_factory)
             responses.send_HTTP_OK(list_role_assignments(self, dao_factory))
         end
