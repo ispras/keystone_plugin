@@ -1,26 +1,19 @@
 local redis = require "resty.redis"
+local kutils = require ("kong.plugins.keystone.utils")
 
-local function config_from_file()
-    local conf = {}
-    local f, err = loadfile("/etc/kong/kong-redis.conf", "t", conf)
-    if f then
-        f()
-    else
-        return nil, err
-    end
-    return {
-        redis_host = conf.redis.host,
-        redis_port = conf.redis.port,
-        redis_timeout = conf.redis.timeout,
-        redis_password = conf.redis.password or ''
-    }
+local function config_from_dao()
+    local singletons = require "kong.singletons"
+    local dao = singletons.dao
+    local temp, err = dao.plugins:find_all({name='keystone'})
+    kutils.assert_dao_error(err, "plugins find all")
+    return temp[1].config
 end
 
 local function connect_to_redis(conf)
     local red = redis:new()
     local err
 
-    conf, err = conf and conf or config_from_file()
+    conf, err = conf or config_from_dao()
     if not conf then
         return nil, "failed to get configuration parameters: "..err
     end
@@ -41,24 +34,7 @@ local function connect_to_redis(conf)
     return red
 end
 
-
-local function red_set(premature, key, val, conf)
-    local red, err = connect_to_redis(conf)
-    if err then
-        return nil, err
-    end
-
-    red:init_pipeline()
-    red:set(key, val)
-    local results, err = red:commit_pipeline()
-    if err then
-        return nil, err
-    end
-    return results
-end
-
 return {
     connect = connect_to_redis,
-    set_value = red_set,
-    config = config_from_file
+    config = config_from_dao
 }
