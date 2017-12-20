@@ -29,122 +29,16 @@ class TestKeystoneBase(unittest.TestCase):
 
 
     def init(self):
-        body = {
-            "domain": {
-                "name": "Default",
-                "description": "Default domain for testing",
-                "enabled":  True
-            }
-        }
-        self.res = requests.post(self.host + '/v3/domains', json = body)
+        self.res = requests.post(self.host + '/v3', json = {})
+        self.checkCode(200)
 
-        # if self.res.text != "{\"message\":\"Error: project with this name exists\"}\n":
-        self.checkCode(201)
-        self.default_domain_id = self.res.json()['domain']['id']
-        #
-        # # body = {
-        # # "project": {
-        # #     "description": "Admin project",
-        # #     "enabled": True,
-        # #     "name": "Admin",
-        # #     }
-        # # }
-        # # self.res = requests.post(self.host + '/v3/projects', json = body)
-        # # if self.res.text != "{\"message\":\"Error: project with this name exists\"}\n":
-        # #     self.checkCode(201)
-        # #     self.project_id = self.res.json()['project']['id']
-        # #
-        # # self.checkCode(201)
-        # # self.default_domain_id = self.res.json()['domain']['id']
-        #
-        body = {
-            "domain": {
-                "name": "admin",
-                "description": "Admin domain for testing",
-                "enabled": True
-            }
-        }
-
-        # if self.res.text != "{\"message\":\"Error: project with this name exists\"}\n":
-        self.res = requests.post(self.host + '/v3/domains', json=body)
-        self.checkCode(201)
-        self.admin_domain_id = self.res.json()['domain']['id']
-
-
-        body = {
-            "project": {
-                "name": "admin",
-                "description": "Admin project for testing",
-                "enabled": True,
-                "is_domain": False,
-                "domain_id": self.admin_domain_id
-            }
-        }
-        self.res = requests.post(self.host + '/v3/projects', json=body)
-        self.checkCode(201)
-        self.admin_project_id = self.res.json()['project']['id']
-
-
-        body = {
-            'role' : {
-                'name' : 'Default'
-            }
-        }
-        self.res = requests.post(self.host + '/v3/roles', json = body)
-
-        if self.res.text != "{\"message\":\"Role with specified name already exists in domain\"}\n":
-            self.checkCode(201)
-            self.default_role_id = self.res.json()['role']['id']
-
-        # # body = {
-        # #     'role': {
-        # #         'name': 'Admin'
-        # #     }
-        # # }
-        # # self.res = requests.post(self.host + '/v3/roles', json=body)
-        # # if self.res.text != "{\"message\":\"Role with specified name already exists in domain\"}\n":
-        # #     self.checkCode(201)
-        # #     self.role_id = self.res.json()['role']['id']
-        #
-        # # self.checkCode(201)
-        # # self.default_role_id = self.res.json()['role']['id']
-        #
-        body = {
-            'role': {
-                'name': 'admin'
-            }
-        }
-        self.res = requests.post(self.host + '/v3/roles', json=body)
-        self.checkCode(201)
-        self.admin_role_id = self.res.json()['role']['id']
-
-        body = {
-            "user": {
-                "enabled": "true",
-                "name": "admin",
-                "password": "myadminpass",
-                "domain_id": self.admin_domain_id,
-                "default_project_id": self.admin_project_id
-
-            }
-        }
-        self.res = requests.post(self.host + '/v3/users', json = body)
-        #
-        # # if self.res.text != "{\"message\":\"Local user with this name is already exists\"}\n":
-        # #     self.checkCode(201)
-        # #     self.user_id = self.res.json()['user']['id']
-        #
-        self.checkCode(201)
-        self.admin_user_id = self.res.json()['user']['id']
-
-        self.res = requests.put(self.host + '/v3/domains/' + self.admin_domain_id + '/users/'
-                                + self.admin_user_id + '/roles/' + self.admin_role_id, json={})  # json object is required
-        self.checkCode(204)
-
-        self.res = requests.put(
-            self.host + '/v3/projects/' + self.admin_project_id + '/users/' + self.admin_user_id + '/roles/' + self.admin_role_id,
-            json={})  # json object is required
-        self.checkCode(204)
+        ids = self.res.json()
+        self.default_domain_id = ids['default_domain_id']
+        self.admin_domain_id = ids['admin_domain_id']
+        self.admin_project_id = ids['admin_project_id']
+        self.default_role_id = ids['default_role_id']
+        self.admin_role_id = ids['admin_role_id']
+        self.admin_user_id = ids['admin_user_id']
 
         body = {
             "region": {
