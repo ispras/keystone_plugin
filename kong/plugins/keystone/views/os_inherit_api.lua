@@ -5,7 +5,10 @@ local roles = require ("kong.plugins.keystone.views.roles")
 local assignment = roles.assignment
 
 local function assign_inherited_role(self, dao_factory, type, enable)
-    assignment.check(self, dao_factory, type, false)
+    local code = assignment.check(self, dao_factory, type, false)
+    if code ~= 204 then
+        responses.send(code)
+    end
     local projects, err = type:match("Domain") and dao_factory.project:find_all({ domain_id = self.params.target_id }) or
             kutils.subtree(dao_factory, self.params.target_id)
     kutils.assert_dao_error(err, type:match("Domain") and "project:find_all" or "subtree")
@@ -50,7 +53,10 @@ local function list_inherited_roles(self, dao_factory, type)
 end
 
 local function check_assignment(self, dao_factory, type)
-    assignment.check(self, dao_factory, type, false)
+    local code = assignment.check(self, dao_factory, type, false)
+    if code ~= 204 then
+        responses.send(code)
+    end
     local projects, err = type:match("Domain") and dao_factory.project:find_all({ domain_id = self.params.target_id }) or
             kutils.subtree(dao_factory, self.params.target_id)
     kutils.assert_dao_error(err, type:match("Domain") and "project:find_all" or "subtree")

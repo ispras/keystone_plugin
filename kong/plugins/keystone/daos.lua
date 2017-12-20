@@ -332,7 +332,7 @@ local ROLE_SCHEMA = {
     table = "role",
     fields = {
         id = { type = "string", required = true },
-        name = { type = "string", required = true },
+        name = { type = "string", required = true, unique = true },
         extra = { type = "string" },
         domain_id = { type = "string", required = true }
     }

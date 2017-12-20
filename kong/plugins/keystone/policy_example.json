@@ -1,5 +1,5 @@
 {
-    "admin_required": "role:admin or is_admin:1",
+    "admin_required": "role:admin",
     "service_role": "role:service",
     "service_or_admin": "rule:admin_required or rule:service_role",
     "owner" : "user_id:%(user_id)s",

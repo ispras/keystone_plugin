@@ -3,7 +3,9 @@ local utils = require "kong.tools.utils"
 local sha512 = require("kong.plugins.keystone.sha512")
 local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
+local policies = require ("kong.plugins.keystone.policies")
 local assignment = roles.assignment
+local cjson = require "cjson"
 
 local function user_fits(params, dao_factory, user_info)
 
@@ -108,18 +110,18 @@ local function check_user_domain(dao_factory, domain_id, uname)
     local temp, err = dao_factory.project:find({id = domain_id})
     kutils.assert_dao_error(err, "projects:find")
     if not temp or not temp.is_domain then
-        return responses.send_HTTP_BAD_REQUEST("Invalid domain ID")
+        responses.send_HTTP_BAD_REQUEST("Invalid domain ID")
     end
 
     local temp, err = dao_factory.local_user:find_all({name = uname, domain_id = domain_id})
     kutils.assert_dao_error(err, "local_user:find_all")
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Local user with this name is already exists")
+        return "Local user with this name is already exists"
     end
     local temp, err = dao_factory.nonlocal_user:find({name = uname, domain_id = domain_id})
     kutils.assert_dao_error(err, "nonlocal_user:find")
     if temp then
-        return responses.send_HTTP_BAD_REQUEST("Nonlocal user with this name is already exists")
+        return "Nonlocal user with this name is already exists"
     end
 
 end
@@ -181,7 +183,10 @@ local function create_local_user(self, dao_factory)
         domain_id = loc_user.domain_id
     }
 
-    check_user_domain(dao_factory, loc_user.domain_id, loc_user.name)
+    local err = check_user_domain(dao_factory, loc_user.domain_id, loc_user.name)
+    if err then
+        return 400, err
+    end
 
     if user.default_project_id then
         check_user_project(dao_factory, user.default_project_id)
@@ -216,7 +221,7 @@ local function create_local_user(self, dao_factory)
             password_expires_at = kutils.time_to_string(passwd.expires_at)
         }
     }
-    return resp
+    return 201, resp
 end
 
 local function create_nonlocal_user(self, dao_factory)
@@ -239,7 +244,10 @@ local function create_nonlocal_user(self, dao_factory)
         created_at = created_time,
         domain_id = nonloc_user.domain_id
     }
-    check_user_domain(dao_factory, nonloc_user.domain_id, nonloc_user.name)
+    local err = check_user_domain(dao_factory, nonloc_user.domain_id, nonloc_user.name)
+    if err then
+        responses.send_HTTP_BAD_REQUEST(err)
+    end
 
     if user.default_project_id then
         check_user_project(dao_factory, user.default_project_id)
@@ -321,7 +329,10 @@ local function update_user(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST({message = "No user object detected in request"})
     end
     if uupdate.name then
-        check_user_domain(dao_factory, user.domain_id, uupdate.name)
+        local err = check_user_domain(dao_factory, user.domain_id, uupdate.name)
+        if err then
+            responses.send_HTTP_BAD_REQUEST(err)
+        end
     end
 
     local loc_user, nonloc_user, err
@@ -613,14 +624,16 @@ local function change_user_password(self, dao_factory)
     return responses.send_HTTP_NO_CONTENT()
 end
 
-return {
+local routes = {
     ["/v3/users"] = {
         GET = function(self, dao_factory)
+--            responses.send_HTTP_OK({policies.check(self.session.user, "list_users")})
+--            responses.send_HTTP_OK(policies.to_table(policies.role("identity:ec2_get_credential")))
             list_users(self, dao_factory)
         end,
         POST = function(self, dao_factory)
             if self.params.user and self.params.user.password then
-                return responses.send_HTTP_CREATED(create_local_user(self, dao_factory))
+                return responses.send(create_local_user(self, dao_factory))
             elseif self.params.user then
                 return responses.send_HTTP_CREATED(create_nonlocal_user(self, dao_factory))
             else
@@ -655,3 +668,5 @@ return {
         end
     }
 }
+
+return {routes = routes, create = create_local_user}

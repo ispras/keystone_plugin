@@ -9,7 +9,7 @@ return {
         end
     end,
     default_domain = function(dao_factory)
-        local domain, err = dao_factory.project:find_all({name = 'Default'})
+        local domain, err = dao_factory.project:find_all({name = 'Default', is_domain = true})
         if not err and next(domain) then return domain[1]['id'] end
         return nil
     end,
@@ -52,28 +52,6 @@ return {
         headers["x-openstack-request-id"] = utils.uuid()
         headers.Vary = "X-Auth-Token"
         return headers
-    end,
-    parse_json = function(file_name)
-        local storage = {}
-        local file, err = io.open(file_name, "r")
-        if not file or err then
-            return err
-        end
-
-        while true do
-            local t = file:read("*line")
-            if not t then
-                break
-            end
-            local a, b = t:match('\"(.*)\":%s\"(.*)\"')
-            if a then
-                storage[a] = b
-            end
-
-        end
-        file:close()
-
-        return nil, storage
     end,
     has_id = function(array, id, field)
         for i = 1, #array do

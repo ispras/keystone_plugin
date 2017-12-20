@@ -48,7 +48,7 @@ local function create_role(self, dao_factory)
     local temp, err = dao_factory.role:find_all(role)
     kutils.assert_dao_error(err, "role find_all")
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Role with specified name already exists in domain")
+        return 400, "Role with specified name already exists in domain"
     end
 
     role = {
@@ -67,7 +67,7 @@ local function create_role(self, dao_factory)
         self = self:build_url(self.req.parsed_url.path..role.id)
     }
 
-    return responses.send_HTTP_CREATED(resp)
+    return 201, resp
 end
 
 local function get_role_info(self, dao_factory)
@@ -322,7 +322,7 @@ local function check_assignment(self, dao_factory, type, inherited)
     local role_name, err
     role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if err then
-        return responses.send_HTTP_BAD_REQUEST()
+        return 400
     end
 
     if not inherited and type:match("User") then -- TODO cache
@@ -330,20 +330,23 @@ local function check_assignment(self, dao_factory, type, inherited)
         kutils.assert_dao_error(err, "redis connect")
         local temp, err = red:get(actor_id..'&'..target_id)
         kutils.assert_dao_error(err, "redis get")
-        if temp ~= ngx.null then
-            local roles = cjson.decode(temp).roles
-            if kutils.has_id(roles, role_id) then
-                return
-            else
-                return responses.send_HTTP_NOT_FOUND()
-            end
+        local roles
+        if temp == ngx.null then
+            roles = list_role_assignments_for_actor_on_target(self, dao_factory, type, inherited).roles
+        else
+            roles = cjson.decode(temp).roles
+        end
+        if kutils.has_id(roles, role_id) then
+            return 204
+        else
+            return 404
         end
     end
 
     local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
     kutils.assert_dao_error(err, "assignment find")
     if temp then
-        return
+        return 204
     elseif type:match("User") then
         local ugroups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
         for _, ugroup in pairs(ugroups) do
@@ -351,12 +354,12 @@ local function check_assignment(self, dao_factory, type, inherited)
                 actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = inherited})
             kutils.assert_dao_error(err, "assignment:find")
             if temp then
-                return
+                return 204
             end
         end
     end
 
-    return responses.send_HTTP_NOT_FOUND()
+    return 404
 end
 
 local function unassign_role(self, dao_factory, type, inherited)
@@ -738,7 +741,7 @@ local routes = {
             responses.send_HTTP_OK(list_roles(self, dao_factory))
         end,
         POST = function(self, dao_factory)
-            create_role(self, dao_factory)
+            responses.send(create_role(self, dao_factory))
         end
     },
     ["/v3/roles/:role_id"] = {
@@ -763,7 +766,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupDomain", false))
+            responses.send(check_assignment(self, dao_factory, "GroupDomain", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupDomain", false)
@@ -780,7 +783,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserDomain", false))
+            responses.send(check_assignment(self, dao_factory, "UserDomain", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserDomain", false)
@@ -797,7 +800,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupProject", false))
+            responses.send(check_assignment(self, dao_factory, "GroupProject", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupProject", false)
@@ -814,7 +817,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserProject", false))
+            responses.send(check_assignment(self, dao_factory, "UserProject", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserProject", false)
@@ -851,4 +854,4 @@ local routes = {
     }
 }
 
-return {routes = routes, roles = Role, assignment = Assignment, inference_rule = Inference_rule}
+return {routes = routes, roles = Role, assignment = Assignment, inference_rule = Inference_rule, create = create_role}
