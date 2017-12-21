@@ -447,7 +447,7 @@ http://cassandra.apache.org/download/ :
 https://getkong.org/install/ubuntu/
         git clone https://github.com/lenaaxenova/keystone_plugin.git
         cd keystone_plugin
-        git checkout cache
+        git checkout v3
 https://getkong.org/docs/0.11.x/plugin-development/distribution/ :
         sudo luarocks make kong-plugin-keystone-0.1.0-1.rockspec
         sudo cp ./kong.conf /etc/kong/kong.conf
