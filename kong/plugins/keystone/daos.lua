@@ -332,7 +332,7 @@ local ROLE_SCHEMA = {
     table = "role",
     fields = {
         id = { type = "string", required = true },
-        name = { type = "string", required = true },
+        name = { type = "string", required = true, unique = true },
         extra = { type = "string" },
         domain_id = { type = "string", required = true }
     }
@@ -456,18 +456,6 @@ local WHITELISTED_CONFIG_SCHEMA = {
     }
 }
 
-local CACHE_SCHEMA = {
-    primary_key = {"user_id", "scope_id"},
-    table = "cache",
-    fields = {
-        user_id = { type = "string", required = true},
-        token_id = { type = "string", unique = true },
-        scope_id = { type = "string", required = true }, --project/domain
-        roles = { type = "string", required = true },
-        issued_at = { type = "timestamp" }
-    }
-}
-
 return {
     access_token = ACCESS_TOKEN_SCHEMA,
     assignment = ASSIGNMENT_SCHEMA,
@@ -507,6 +495,5 @@ return {
     user = USER_SCHEMA,
     user_group_membership = USER_GROUP_MEMBERSHIP_SCHEMA,
     user_option = USER_OPTION_SCHEMA,
-    whitelisted_config = WHITELISTED_CONFIG_SCHEMA,
-    cache = CACHE_SCHEMA
+    whitelisted_config = WHITELISTED_CONFIG_SCHEMA
 }

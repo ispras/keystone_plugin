@@ -117,14 +117,14 @@ local function check_project_name(dao_factory,name, is_domain, domain_id)
         kutils.assert_dao_error(err, "project:find_all")
 
         if next(res) then
-            return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
+            return "Error: project with this name exists"
         end
     else
         local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain, domain_id = domain_id})
         kutils.assert_dao_error(err, "project:find_all")
 
         if next(res) then
-            return responses.send_HTTP_BAD_REQUEST("Error: project with this name exists")
+            return "Error: project with this name exists"
         end
     end
 end
@@ -154,12 +154,12 @@ local function create_project(self, dao_factory)
     --request = cjson.decode(request)
     local request = self.params
     if not request.project then
-         return responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
+         responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
     end
     --print(request)
     local name = request.project.name -- must be checked that name is unique
     if not name then
-        return responses.send_HTTP_BAD_REQUEST("Error: project name must be in the request")
+        responses.send_HTTP_BAD_REQUEST("Error: project name must be in the request")
     end
 
     local is_domain = kutils.bool(request.project.is_domain) or false
@@ -171,7 +171,10 @@ local function create_project(self, dao_factory)
         domain_id = kutils.default_domain(dao_factory)
     end
 
-    check_project_name(dao_factory, name, is_domain, domain_id)
+    local err = check_project_name(dao_factory, name, is_domain, domain_id)
+    if err then
+        return 400, err
+    end
 
     local description = request.project.description or ''
 
@@ -214,7 +217,7 @@ local function create_project(self, dao_factory)
                             }
         }
     end
-    return responses.send_HTTP_CREATED(response)
+    return 201, response
 end
 
 local function get_project_info(self, dao_factory)
@@ -369,7 +372,10 @@ local function update_project(self, dao_factory)
     end
 
     if request.project.name then
-        check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
+        local err = check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
+        if err then
+            responses.send_HTTP_BAD_REQUEST(err)
+        end
     end
 
     local updated_project, err = dao_factory.project:update(request.project, {id=project.id})
@@ -412,13 +418,13 @@ Project.get_project_info = get_project_info
 Project.update_project = update_project
 Project.delete_project = delete_project
 
-return {
+local routes = {
     ["/v3/projects"] = {
         GET = function(self, dao_factory)
             Project.list_projects(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            Project.create_project(self, dao_factory)
+            return responses.send(Project.create_project(self, dao_factory))
         end
     },
     ["/v3/projects/:project_id"] = {
@@ -433,3 +439,5 @@ return {
         end
     }
 }
+
+return {routes = routes, create = create_project}

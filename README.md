@@ -434,4 +434,28 @@ Also you can test two DELETE-methods:
 These queries will delete entities by their ID.
 
 
-## **Step 3: Testing**
+## **Instruction for running Keystone plugin on Ubuntu**
+
+~~~sh
+http://cassandra.apache.org/download/ :
+        echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+        curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+        sudo apt-get update
+        sudo apt-get install cassandra
+        sudo service cassandra start
+        sudo apt-get install libssl1.0.0
+https://getkong.org/install/ubuntu/
+        git clone https://github.com/lenaaxenova/keystone_plugin.git
+        cd keystone_plugin
+        git checkout cache
+https://getkong.org/docs/0.11.x/plugin-development/distribution/ :
+        sudo luarocks make kong-plugin-keystone-0.1.0-1.rockspec
+        sudo cp ./kong.conf /etc/kong/kong.conf
+        sudo kong migrations up -c /etc/kong/kong.conf
+        sudo kong start -c /etc/kong/kong.conf
+        curl -i http://localhost:8001/
+
+        sudo kong restart
+~~~
+
+For install and configure Redis use this link: https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-redis-on-ubuntu-16-04

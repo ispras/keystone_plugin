@@ -1,4 +1,5 @@
-local projects = require ("kong.plugins.keystone.views.projects")
+local temp = require ("kong.plugins.keystone.views.projects")
+local projects = temp.routes
 
 local function list_domains(self, dao_factory)
     return ''

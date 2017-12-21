@@ -31,7 +31,7 @@ local project_tags = require ('kong.plugins.keystone.views.project_tags')
 add_routes(project_tags)
 
 local projects = require ('kong.plugins.keystone.views.projects')
-add_routes(projects)
+add_routes(projects.routes)
 
 local regions = require ('kong.plugins.keystone.views.regions')
 add_routes(regions)
@@ -43,7 +43,7 @@ local services_and_endpoints = require ('kong.plugins.keystone.views.services_an
 add_routes(services_and_endpoints.routes)
 
 local users = require ('kong.plugins.keystone.views.users')
-add_routes(users)
+add_routes(users.routes)
 
 local v3 = require ('kong.plugins.keystone.views.v3')
 add_routes(v3)

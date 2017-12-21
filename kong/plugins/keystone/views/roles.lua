@@ -1,7 +1,9 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
-local sha512 = require('sha512')
+local sha512 = require("kong.plugins.keystone.sha512")
 local kutils = require ("kong.plugins.keystone.utils")
+local redis = require ("kong.plugins.keystone.redis")
+local cjson = require "cjson"
 
 local function list_roles(self, dao_factory)
     local name = self.params.name
@@ -46,7 +48,7 @@ local function create_role(self, dao_factory)
     local temp, err = dao_factory.role:find_all(role)
     kutils.assert_dao_error(err, "role find_all")
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Role with specified name already exists in domain")
+        return 400, "Role with specified name already exists in domain"
     end
 
     role = {
@@ -65,7 +67,7 @@ local function create_role(self, dao_factory)
         self = self:build_url(self.req.parsed_url.path..role.id)
     }
 
-    return responses.send_HTTP_CREATED(resp)
+    return 201, resp
 end
 
 local function get_role_info(self, dao_factory)
@@ -86,7 +88,7 @@ local function get_role_info(self, dao_factory)
     return resp
 end
 
-local function update_role(self, dao_factory)
+local function update_role(self, dao_factory) -- clean cache
     local role_id = self.params.role_id
     local role, err = dao_factory.role:find({id = role_id})
     kutils.assert_dao_error(err, "role find")
@@ -114,20 +116,10 @@ local function update_role(self, dao_factory)
         self = self:build_url(self.req.parsed_url.path..role.id)
     }
 
-    local temp, err = dao_factory.cache:find_all()
-    for _, v in ipairs(temp) do
-        local roles = kutils.string_to_roles(v.roles)
-        local i = kutils.has_id(roles, role_id)
-        if i then
-            roles[i].name = role.name
-            dao_factory.cache:update({roles = kutils.roles_to_string(roles)}, {user_id = v.user_id, scope_id = v.scope_id})
-        end
-    end
-
     return responses.send_HTTP_OK(resp)
 end
 
-local function delete_role(self, dao_factory)
+local function delete_role(self, dao_factory) -- clean cache
     local role_id = self.params.role_id
 
     local temp, err = dao_factory.role:delete({id = role_id})
@@ -135,13 +127,6 @@ local function delete_role(self, dao_factory)
     if not temp then
         return responses.send_HTTP_BAD_REQUEST("Role is not found")
     end
-        temp, err = dao_factory.cache:find_all()
-        for _, v in ipairs(temp) do
-            local roles = kutils.string_to_roles(v.roles)
-            if kutils.has_id(roles, role_id) then
-                dao_factory.cache:delete({user_id = v.user_id, scope_id = v.scope_id})
-            end
-        end
         temp = dao_factory.assignment:find_all({role_id = role_id})
         for _, v in ipairs(temp) do
             dao_factory.assignment:delete(v)
@@ -178,10 +163,12 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
     }
 
     if not inherited then --TODO cache
-        local temp, err = dao_factory.cache:find({user_id = actor_id, scope_id = target_id})
-        kutils.assert_dao_error(err, "cache:find")
-        if temp then
-            resp.roles = kutils.string_to_roles(temp.roles)
+        local red, err = redis.connect()
+        kutils.assert_dao_error(err, "redis connect")
+        local temp, err = red:get(actor_id..'&'..target_id)
+        kutils.assert_dao_error(err, "redis get")
+        if temp ~= ngx.null then
+            resp.roles = cjson.decode(temp).roles
             for i = 1, #resp.roles do
                 resp.roles[i].links = {
                     self = self:build_url('/v3/roles/'..resp.roles[i].id)
@@ -226,13 +213,10 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
             end
         end
         if not inherited and next(resp.roles) then --TODO cache
-            local cache = {
-                user_id = actor_id,
-                scope_id = target_id,
-                roles = kutils.roles_to_string(resp.roles)
-            }
-            local _, err = dao_factory.cache:insert(cache)
-            kutils.assert_dao_error(err, "cache:insert")
+            local red, err = redis.connect()
+            kutils.assert_dao_error(err, "redis connect")
+            local _, err = red:set(actor_id..'&'..target_id, cjson.encode({roles = resp.roles}))
+            kutils.assert_dao_error(err, "redis set")
         end
     end
 
@@ -245,53 +229,54 @@ end
 
 local function check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if type and not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") and not actor_id or not target_id then
-        return "Incorrect type"
+        return nil, "Incorrect type"
     end
 
-    local temp, err = dao_factory.role:find({id = role_id})
+    local role, err = dao_factory.role:find({id = role_id})
     kutils.assert_dao_error(err, "role find")
-    if not temp then
-        return "No role found"
+    if not role then
+        return nil, "No role found"
     end
     if type:match("User") then
-        temp, err = dao_factory.user:find({id = actor_id})
+        local temp, err = dao_factory.user:find({id = actor_id})
         kutils.assert_dao_error(err, "user find")
         if not temp then
-            return "No user found"
+            return nil, "No user found"
         end
     end
     if type:match("Group") then
         local temp, err = dao_factory.group:find({id = actor_id})
         kutils.assert_dao_error(err, "group find")
         if not temp then
-            return "No group found"
+            return nil, "No group found"
         end
     end
     if type:match("Project") then
         local temp, err = dao_factory.project:find({id = target_id})
         kutils.assert_dao_error(err, "project find")
         if not temp then
-            return "No project found"
+            return nil, "No project found"
         end
         if temp.is_domain then
-            return "Requested project is domain"
+            return nil, "Requested project is domain"
         end
     end
     if type:match("Domain") then
         local temp, err = dao_factory.project:find({id = target_id})
         kutils.assert_dao_error(err, "project find")
         if not temp or not temp.is_domain then
-            return "No domain found"
+            return nil, "No domain found"
         end
     end
-
+    return role.name
 end
 
 local function assign_role(self, dao_factory, type, inherited, checked)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
+    local role_name, err
     if not checked then
-        local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+        role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
         if err then
             return responses.send_HTTP_BAD_REQUEST(err)
         end
@@ -307,37 +292,61 @@ local function assign_role(self, dao_factory, type, inherited, checked)
     local _, err = dao_factory.assignment:insert(assign)
     kutils.assert_dao_error(err, "assignment insert")
 
-    if type:match("User") and not inherited then
-        local _, err = dao_factory.cache:delete({user_id = actor_id, scope_id = target_id})
-        kutils.assert_dao_error(err, "cache:delete")
+    if type:match("User") and not inherited then -- TODO cache
+        local red, err = redis.connect()
+        kutils.assert_dao_error(err, "redis connect")
+        local temp, err = red:get(actor_id..'&'..target_id)
+        kutils.assert_dao_error(err, "redis get")
+        if temp ~= ngx.null then
+            temp = cjson.decode(temp)
+            if not role_name then
+                local role, err = dao_factory.role:find({id = role_id})
+                kutils.assert_dao_error(err, "role:find")
+                role_name = role.name
+            end
+            if not kutils.has_id(temp.roles, role_id) then
+                temp.roles[#temp.roles + 1] = {
+                    id = role_id,
+                    name = role_name
+                }
+            end
+            local _, err = red:set(actor_id..'&'..target_id, cjson.encode(temp))
+            kutils.assert_dao_error(err, "redis set")
+        end
     end
 end
 
 local function check_assignment(self, dao_factory, type, inherited)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
-    local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+    local role_name, err
+    role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if err then
-        return responses.send_HTTP_BAD_REQUEST()
+        return 400
     end
 
     if not inherited and type:match("User") then -- TODO cache
-        local temp, err = dao_factory.cache:find({user_id = actor_id, scope_id = target_id})
-        kutils.assert_dao_error(err, "cache:find")
-        if temp then
-            local roles = kutils.string_to_roles(temp.roles)
-            if kutils.has_id(roles, role_id) then
-                return
-            else
-                return responses.send_HTTP_NOT_FOUND()
-            end
+        local red, err = redis.connect()
+        kutils.assert_dao_error(err, "redis connect")
+        local temp, err = red:get(actor_id..'&'..target_id)
+        kutils.assert_dao_error(err, "redis get")
+        local roles
+        if temp == ngx.null then
+            roles = list_role_assignments_for_actor_on_target(self, dao_factory, type, inherited).roles
+        else
+            roles = cjson.decode(temp).roles
+        end
+        if kutils.has_id(roles, role_id) then
+            return 204
+        else
+            return 404
         end
     end
 
     local temp, err = dao_factory.assignment:find({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
     kutils.assert_dao_error(err, "assignment find")
     if temp then
-        return
+        return 204
     elseif type:match("User") then
         local ugroups, err = dao_factory.user_group_membership:find_all({user_id = actor_id})
         for _, ugroup in pairs(ugroups) do
@@ -345,32 +354,38 @@ local function check_assignment(self, dao_factory, type, inherited)
                 actor_id = ugroup.group_id, target_id = target_id, role_id = role_id, inherited = inherited})
             kutils.assert_dao_error(err, "assignment:find")
             if temp then
-                return
+                return 204
             end
         end
     end
 
-    return responses.send_HTTP_NOT_FOUND()
+    return 404
 end
 
 local function unassign_role(self, dao_factory, type, inherited)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
-    local err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
+    local role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
     end
 
-    local assign, err = dao_factory.assignment:find_all({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
-    kutils.assert_dao_error(err, "assignment find_all")
-    for i = 1, #assign do
-        local _, err = dao_factory.assignment:delete(assign[i])
-        kutils.assert_dao_error(err, "assignment delete")
-    end
+    local assign, err = dao_factory.assignment:delete({type = type, actor_id = actor_id, target_id = target_id, role_id = role_id, inherited = inherited})
+    kutils.assert_dao_error(err, "assignment delete")
 
-    if not inherited and type:match("User") then -- TODO cache
-        local _, err = dao_factory.cache:delete({user_id = actor_id, scope_id = target_id})
-        kutils.assert_dao_error(err, "cache:delete")
+    if type:match("User") and not inherited and assign then -- TODO cache
+        local red, err = redis.connect()
+        kutils.assert_dao_error(err, "redis connect")
+        local temp, err = red:get(actor_id..'&'..target_id)
+        kutils.assert_dao_error(err, "redis get")
+        if temp ~= ngx.null then
+            temp = cjson.decode(temp)
+            local i = kutils.has_id(temp.roles, role_id)
+            temp.roles[i] = temp.roles[#temp.roles]
+            temp.roles[#temp.roles] = nil
+            local _, err = red:set(actor_id..'&'..target_id, cjson.encode(temp))
+            kutils.assert_dao_error(err, "redis set")
+        end
     end
 
     return responses.send_HTTP_NO_CONTENT()
@@ -726,7 +741,7 @@ local routes = {
             responses.send_HTTP_OK(list_roles(self, dao_factory))
         end,
         POST = function(self, dao_factory)
-            create_role(self, dao_factory)
+            responses.send(create_role(self, dao_factory))
         end
     },
     ["/v3/roles/:role_id"] = {
@@ -751,7 +766,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupDomain", false))
+            responses.send(check_assignment(self, dao_factory, "GroupDomain", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupDomain", false)
@@ -768,7 +783,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserDomain", false))
+            responses.send(check_assignment(self, dao_factory, "UserDomain", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserDomain", false)
@@ -785,7 +800,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "GroupProject", false))
+            responses.send(check_assignment(self, dao_factory, "GroupProject", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "GroupProject", false)
@@ -802,7 +817,7 @@ local routes = {
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(check_assignment(self, dao_factory, "UserProject", false))
+            responses.send(check_assignment(self, dao_factory, "UserProject", false))
         end,
         DELETE = function(self, dao_factory)
             unassign_role(self, dao_factory, "UserProject", false)
@@ -827,7 +842,7 @@ local routes = {
             delete_role_inference_rule(self, dao_factory)
         end
     },
-    ["/v3/role_assigments"] = {
+    ["/v3/role_assignments"] = {
         GET = function(self, dao_factory)
             responses.send_HTTP_OK(list_role_assignments(self, dao_factory))
         end
@@ -839,4 +854,4 @@ local routes = {
     }
 }
 
-return {routes = routes, roles = Role, assignment = Assignment, inference_rule = Inference_rule}
+return {routes = routes, roles = Role, assignment = Assignment, inference_rule = Inference_rule, create = create_role}
