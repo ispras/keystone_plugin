@@ -1,3 +1,4 @@
+local responses = require "kong.tools.responses"
 local cjson = require ("cjson")
 local kutils = require ("kong.plugins.keystone.utils")
 local redis = require ("kong.plugins.keystone.redis")
@@ -5,7 +6,7 @@ local redis = require ("kong.plugins.keystone.redis")
 local parse_json = function(file_name)
     local file, err = io.open(file_name, "r")
     if not file or err then
-        return nil, err
+        responses.send_HTTP_CONFLICT(err)
     end
 
     local t = file:read("*a")
@@ -13,7 +14,7 @@ local parse_json = function(file_name)
 
     file:close()
 
-    return storage, nil
+    return storage
 end
 
 local function get_role(rule)
@@ -32,7 +33,6 @@ local function get_role(rule)
                 format = format.." or (.*)"
             end
             local temp = {rule:match(format) }
-            if not next(temp) then return rule, true end
             rule = get_role(temp[1])
             for i = 2, #temp do
                 rule = rule..' or '..get_role(temp[i])
@@ -46,7 +46,6 @@ local function get_role(rule)
                 format = format.." and (.*)"
             end
             local temp = {rule:match(format)}
-            if not next(temp) then return rule, true end
             rule = get_role(temp[1])
             for i = 2, #temp do
                 rule = rule..' and '..get_role(temp[i])
@@ -92,66 +91,51 @@ local function check_valid(token_id)
     kutils.assert_dao_error(err, "redis get")
     if temp ~= ngx.null then
         if temp:match("^not_valid&") then
-            return false
+            responses.send_HTTP_BAD_REQUEST("Invalid token")
         end
         local user_id, scope_id = temp:match('(.*)&(.*)')
         temp, err = red:get(temp)
         kutils.assert_dao_error(err, "redis get")
-        local roles = cjson.decode(temp).roles
-        return true, user_id, roles
+        local temp = cjson.decode(temp)
+        return user_id, scope_id, temp.roles, temp.is_admin
     end
-    return false
+    responses.send_HTTP_BAD_REQUSET("No scope info for token")
 end
 
-local function check_policy_rule(user, rule, scope_id)
-    if not user or not next(user) or not user.auth then
-        return false, "Unauthorized"
+local function check_policy_rule(token, rule, _user_id, _project_id)
+    if not token then
+        responses.send_HTTP_UNAUTHORIZED()
     end
-    if user.is_admin then
-        return true
-    end
-    if not user.auth[scope_id] then
-        return false, "Unauthorized"
-    end
-    local valid, user_id, roles = check_valid(user.auth[scope_id])
-    if not valid then
-        return false, "Unauthorized"
+    local user_id, scope_id, roles, is_admin = check_valid(token)
+    if is_admin then
+        return
     end
 
-    local role, err = get_role('identity:'..rule)
-    if err then
-        return false, "Unknown rule: "..role
-    end
+    local role = get_role(rule)
 
     if role == '' then
-        return true
+        return
     elseif role == '!' then
-        return false, "Forbidden"
+        responses.send_HTTP_FORBIDDEN()
     end
 
     local rules = to_table(role)
     for _, rules in ipairs(rules) do
-        local check = true
+        local check = false
         for _, rule in ipairs(rules) do
             local comp_user = rule:match("user_id:%%%((.*)%)s")
             local comp_proj = rule:match("project_id:%%%((.*)%)s")
-            if comp_user then
-                --TODO user_id on the left
-                return false, "Not implemented"
-            elseif comp_proj then
-                --TODO project_id on the left
-                return false, "Not implemented"
-            elseif not kutils.has_id(roles, rule, "name") then
-                check = false
+            if comp_user and user_id == _user_id or comp_proj and scope_id == _project_id or kutils.has_id(roles, rule, "name") then
+                check = true
                 break
             end
         end
         if check then
-            return true
+            return
         end
     end
 
-    return false, "Forbidden"
+    responses.send_HTTP_FORBIDDEN()
 end
 
 return {

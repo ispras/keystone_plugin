@@ -5,9 +5,14 @@ class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
         self.url = self.host + '/v3/users/'
-        self.user_id = '3daf3fca-d165-4059-a71a-fd1617d9e9cb'
+        self.user_id = '919a95dd-f955-4c72-b517-fd80af3f36a7'
         self.domain_id = '7bba3639-1d1e-4999-9b14-d8392b6a025d'
         self.project_id = '899f724c-80ad-456a-a584-040d3748a5b8'
+        self.auth()
+        self.headers = {
+            'X-Auth-Token': self.auth_token
+        }
+
 
     def list(self):
         query = {
@@ -19,7 +24,7 @@ class TestKeystoneUsers(TestKeystoneBase):
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
         }
-        self.res = requests.get(self.url, params = query)
+        self.res = requests.get(self.url, params = query, headers = self.headers)
         self.checkCode(200)
 
     def create_local(self):
@@ -32,7 +37,7 @@ class TestKeystoneUsers(TestKeystoneBase):
                 # "domain_id": self.domain_id,
             }
         }
-        self.res = requests.post(self.url, json = body)
+        self.res = requests.post(self.url, json = body, headers = self.headers)
         self.checkCode(201)
         self.user_id = self.res.json()['user']['id']
 
@@ -42,16 +47,16 @@ class TestKeystoneUsers(TestKeystoneBase):
                 "name": "nonloc_user"
             }
         }
-        self.res = requests.post(self.url, json = body)
+        self.res = requests.post(self.url, json = body, headers = self.headers)
         self.checkCode(201)
         self.user_id = self.res.json()['user']['id']
 
     def delete(self):
-        self.res = requests.delete(self.url + self.user_id)
+        self.res = requests.delete(self.url + self.user_id, headers = self.headers)
         self.checkCode(204)
 
     def get_info(self):
-        self.res = requests.get(self.url + self.user_id)
+        self.res = requests.get(self.url + self.user_id, headers = self.headers)
         self.checkCode(200)
 
     def update(self):
@@ -63,23 +68,23 @@ class TestKeystoneUsers(TestKeystoneBase):
                 'password' : 'secret2'
             }
         }
-        self.res = requests.patch(self.url + self.user_id, json = body)
+        self.res = requests.patch(self.url + self.user_id, json = body, headers = self.headers)
         self.checkCode(200)
 
     def list_groups(self):
-        self.res = requests.get(self.url + self.user_id + '/groups')
+        self.res = requests.get(self.url + self.user_id + '/groups', headers = self.headers)
         self.checkCode(200)
 
     def list_projects(self):
-        self.res = requests.get(self.url + self.user_id + '/projects')
+        self.res = requests.get(self.url + self.user_id + '/projects', headers = self.headers)
         self.checkCode(200)
 
     def change_password(self):
         body = {
             'user' : {
-                'password' : 'new_tester',
-                'original_password' : 'tester'
+                'password' : 'myadminpassword',
+                'original_password' : 'myadminpassword'
             }
         }
-        self.res = requests.post(self.url + '/password', json = body)
+        self.res = requests.post(self.url + self.user_id + '/password', json = body, headers=self.headers)
         self.checkCode(204)

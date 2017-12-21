@@ -314,15 +314,16 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     local _, err = red:set(token.id, user.id..'&'..project.id)
     kutils.assert_dao_error(err, "redis set")
 
-    if not self.session.user then
-        self.session.user = {
-            auth = {}
-        }
-    end
-    self.session.user.auth[project.id] = token.id
-    if project.name == "admin" and kutils.has_id(roles, "admin", "name") then
-        self.session.user.is_admin = true
-    end
+--    if not self.session.user then
+--        self.session.user = {
+--            auth = {}
+--        }
+--    end
+--    self.session.user.auth[project.id] = token.id
+--    if project.name == "admin" and kutils.has_id(roles, "admin", "name") then
+--        self.session.user.is_admin = true
+--    end
+
 
     local resp = {
         token = {
@@ -430,15 +431,15 @@ local function auth_token_scoped(self, dao_factory, user)
     local _, err = red:set(token.id, user.id..'&'..project.id)
     kutils.assert_dao_error(err, "redis set")
 
-    if not self.session.user then
-        self.session.user = {
-            auth = {}
-        }
-    end
-    self.session.user.auth[project.id] = token.id
-    if project.name == "admin" and kutils.has_id(roles, "admin", "name") then
-        self.session.user.is_admin = true
-    end
+--    if not self.session.user then
+--        self.session.user = {
+--            auth = {}
+--        }
+--    end
+--    self.session.user.auth[project.id] = token.id
+--    if project.name == "admin" and kutils.has_id(roles, "admin", "name") then
+--        self.session.user.is_admin = true
+--    end
 
     local resp = {
         token = {

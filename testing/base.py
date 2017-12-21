@@ -27,6 +27,27 @@ class TestKeystoneBase(unittest.TestCase):
             if self.__getattribute__(k) != '':
                 print('self.' + k + ' = \''+ self.__getattribute__(k) + '\'')
 
+    def auth(self):
+        # Authenticate as admin
+        body = {
+            'auth' : {
+                'identity' : {
+                    'methods' : [ 'password' ],
+                    'password' : {
+                        'user' : {
+                            'name' : 'admin',
+                            'domain' : {
+                                'name' : 'admin'
+                            },
+                            'password' : 'myadminpassword'
+                        }
+                    }
+                }
+            }
+        }
+        self.res = requests.post(self.host + '/v3/auth/tokens', json = body)
+        self.checkCode(201)
+        self.auth_token = self.res.headers['X-Subject-Token']
 
     def init(self):
         self.res = requests.post(self.host + '/v3', json = {})
@@ -39,6 +60,7 @@ class TestKeystoneBase(unittest.TestCase):
         self.default_role_id = ids['default_role_id']
         self.admin_role_id = ids['admin_role_id']
         self.admin_user_id = ids['admin_user_id']
+
 
         body = {
             "region": {

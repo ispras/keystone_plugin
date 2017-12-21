@@ -172,8 +172,7 @@ local function create_local_user(self, dao_factory)
         id = utils.uuid(),
         local_user_id = loc_user.id,
         password = sha512.crypt(user.password),
-        created_at = created_time,
-        expires_at = os.time() + 24*60*60
+        created_at = created_time
     }
     local user = {
         id = user.id,
@@ -627,11 +626,11 @@ end
 local routes = {
     ["/v3/users"] = {
         GET = function(self, dao_factory)
---            responses.send_HTTP_OK({policies.check(self.session.user, "list_users")})
---            responses.send_HTTP_OK(policies.to_table(policies.role("identity:ec2_get_credential")))
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_users")
             list_users(self, dao_factory)
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_user")
             if self.params.user and self.params.user.password then
                 return responses.send(create_local_user(self, dao_factory))
             elseif self.params.user then
@@ -643,27 +642,33 @@ local routes = {
     },
     ["/v3/users/:user_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_user", self.params.user_id)
             get_user_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_user", self.params.user_id)
             update_user(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_user", self.params.user_id)
             delete_user(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/groups"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_groups_for_user", self.params.user_id)
             list_user_groups(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/projects"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_user_projects", self.params.user_id)
             list_user_projects(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/password"] = {
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:change_password", self.params.user_id)
             change_user_password(self, dao_factory)
         end
     }

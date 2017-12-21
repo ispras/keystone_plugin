@@ -152,6 +152,8 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
     if not type or not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") or not actor_id or not target_id then
         return responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
+    local project, err = dao_factory.project:find({id = target_id})
+    kutils.assert_dao_error(err, "project find")
 
     local resp = {
         links = {
@@ -215,7 +217,11 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         if not inherited and next(resp.roles) then --TODO cache
             local red, err = redis.connect()
             kutils.assert_dao_error(err, "redis connect")
-            local _, err = red:set(actor_id..'&'..target_id, cjson.encode({roles = resp.roles}))
+            local is_admin
+            if kutils.has_id(resp.roles, 'admin', 'name') and project.name == 'admin' then
+                is_admin = true
+            end
+            local _, err = red:set(actor_id..'&'..target_id, cjson.encode({roles = resp.roles, is_admin = is_admin}))
             kutils.assert_dao_error(err, "redis set")
         end
     end
@@ -274,6 +280,9 @@ end
 local function assign_role(self, dao_factory, type, inherited, checked)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
+    local project, err = dao_factory.project:find({id = target_id})
+    kutils.assert_dao_error(err, "project find")
+
     local role_name, err
     if not checked then
         role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
@@ -309,6 +318,9 @@ local function assign_role(self, dao_factory, type, inherited, checked)
                     id = role_id,
                     name = role_name
                 }
+            end
+            if role_name == 'admin' and project.name == 'admin' then
+                temp.is_admin = true
             end
             local _, err = red:set(actor_id..'&'..target_id, cjson.encode(temp))
             kutils.assert_dao_error(err, "redis set")
@@ -365,6 +377,9 @@ end
 local function unassign_role(self, dao_factory, type, inherited)
     local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
 
+    local project, err = dao_factory.project:find({id = target_id})
+    kutils.assert_dao_error(err, "project find")
+
     local role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if err then
         return responses.send_HTTP_BAD_REQUEST(err)
@@ -383,12 +398,15 @@ local function unassign_role(self, dao_factory, type, inherited)
             local i = kutils.has_id(temp.roles, role_id)
             temp.roles[i] = temp.roles[#temp.roles]
             temp.roles[#temp.roles] = nil
+            if role_name == 'admin' and project.name == 'admin' then
+                temp.is_admin = nil
+            end
             local _, err = red:set(actor_id..'&'..target_id, cjson.encode(temp))
             kutils.assert_dao_error(err, "redis set")
         end
     end
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local function list_implied_roles(self, dao_factory)
