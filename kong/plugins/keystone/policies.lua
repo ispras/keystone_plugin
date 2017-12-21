@@ -137,8 +137,10 @@ local function check_policy_rule(user, rule, scope_id)
             local comp_proj = rule:match("project_id:%%%((.*)%)s")
             if comp_user then
                 --TODO user_id on the left
+                return false, "Not implemented"
             elseif comp_proj then
                 --TODO project_id on the left
+                return false, "Not implemented"
             elseif not kutils.has_id(roles, rule, "name") then
                 check = false
                 break
