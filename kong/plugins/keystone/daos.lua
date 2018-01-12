@@ -110,7 +110,7 @@ local FEDERATION_PROTOCOL_SCHEMA = {
 
 local GROUP_SCHEMA = {
     primary_key = {"id"},
-    table = "group",
+    table = "group_",
     fields = {
         id = { type = "string", required = true },
         domain_id = { type = "string", required = true, queryable = true },
@@ -339,11 +339,11 @@ local ROLE_SCHEMA = {
 }
 
 local SENSITIVE_CONFIG_SCHEMA = {
-    primary_key = {"domain_id", "group", "option"},
+    primary_key = {"domain_id", "group_", "option"},
     table = "sensitive_config",
     fields = {
         domain_id = { type = "string", required = true },
-        group = { type = "string", required = true },
+        group_ = { type = "string", required = true },
         option = { type = "string", required = true },
         value = { type = "string", required = true }
     }
@@ -414,7 +414,7 @@ local TRUST_ROLE_SCHEMA = {
 
 local USER_SCHEMA = {
     primary_key = {"id"},
-    table = "user",
+    table = "user_",
     fields = {
         id = { type = "string", required = true },
         extra = { type = "string" },
@@ -446,11 +446,11 @@ local USER_OPTION_SCHEMA = {
 }
 
 local WHITELISTED_CONFIG_SCHEMA = {
-    primary_key = {"domain_id", "group", "option"},
+    primary_key = {"domain_id", "group_", "option"},
     table = "whitelisted_config",
     fields = {
         domain_id = { type = "string", required = true },
-        group = { type = "string", required = true },
+        group_ = { type = "string", required = true },
         option = { type = "string", required = true },
         value = { type = "string", required = true }
     }

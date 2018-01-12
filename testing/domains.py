@@ -10,8 +10,8 @@ class TestKeystoneDomains(TestKeystoneBase):
     def create(self):
         body = {
             "domain": {
-                "name": "Default",
-                "description": "Default domain for testing",
+                "name": "test",
+                "description": "test domain for testing",
                 "enabled":  True
             }
         }

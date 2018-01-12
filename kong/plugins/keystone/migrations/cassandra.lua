@@ -97,7 +97,9 @@ return {
         PRIMARY KEY (id, idp_id)
       );
 
-      CREATE TABLE IF NOT EXISTS group(
+      CREATE INDEX IF NOT EXISTS ON federation_protocol(idp_id);
+
+      CREATE TABLE IF NOT EXISTS group_(
         id varchar,
         domain_id varchar,
         name varchar,
@@ -106,7 +108,7 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON group(domain_id);
+      CREATE INDEX IF NOT EXISTS ON group_(domain_id);
 
       CREATE TABLE IF NOT EXISTS id_mapping(
         public_id varchar,
@@ -300,10 +302,10 @@ return {
 
       CREATE TABLE IF NOT EXISTS sensitive_config(
         domain_id varchar,
-        group varchar,
+        group_ varchar,
         option varchar,
         value text,
-        PRIMARY KEY (domain_id, group, option)
+        PRIMARY KEY (domain_id, group_, option)
       );
 
       CREATE TABLE IF NOT EXISTS service(
@@ -360,7 +362,7 @@ return {
         PRIMARY KEY (trust_id, role_id)
       );
 
-      CREATE TABLE IF NOT EXISTS user(
+      CREATE TABLE IF NOT EXISTS user_(
         id varchar,
         extra text,
         enabled boolean,
@@ -371,8 +373,8 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON user(default_project_id);
-      CREATE INDEX IF NOT EXISTS ON user(domain_id);
+      CREATE INDEX IF NOT EXISTS ON user_(default_project_id);
+      CREATE INDEX IF NOT EXISTS ON user_(domain_id);
 
       CREATE TABLE IF NOT EXISTS user_group_membership(
         user_id varchar,
@@ -389,10 +391,10 @@ return {
 
       CREATE TABLE IF NOT EXISTS whitelisted_config(
         domain_id varchar,
-        group varchar,
+        group_ varchar,
         option varchar,
         value text,
-        PRIMARY KEY (domain_id, group, option)
+        PRIMARY KEY (domain_id, group_, option)
       );
 
     ]],
@@ -406,7 +408,7 @@ return {
       DROP TABLE enpoint_group;
       DROP TABLE federated_user;
       DROP TABLE federation_protocol;
-      DROP TABLE group;
+      DROP TABLE group_;
       DROP TABLE id_mapping;
       DROP TABLE identity_provider;
       DROP TABLE idp_remote_ids;
@@ -432,7 +434,7 @@ return {
       DROP TABLE token_;
       DROP TABLE trust;
       DROP TABLE trust_role;
-      DROP TABLE user;
+      DROP TABLE user_;
       DROP TABLE user_group_membership;
       DROP TABLE user_option;
       DROP TABLE whitelisted_config;
