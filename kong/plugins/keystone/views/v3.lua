@@ -71,10 +71,10 @@ local function init(self, dao_factory)
     resp.admin_project_id = temp[1].id
 
     self.params.role = {
-        name = "default"
+        name = "member"
     }
     roles.create(self, dao_factory)
-    local temp, err = dao_factory.role:find_all({name = "default"})
+    local temp, err = dao_factory.role:find_all({name = "member"})
     kutils.assert_dao_error(err, "role find all")
     resp.default_role_id = temp[1].id
 
@@ -110,14 +110,14 @@ local function init(self, dao_factory)
     resp.admin_user_id = temp[1].user_id
 
     self.params = {
-        actor_id = resp.admin_user_id,
-        target_id = resp.admin_project_id,
+        user_id = resp.admin_user_id,
+        project_id = resp.admin_project_id,
         role_id = resp.admin_role_id
     }
     roles.assignment.assign(self, dao_factory, "UserProject", false, true)
     self.params = {
-        actor_id = resp.admin_user_id,
-        target_id = resp.admin_domain_id,
+        user_id = resp.admin_user_id,
+        domain_id = resp.admin_domain_id,
         role_id = resp.admin_role_id
     }
     roles.assignment.assign(self, dao_factory, "UserDomain", false, true)

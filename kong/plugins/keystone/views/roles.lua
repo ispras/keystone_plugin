@@ -4,6 +4,7 @@ local sha512 = require("kong.plugins.keystone.sha512")
 local kutils = require ("kong.plugins.keystone.utils")
 local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
+local policies = require ("kong.plugins.keystone.policies")
 
 local function list_roles(self, dao_factory)
     local name = self.params.name
@@ -148,7 +149,17 @@ local function delete_role(self, dao_factory) -- clean cache
 end
 
 local function list_role_assignments_for_actor_on_target(self, dao_factory, type, inherited)
-    local actor_id, target_id = self.params.actor_id, self.params.target_id
+    local actor_id, target_id
+    if type:match("User") then
+        actor_id = self.params.user_id
+    elseif type:match("Group") then
+        actor_id = self.params.group_id
+    end
+    if type:match("Domain") then
+        target_id = self.params.domain_id
+    elseif type:match("Project") then
+        target_id = self.params.project_id
+    end
     if not type or not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") or not actor_id or not target_id then
         return responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
@@ -278,7 +289,18 @@ local function check_actor_target_role_id(dao_factory, actor_id, target_id, role
 end
 
 local function assign_role(self, dao_factory, type, inherited, checked)
-    local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
+    local actor_id, target_id
+    if type:match("User") then
+        actor_id = self.params.user_id
+    elseif type:match("Group") then
+        actor_id = self.params.group_id
+    end
+    if type:match("Domain") then
+        target_id = self.params.domain_id
+    elseif type:match("Project") then
+        target_id = self.params.project_id
+    end
+    local role_id = self.params.role_id
 
     local project, err = dao_factory.project:find({id = target_id})
     kutils.assert_dao_error(err, "project find")
@@ -329,7 +351,18 @@ local function assign_role(self, dao_factory, type, inherited, checked)
 end
 
 local function check_assignment(self, dao_factory, type, inherited)
-    local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
+    local actor_id, target_id
+    if type:match("User") then
+        actor_id = self.params.user_id
+    elseif type:match("Group") then
+        actor_id = self.params.group_id
+    end
+    if type:match("Domain") then
+        target_id = self.params.domain_id
+    elseif type:match("Project") then
+        target_id = self.params.project_id
+    end
+    local role_id = self.params.role_id
 
     local role_name, err
     role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
@@ -375,7 +408,18 @@ local function check_assignment(self, dao_factory, type, inherited)
 end
 
 local function unassign_role(self, dao_factory, type, inherited)
-    local actor_id, target_id, role_id = self.params.actor_id, self.params.target_id, self.params.role_id
+    local actor_id, target_id
+    if type:match("User") then
+        actor_id = self.params.user_id
+    elseif type:match("Group") then
+        actor_id = self.params.group_id
+    end
+    if type:match("Domain") then
+        target_id = self.params.domain_id
+    elseif type:match("Project") then
+        target_id = self.params.project_id
+    end
+    local role_id = self.params.role_id
 
     local project, err = dao_factory.project:find({id = target_id})
     kutils.assert_dao_error(err, "project find")
@@ -448,7 +492,7 @@ local function list_implied_roles(self, dao_factory)
     return resp
 end
 
-local function get_role_inference_rule(self, dao_factory, if_create)
+local function get_implied_role(self, dao_factory, if_create)
     local prior_role_id, implied_role_id = self.params.prior_role_id, self.params.implied_role_id
     local role, err = dao_factory.role:find({id = prior_role_id})
     kutils.assert_dao_error(err, "role find")
@@ -487,11 +531,11 @@ local function get_role_inference_rule(self, dao_factory, if_create)
     return resp
 end
 
-local function create_role_inference_rule(self, dao_factory)
-    return responses.send_HTTP_CREATED(get_role_inference_rule(self, dao_factory, true))
+local function create_implied_role(self, dao_factory)
+    return responses.send_HTTP_CREATED(get_implied_role(self, dao_factory, true))
 end
 
-local function confirm_role_inference_rule(self, dao_factory)
+local function check_implied_role(self, dao_factory)
     local prior_role_id, implied_role_id = self.params.prior_role_id, self.params.implied_role_id
     local role, err = dao_factory.role:find({id = prior_role_id})
     kutils.assert_dao_error(err, "role find")
@@ -514,7 +558,7 @@ local function confirm_role_inference_rule(self, dao_factory)
     return
 end
 
-local function delete_role_inference_rule(self, dao_factory)
+local function delete_implied_role(self, dao_factory)
     local prior_role_id, implied_role_id = self.params.prior_role_id, self.params.implied_role_id
     local role, err = dao_factory.role:find({id = prior_role_id})
     kutils.assert_dao_error(err, "role find")
@@ -684,7 +728,7 @@ local function list_role_assignments(self, dao_factory)
     return resp
 end
 
-local function list_role_inferences(self, dao_factory)
+local function list_role_inference_rules(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path)
@@ -735,6 +779,7 @@ local function list_role_inferences(self, dao_factory)
 
     return resp
 end
+
 local Role = {
     list = list_roles,
     get_info = get_role_info
@@ -749,125 +794,153 @@ local Assignment = {
 }
 local Inference_rule = {
     list = list_implied_roles,
-    get_info = get_role_inference_rule,
-    check = confirm_role_inference_rule,
-    list_all = list_role_inferences
+    get_info = get_implied_role,
+    check = check_implied_role,
+    list_all = list_role_inference_rules
 }
 local routes = {
     ["/v3/roles/"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_roles", dao_factory, self.params)
             responses.send_HTTP_OK(list_roles(self, dao_factory))
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_role", dao_factory, self.params)
             responses.send(create_role(self, dao_factory))
         end
     },
     ["/v3/roles/:role_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role", dao_factory, self.params)
             responses.send_HTTP_OK(get_role_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_role", dao_factory, self.params)
             update_role(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_role", dao_factory, self.params)
             delete_role(self, dao_factory)
         end
     },
-    ["/v3/domains/:target_id/groups/:actor_id/roles"] = {
+    ["/v3/domains/:domain_id/groups/:group_id/roles"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "GroupDomain", false))
         end
     },
-    ["/v3/domains/:target_id/groups/:actor_id/roles/:role_id"] = {
+    ["/v3/domains/:domain_id/groups/:group_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_role", dao_factory, self.params)
             assign_role(self, dao_factory, "GroupDomain", false)
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_assignment", dao_factory, self.params)
             responses.send(check_assignment(self, dao_factory, "GroupDomain", false))
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:unassign_role", dao_factory, self.params)
             unassign_role(self, dao_factory, "GroupDomain", false)
         end
     },
-    ["/v3/domains/:target_id/users/:actor_id/roles"] = {
+    ["/v3/domains/:domain_id/users/:user_id/roles"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "UserDomain", false))
         end
     },
-    ["/v3/domains/:target_id/users/:actor_id/roles/:role_id"] = {
+    ["/v3/domains/:domain_id/users/:user_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_role", dao_factory, self.params)
             assign_role(self, dao_factory, "UserDomain", false)
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_assignment", dao_factory, self.params)
             responses.send(check_assignment(self, dao_factory, "UserDomain", false))
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             unassign_role(self, dao_factory, "UserDomain", false)
         end
     },
-    ["/v3/projects/:target_id/groups/:actor_id/roles"] = {
+    ["/v3/projects/:project_id/groups/:group_id/roles"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "GroupProject", false))
         end
     },
-    ["/v3/projects/:target_id/groups/:actor_id/roles/:role_id"] = {
+    ["/v3/projects/:project_id/groups/:group_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_role", dao_factory, self.params)
             assign_role(self, dao_factory, "GroupProject", false)
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_assignment", dao_factory, self.params)
             responses.send(check_assignment(self, dao_factory, "GroupProject", false))
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             unassign_role(self, dao_factory, "GroupProject", false)
         end
     },
-    ["/v3/projects/:target_id/users/:actor_id/roles"] = {
+    ["/v3/projects/:project_id/users/:user_id/roles"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "UserProject", false))
         end
     },
-    ["/v3/projects/:target_id/users/:actor_id/roles/:role_id"] = {
+    ["/v3/projects/:project_id/users/:user_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_role", dao_factory, self.params)
             assign_role(self, dao_factory, "UserProject", false)
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_assignment", dao_factory, self.params)
             responses.send(check_assignment(self, dao_factory, "UserProject", false))
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
             unassign_role(self, dao_factory, "UserProject", false)
         end
     },
     ["/v3/roles/:prior_role_id/implies"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_implied_roles", dao_factory, self.params)
             responses.send_HTTP_OK(list_implied_roles(self, dao_factory))
         end
     },
     ["/v3/roles/:prior_role_id/implies/:implied_role_id"] = {
         PUT = function(self, dao_factory)
-            create_role_inference_rule(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:cteate_implied_role", dao_factory, self.params)
+            create_implied_role(self, dao_factory)
         end,
         GET = function(self, dao_factory)
-            responses.send_HTTP_OK(get_role_inference_rule(self, dao_factory))
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_implied_role", dao_factory, self.params)
+            responses.send_HTTP_OK(get_implied_role(self, dao_factory))
         end,
         HEAD = function(self, dao_factory)
-            responses.send_HTTP_NO_CONTENT(confirm_role_inference_rule(self, dao_factory))
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_implied_role", dao_factory, self.params)
+            responses.send_HTTP_NO_CONTENT(check_implied_role(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            delete_role_inference_rule(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_implied_role", dao_factory, self.params)
+            delete_implied_role(self, dao_factory)
         end
     },
     ["/v3/role_assignments"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments(self, dao_factory))
         end
     },
     ["/v3/role_inferences"] = {
         GET = function(self, dao_factory)
-            responses.send_HTTP_OK(list_role_inferences(self, dao_factory))
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_inference_rules", dao_factory, self.params)
+            responses.send_HTTP_OK(list_role_inference_rules(self, dao_factory))
         end
     }
 }

@@ -1,5 +1,6 @@
 local temp = require ("kong.plugins.keystone.views.projects")
 local projects = temp.routes
+local policies = require ("kong.plugins.keystone.policies")
 
 local function list_domains(self, dao_factory)
     return ''
@@ -35,23 +36,28 @@ return {
         GET = function (self, dao_factory)
             self.params.is_domain = true
             self.params.domain = true
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_domains", dao_factory, self.params)
             projects["/v3/projects"].GET(self, dao_factory)
         end,
         POST = function (self, dao_factory)
             update_params(self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_domain", dao_factory, self.params)
             projects["/v3/projects"].POST(self, dao_factory)
         end
     },
     ["/v3/domains/:project_id"] = {
         GET = function (self, dao_factory)
             update_params(self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_domain", dao_factory, self.params)
             projects["/v3/projects/:project_id"].GET(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
             update_params(self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_domain", dao_factory, self.params)
             projects["/v3/projects/:project_id"].PATCH(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_domain", dao_factory, self.params)
             projects["/v3/projects/:project_id"].DELETE(self, dao_factory)
         end
     }

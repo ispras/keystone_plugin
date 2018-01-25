@@ -1,10 +1,11 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
 
-Region = {}
+local Region = {}
 
-function list_regions(self, dao_factory)
+local function list_regions(self, dao_factory)
     local resp = {
         links = {
             next = "null",
@@ -39,7 +40,7 @@ function list_regions(self, dao_factory)
     return responses.send_HTTP_OK(resp)
 end
 
-function create_region(self, dao_factory)
+local function create_region(self, dao_factory)
     local request = self.params
     if not request.region then
         return responses.send_HTTP_BAD_REQUEST("Region is nil, check self.params")
@@ -78,7 +79,7 @@ function create_region(self, dao_factory)
     return responses.send_HTTP_CREATED(response)
 end
 
-function get_region_info(self, dao_factory)
+local function get_region_info(self, dao_factory)
     local region_id = self.params.region_id
     if not region_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad region id")
@@ -94,7 +95,7 @@ function get_region_info(self, dao_factory)
     return responses.send_HTTP_OK(response)
 end
 
-function update_region(self, dao_factory)
+local function update_region(self, dao_factory)
     local region_id = self.params.region_id
     if not region_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad region id")
@@ -123,7 +124,7 @@ function update_region(self, dao_factory)
     return responses.send_HTTP_OK(response)
 end
 
-function delete_region(self, dao_factory)
+local function delete_region(self, dao_factory)
     local region_id = self.params.region_id
     if not region_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad region id")
@@ -153,20 +154,25 @@ Region.delete_region = delete_region
 return {
     ["/v3/regions"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_regions", dao_factory, self.params)
             Region.list_regions(self, dao_factory)
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_region", dao_factory, self.params)
             Region.create_region(self, dao_factory)
         end
     },
     ["/v3/regions/:region_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_region", dao_factory, self.params)
             Region.get_region_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_region", dao_factory, self.params)
             Region.update_region(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_region", dao_factory, self.params)
             Region.delete_region(self, dao_factory)
         end
     }

@@ -27,8 +27,11 @@ class TestKeystoneBase(unittest.TestCase):
             if self.__getattribute__(k) != '':
                 print('self.' + k + ' = \''+ self.__getattribute__(k) + '\'')
 
-    def auth(self):
-        # Authenticate as admin
+    def admin_auth(self):
+        '''
+        Authenticate as admin
+        :return:
+        '''
         body = {
             'auth' : {
                 'identity' : {
@@ -46,8 +49,12 @@ class TestKeystoneBase(unittest.TestCase):
             }
         }
         self.res = requests.post(self.host + '/v3/auth/tokens', json = body)
+        # pprint(self.res.json())
         self.checkCode(201)
         self.auth_token = self.res.headers['X-Subject-Token']
+        self.headers = {
+            'X-Auth-Token': self.auth_token
+        }
 
     def init(self):
         self.res = requests.post(self.host + '/v3', json = {})
@@ -116,4 +123,3 @@ class TestKeystoneBase(unittest.TestCase):
         }
         self.res = requests.post(self.host + '/v3/endpoints/', json=body)
         self.checkCode(201)
-

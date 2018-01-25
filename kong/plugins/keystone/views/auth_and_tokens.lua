@@ -9,10 +9,14 @@ local service = services_and_endpoints.services
 local endpoint = services_and_endpoints.endpoints
 local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
+local policies = require ("kong.plugins.keystone.policies")
 
 local function check_user(user, dao_factory)
     local loc_user, domain
     local password = user.password
+    if not password then
+        responses.send_HTTP_BAD_REQUEST("Specify password in user object")
+    end
     if not (user.id or user.name and (user.domain.name or user.domain.id)) then
         responses.send_HTTP_BAD_REQUEST("User info is required")
     else
@@ -284,8 +288,9 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     local scope = self.params.auth.scope
     local project, domain_name = check_scope(scope, dao_factory)
 
-    self.params.actor_id = user.id
-    self.params.target_id = project.id
+    self.params.user_id = user.id
+    self.params.project_id = scope.project and project.id or null
+    self.params.domain_id = not scope.project and project.id or null
 
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
@@ -402,8 +407,9 @@ end
 local function auth_token_scoped(self, dao_factory, user)
     local scope = self.params.auth.scope
     local project, domain_name = check_scope(scope, dao_factory)
-    self.params.actor_id = user.id
-    self.params.target_id = project.id
+    self.params.user_id = user.id
+    self.params.project_id = scope.project and project.id or null
+    self.params.domain_id = not scope.project and project.id or null
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
@@ -683,27 +689,33 @@ local routes =  {
             end
         end,
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_and_show_token", dao_factory, self.params)
             get_token_info(self, dao_factory)
         end,
         HEAD = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_token_head", dao_factory, self.params)
             check_token(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_token", dao_factory, self.params)
             revoke_token(self, dao_factory)
         end
     },
     ["/v3/auth/catalog"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
             get_service_catalog(self, dao_factory)
         end
     },
     ["/v3/auth/projects"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_projects", dao_factory, self.params)
             get_scopes(self, dao_factory, false)
         end
     },
     ["/v3/auth/domains"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_domains", dao_factory, self.params)
             get_scopes(self, dao_factory, true)
         end
     }

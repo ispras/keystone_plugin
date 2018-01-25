@@ -1,17 +1,15 @@
 from keystone_plugin.testing.base import TestKeystoneBase
 import requests
+from pprint import pprint
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
         self.url = self.host + '/v3/users/'
-        self.user_id = '919a95dd-f955-4c72-b517-fd80af3f36a7'
-        self.domain_id = '7bba3639-1d1e-4999-9b14-d8392b6a025d'
-        self.project_id = '899f724c-80ad-456a-a584-040d3748a5b8'
-        self.auth()
-        self.headers = {
-            'X-Auth-Token': self.auth_token
-        }
+        self.user_id = '8f5b0cfa-8655-4055-a2e0-71070149c85e'
+        self.domain_id = '902f3886-0f59-40f6-baff-768aa8767159'
+        self.project_id = 'd99a744b-3a9d-4fc1-85bf-0c6035414ec2'
+        self.admin_auth()
 
 
     def list(self):
@@ -88,3 +86,57 @@ class TestKeystoneUsers(TestKeystoneBase):
         }
         self.res = requests.post(self.url + self.user_id + '/password', json = body, headers=self.headers)
         self.checkCode(204)
+
+    def policies(self):
+        '''
+        create user, authenticate him, check policies for user actions and delete user
+        :return:
+        '''
+
+        # body = {
+        #     "user": {
+        #         "enabled": "true",
+        #         "name": "not_admin",
+        #         "password": "not_admin",
+        #     }
+        # }
+        # self.res = requests.post(self.url, json = body, headers = self.headers)
+        # self.checkCode(201)
+        # self.user_id = self.res.json()['user']['id']
+
+        body = {
+            'auth' : {
+                'identity' : {
+                    'methods' : [ 'password' ],
+                    'password' : {
+                        'user' : {
+                            'id' : self.user_id,
+                            'password' : 'not_admin'
+                        }
+                    }
+                },
+                'scope' : {
+                    'domain' : {
+                        'id' : self.domain_id
+                    }
+                }
+            }
+        }
+        self.res = requests.post(self.host + '/v3/auth/tokens', json = body)
+        self.checkCode(201)
+        self.auth_token = self.res.headers['X-Subject-Token']
+
+        self.headers = {
+            'X-Auth-Token' : self.auth_token
+        }
+        query = {
+            'user' : {
+                'domain' : {
+                    'id' : self.domain_id
+                }
+            }
+        }
+        self.res = requests.get(self.url + self.user_id, json = query, headers = self.headers)
+        self.checkCode(200)
+        # pprint(self.res.json())
+        # self.delete()

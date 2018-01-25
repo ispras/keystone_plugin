@@ -14,7 +14,7 @@ return {
         return nil
     end,
     default_role = function(dao_factory)
-        local role, err = dao_factory.role:find_all({name = 'Default'})
+        local role, err = dao_factory.role:find_all({name = 'member'})
         if not err and next(role) then return role[1]['id'] end
         return nil
     end,

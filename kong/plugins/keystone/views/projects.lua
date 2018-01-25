@@ -3,6 +3,7 @@ local crud = require "kong.api.crud_helpers"
 local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
 
 local Project = {}
 
@@ -421,20 +422,25 @@ Project.delete_project = delete_project
 local routes = {
     ["/v3/projects"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects", dao_factory, self.params)
             Project.list_projects(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            return responses.send(Project.create_project(self, dao_factory))
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_project", dao_factory, self.params)
+            responses.send(Project.create_project(self, dao_factory))
         end
     },
     ["/v3/projects/:project_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
             Project.update_project(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
             Project.delete_project(self, dao_factory)
         end
     }

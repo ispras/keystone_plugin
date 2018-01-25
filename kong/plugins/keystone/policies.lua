@@ -18,6 +18,7 @@ local parse_json = function(file_name)
 end
 
 local function get_role(rule)
+    --TODO http rule
 
     local pols = parse_json("/etc/kong/policy_example.json")
     local rule = rule
@@ -99,10 +100,61 @@ local function check_valid(token_id)
         local temp = cjson.decode(temp)
         return user_id, scope_id, temp.roles, temp.is_admin
     end
-    responses.send_HTTP_BAD_REQUSET("No scope info for token")
+    responses.send_HTTP_BAD_REQUEST("No scope info for token")
 end
 
-local function check_policy_rule(token, rule, _user_id, _project_id)
+local function handle_match(rule, user_id, scope_id, target, obj)
+    local token_attr, api_call_attr = rule:match("(.*):%%%((.*)%)s")
+    if not token_attr or not api_call_attr then
+        return false
+    end
+    if token_attr == "user_id" then
+        token_attr = user_id
+    elseif token_attr == "project_id" or "domain_id" then
+        token_attr = scope_id
+    elseif token_attr == "None" then
+        token_attr = null
+    else
+        responses.send_HTTP_CONFLICT("unknown attribute "..token_attr)
+    end
+    -- case: target.object.attribute
+    local ob, at = api_call_attr:match("target.(.*)%.(.*)")
+    if ob and at then
+        local param = ob..'_id'
+        local target_id = obj[param]
+        if not target_id then
+            return false
+        end
+        local temp, err = target[ob]:find({id = target_id})
+        if err then
+            return false
+        end
+        api_call_attr = temp[at]
+    else
+        -- case: object.attributes
+        local _, num = api_call_attr:gsub("%.", '')
+        local format = "(.*)"
+        for i = 1, num do
+            format = format.."%.(.*)"
+        end
+        local temp = { api_call_attr:match(format) }
+        api_call_attr = obj
+        for _, v in ipairs(temp) do
+            if not api_call_attr then
+                return false
+            end
+            api_call_attr = api_call_attr[v]
+        end
+
+    end
+    if api_call_attr == token_attr then
+        return true
+    end
+    return false
+end
+
+local function check_policy_rule(token, rule, target, obj)
+    --TODO is_admin_project
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
     end
@@ -123,9 +175,16 @@ local function check_policy_rule(token, rule, _user_id, _project_id)
     for _, rules in ipairs(rules) do
         local check = false
         for _, rule in ipairs(rules) do
-            local comp_user = rule:match("user_id:%%%((.*)%)s")
-            local comp_proj = rule:match("project_id:%%%((.*)%)s")
-            if comp_user and user_id == _user_id or comp_proj and scope_id == _project_id or kutils.has_id(roles, rule, "name") then
+
+            if rule == '' then
+                return
+            elseif rule == '!' then
+                responses.send_HTTP_FORBIDDEN()
+            end
+
+            -- attributes from token user_id, scope_id
+            if handle_match(rule, user_id, scope_id, target, obj)
+                    or kutils.has_id(roles, rule, "name") then
                 check = true
                 break
             end

@@ -137,18 +137,20 @@ end
 
 local function assign_default_role(dao_factory, user)
     local self = {}
-    self.params = {}
-    self.params.actor_id = user.id
-    self.params.target_id = user.domain_id
-    self.params.role_id = kutils.default_role(dao_factory)
+    self.params = {
+        user_id = user.id,
+        domain_id = user.domain_id,
+        role_id = kutils.default_role(dao_factory)
+    }
     assignment.assign(self, dao_factory, "UserDomain", false, true)
 
     if user.default_project_id then
         local self = {}
-        self.params = {}
-        self.params.actor_id = user.id
-        self.params.target_id = user.default_project_id
-        self.params.role_id = kutils.default_role(dao_factory)
+        self.params = {
+            user_id = user.id,
+            project_id = user.default_project_id,
+            role_id = kutils.default_role(dao_factory)
+        }
         assignment.assign(self, dao_factory, "UserProject", false, true)
     end
 
@@ -626,11 +628,11 @@ end
 local routes = {
     ["/v3/users"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_users")
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_users", dao_factory, self.params)
             list_users(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_user")
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_user", dao_factory, self.params)
             if self.params.user and self.params.user.password then
                 return responses.send(create_local_user(self, dao_factory))
             elseif self.params.user then
@@ -642,33 +644,33 @@ local routes = {
     },
     ["/v3/users/:user_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_user", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_user", dao_factory, self.params)
             get_user_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_user", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_user", dao_factory, self.params)
             update_user(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_user", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_user", dao_factory, self.params)
             delete_user(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/groups"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_groups_for_user", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_user_groups", dao_factory, self.params)
             list_user_groups(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/projects"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_user_projects", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_user_projects", dao_factory, self.params)
             list_user_projects(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/password"] = {
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:change_password", self.params.user_id)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:change_password", dao_factory, self.params)
             change_user_password(self, dao_factory)
         end
     }

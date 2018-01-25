@@ -3,6 +3,7 @@ local crud = require "kong.api.crud_helpers"
 local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
 
 local ServiceAndEndpoint = {}
 
@@ -390,39 +391,49 @@ ServiceAndEndpoint.delete_endpoint = delete_endpoint
 local routes = {
     ["/v3/services"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:list_services', dao_factory, self.params)
             responses.send_HTTP_OK(ServiceAndEndpoint.list_services(self, dao_factory))
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:create_service', dao_factory, self.params)
             ServiceAndEndpoint.create_service(self, dao_factory)
         end
     },
     ["/v3/services/:service_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:get_service', dao_factory, self.params)
             responses.send_HTTP_OK(ServiceAndEndpoint.get_service_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:update_service', dao_factory, self.params)
             ServiceAndEndpoint.update_service(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:delete_service', dao_factory, self.params)
             ServiceAndEndpoint.delete_service(self, dao_factory)
         end
     },
     ["/v3/endpoints"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:list_endpoints', dao_factory, self.params)
             responses.send_HTTP_OK(ServiceAndEndpoint.list_endpoints(self, dao_factory))
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:create_endpoint', dao_factory, self.params)
             ServiceAndEndpoint.create_endpoint(self, dao_factory)
         end
     },
     ["/v3/endpoints/:endpoint_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:get_endpoint', dao_factory, self.params)
             responses.send_HTTP_OK(ServiceAndEndpoint.get_endpoint_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:update_endpoint', dao_factory, self.params)
             ServiceAndEndpoint.update_endpoint(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:delete_endpoint', dao_factory, self.params)
             ServiceAndEndpoint.delete_endpoint(self, dao_factory)
         end
     }

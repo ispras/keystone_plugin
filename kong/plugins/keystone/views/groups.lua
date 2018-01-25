@@ -1,6 +1,7 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
 
 local function list_groups(self, dao_factory)
     local args = (self.params.name or self.params.domain_id) and {name = self.params.name, domain_id = self.params.domain_id} or nil
@@ -206,36 +207,45 @@ end
 local routes = {
     ['/v3/groups'] = {
         GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_groups", dao_factory, self.params)
             list_groups(self, dao_factory)
         end,
         POST = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_group", dao_factory, self.params)
             create_group(self, dao_factory)
         end
     },
     ['/v3/groups/:group_id'] = {
         GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_group", dao_factory, self.params)
             get_group_info(self, dao_factory)
         end,
         PATCH = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_group", dao_factory, self.params)
             update_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_group", dao_factory, self.params)
             delete_group(self, dao_factory)
         end,
     },
     ['/v3/groups/:group_id/users'] = {
         GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_group_users", dao_factory, self.params)
             list_group_users(self, dao_factory)
         end
     },
     ['/v3/groups/:group_id/users/:user_id'] = {
         PUT = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:add_user_to_group", dao_factory, self.params)
             add_user_to_group(self, dao_factory)
         end,
         HEAD = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_user_in_group", dao_factory, self.params)
             check_user_in_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:remove_user_from_group", dao_factory, self.params)
             remove_user_from_group(self, dao_factory)
         end
     }

@@ -1,8 +1,9 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
 
-Credential = {}
+local Credential = {}
 
 local available_credential_types = {
     ec2 = true, cert = true
@@ -31,7 +32,7 @@ local function check_type(type)
     end
 end
 
-function list_credentials(self, dao_factory)
+local function list_credentials(self, dao_factory)
     local args = {}
     if self.params.type then
         check_type(self.params.type)
@@ -79,7 +80,7 @@ function list_credentials(self, dao_factory)
     return responses.send_HTTP_OK(resp)
 end
 
-function create_credential(self, dao_factory)
+local function create_credential(self, dao_factory)
     local credential = self.params.credential
     if not credential then
         return responses.send_HTTP_BAD_REQUEST("Error: credential is nil, check self.params")
@@ -98,7 +99,7 @@ function create_credential(self, dao_factory)
                 self = self:build_url(self.req.parsed_url.path)
             }
 
-    credential_obj = {id = credential.id, user_id = credential.user_id, project_id = credential.project_id, type = credential.type,
+    local credential_obj = {id = credential.id, user_id = credential.user_id, project_id = credential.project_id, type = credential.type,
                         key_hash = 'fernet', encrypted_blob = credential.blob} --TODO: change key_hash and encrypted blob, use fernet
 
     local res, err = dao_factory.credential:insert(credential_obj) --TODO: check if unique?
@@ -107,7 +108,7 @@ function create_credential(self, dao_factory)
     return responses.send_HTTP_CREATED({credential = credential})
 end
 
-function get_credential_info(self, dao_factory)
+local function get_credential_info(self, dao_factory)
     local credential_id = self.params.credential_id
     if not credential_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad credential id")
@@ -131,7 +132,7 @@ function get_credential_info(self, dao_factory)
     return responses.send_HTTP_OK({credential = credential})
 end
 
-function update_credential(self, dao_factory)
+local function update_credential(self, dao_factory)
     local credential_id = self.params.credential_id
     if not credential_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad credential id")
@@ -178,7 +179,7 @@ function update_credential(self, dao_factory)
     return responses.send_HTTP_OK({credential = updated_credential})
 end
 
-function delete_credential(self, dao_factory)
+local function delete_credential(self, dao_factory)
     local credential_id = self.params.credential_id
     if not credential_id then
         return responses.send_HTTP_BAD_REQUEST("Error: bad credential id")
@@ -202,23 +203,28 @@ Credential.get_credential_info = get_credential_info
 Credential.update_credential = update_credential
 Credential.delete_credential = delete_credential
 
-routes = {
+local routes = {
     ["/v3/credentials"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_credentials", dao_factory, self.params)
             Credential.list_credentials(self, dao_factory)
         end,
         POST = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_credential", dao_factory, self.params)
             Credential.create_credential(self, dao_factory)
         end
     },
     ["/v3/credentials/:credential_id"] = {
         GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_credential", dao_factory, self.params)
             Credential.get_credential_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_credential", dao_factory, self.params)
             Credential.update_credential(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_credential", dao_factory, self.params)
             Credential.delete_credential(self, dao_factory)
         end
     }
