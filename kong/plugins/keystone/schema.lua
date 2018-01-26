@@ -8,6 +8,7 @@ return {
         redis_host = { type = "string", default = '127.0.0.1' },
         redis_timeout = { type = "number", default = 2000 },
         redis_password = { type = "string", default = '' },
+        token_provider = {type = "string", enum = "uuid", "fernet", default = "uuid"}
     },
     self_check = function(schema, conf, dao, is_updating)
         local red, err = redis.connect(conf)
