@@ -379,7 +379,7 @@ local function get_token_info(self, dao_factory)
     }
     local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
 
-    local cache = Tokens.get_info(dao_factory, token.id)
+    local cache = Tokens.get_info(token.id)
 
     local temp, err = dao_factory.project:find({id = cache.scope_id})
     kutils.assert_dao_error(err, "project:find")
@@ -532,6 +532,18 @@ local function get_scopes(self, dao_factory, domain_scoped)
     end
 
     responses.send_HTTP_OK(resp)
+end
+
+local function revoke_token(self, dao_factory)
+    -- TODO revocation event?
+    local subj_token = self.req.headers["X-Subject-Token"]
+    if not subj_token then
+        return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
+    end
+
+    Tokens.validate(dao_factory, subj_token, false)
+
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local routes =  {

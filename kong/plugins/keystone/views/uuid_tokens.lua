@@ -86,34 +86,26 @@ local function generate_token(dao_factory, user, cached, scope_id)
     return token
 end
 
-local function get_token_info(dao_factory, token_id)
+local function get_token_info(token_id)
     local red, err = redis.connect() -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local key, err = red:get(token_id)
     kutils.assert_dao_error(err, "redis get")
-    local temp, err = red:get(key)
-    kutils.assert_dao_error(err, "redis get")
-    if temp == ngx.null then
-        validate_token(dao_factory, token_id, false)
-        responses.send_HTTP_CONFLICT("No scope info for token")
+    if key ~= ngx.null then
+        if key:match("^not_valid&") then
+            responses.send_HTTP_BAD_REQUEST("Invalid token")
+        end
+        local temp, err = red:get(key)
+        kutils.assert_dao_error(err, "redis get")
+        if temp == ngx.null then
+            responses.send_HTTP_CONFLICT("No scope info for token")
+        end
+        local token = cjson.decode(temp)
+        token.user_id, token.scope_id = key:match("(.*)&(.*)")
+        token.issued_at = tonumber(token.issued_at)
+        return token
     end
-    local cache = cjson.decode(temp)
-    cache.user_id, cache.scope_id = key:match("(.*)&(.*)")
-    cache.issued_at = tonumber(cache.issued_at)
-
-    return cache
-end
-
-local function revoke_token(self, dao_factory)
-    -- TODO revocation event?
-    local subj_token = self.req.headers["X-Subject-Token"]
-    if not subj_token then
-        return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
-    end
-
-    validate_token(dao_factory, subj_token, false)
-
-    responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_BAD_REQUEST("No scope info for token")
 end
 
 return {

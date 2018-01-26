@@ -23,7 +23,7 @@ local function generate_token(dao_factory, user, cached, scope_id)
     return token
 end
 
-local function get_token_info(dao_factory, token_id)
+local function get_token_info(token_id)
     -- return token: { user_id, scope_id, roles, issued_at, is_admin }
     local token = {}
     return token

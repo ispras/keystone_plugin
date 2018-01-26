@@ -1,7 +1,7 @@
 local responses = require "kong.tools.responses"
 local cjson = require ("cjson")
 local kutils = require ("kong.plugins.keystone.utils")
-local redis = require ("kong.plugins.keystone.redis")
+local Tokens = kutils.provider()
 
 local parse_json = function(file_name)
     local file, err = io.open(file_name, "r")
@@ -85,24 +85,6 @@ local function to_table(role)
     return roles
 end
 
-local function check_valid(token_id)
-    local red, err = redis.connect() -- TODO cache
-    kutils.assert_dao_error(err, "redis connect")
-    local temp, err = red:get(token_id)
-    kutils.assert_dao_error(err, "redis get")
-    if temp ~= ngx.null then
-        if temp:match("^not_valid&") then
-            responses.send_HTTP_BAD_REQUEST("Invalid token")
-        end
-        local user_id, scope_id = temp:match('(.*)&(.*)')
-        temp, err = red:get(temp)
-        kutils.assert_dao_error(err, "redis get")
-        local temp = cjson.decode(temp)
-        return user_id, scope_id, temp.roles, temp.is_admin
-    end
-    responses.send_HTTP_BAD_REQUEST("No scope info for token")
-end
-
 local function handle_match(rule, user_id, scope_id, target, obj)
     local token_attr, api_call_attr = rule:match("(.*):%%%((.*)%)s")
     if not token_attr or not api_call_attr then
@@ -158,8 +140,8 @@ local function check_policy_rule(token, rule, target, obj)
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
     end
-    local user_id, scope_id, roles, is_admin = check_valid(token)
-    if is_admin then
+    local token = Tokens.check(token)
+    if token.is_admin then
         return
     end
 
@@ -183,8 +165,8 @@ local function check_policy_rule(token, rule, target, obj)
             end
 
             -- attributes from token user_id, scope_id
-            if handle_match(rule, user_id, scope_id, target, obj)
-                    or kutils.has_id(roles, rule, "name") then
+            if handle_match(rule, token.user_id, token.scope_id, target, obj)
+                    or kutils.has_id(token.roles, rule, "name") then
                 check = true
                 break
             end
