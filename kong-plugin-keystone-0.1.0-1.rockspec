@@ -19,26 +19,26 @@ description = {
 }
 
 dependencies = {
-  "luasec == 0.6",
-  "luasocket == 3.0-rc1",
-  "penlight == 1.5.4",
-  "lua-resty-http == 0.08",
-  "lua-resty-jit-uuid == 0.0.5",
-  "multipart == 0.5.1",
-  "version == 0.2",
-  "kong-lapis == 1.6.0.1",
-  "lua-cassandra == 1.2.3",
-  "pgmoon == 1.8.0",
-  "luatz == 0.3",
-  "lua_system_constants == 0.1.2",
-  "lua-resty-iputils == 0.3.0",
-  "luacrypto == 0.3.2",
-  "luasyslog == 1.0.0",
-  "lua_pack == 1.0.5",
-  "lua-resty-dns-client == 0.6.2",
-  "lua-resty-worker-events == 0.3.0",
-  "lua-resty-mediador == 0.1.2",
-  "luaposix == 33.4.0-1"
+  "luasec >= 0.6",
+  "luasocket >= 3.0-rc1",
+  "penlight >= 1.5.4",
+  "lua-resty-http >= 0.08",
+  "lua-resty-jit-uuid >= 0.0.5",
+  "multipart >= 0.5.1",
+  "version >= 0.2",
+  "kong-lapis >= 1.6.0.1",
+  "lua-cassandra >= 1.2.3",
+  "pgmoon >= 1.8.0",
+  "luatz >= 0.3",
+  "lua_system_constants >= 0.1.2",
+  "lua-resty-iputils >= 0.3.0",
+  "luacrypto >= 0.3.2",
+  "luasyslog >= 1.0.0",
+  "lua_pack >= 1.0.5",
+  "lua-resty-dns-client >= 0.6.2",
+  "lua-resty-worker-events >= 0.3.0",
+  "lua-resty-mediador >= 0.1.2",
+  "luaposix >= 33.4.0-1"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
@@ -66,6 +66,8 @@ build = {
     ["kong.plugins.keystone.views.domains"] = "kong/plugins/keystone/views/domains.lua",
     ["kong.plugins.keystone.views.domain_configuration"] = "kong/plugins/keystone/views/domain_configuration.lua",
     ["kong.plugins.keystone.views.credentials"] = "kong/plugins/keystone/views/credentials.lua",
-    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua"
+    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua",
+    ["kong.plugins.keystone.views.uuid_tokens"] = "kong/plugins/keystone/views/uuid_tokens.lua",
+    ["kong.plugins.keystone.views.fernet_tokens"] = "kong/plugins/keystone/views/fernet_tokens.lua"
   }
 }

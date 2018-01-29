@@ -1,7 +1,6 @@
 local responses = require "kong.tools.responses"
 local cjson = require ("cjson")
 local kutils = require ("kong.plugins.keystone.utils")
-local Tokens = kutils.provider()
 
 local parse_json = function(file_name)
     local file, err = io.open(file_name, "r")
@@ -140,6 +139,7 @@ local function check_policy_rule(token, rule, target, obj)
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
     end
+    local Tokens = kutils.provider()
     local token = Tokens.check(token)
     if token.is_admin then
         return

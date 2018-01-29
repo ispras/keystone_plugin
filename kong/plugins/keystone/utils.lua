@@ -1,4 +1,6 @@
 local utils = require "kong.tools.utils"
+local fernet_tokens = require ("kong.plugins.keystone.views.fernet_tokens")
+local uuid_tokens = require ("kong.plugins.keystone.views.uuid_tokens")
 
 local function bool (a)
     if type(a) == "string" then
@@ -94,12 +96,10 @@ end
 
 local function provider()
     local config = config_from_dao()
-    if config.token_provider == 'uuid_token' then
-        local temp = require ("kong.plugins.keystone.views.uuid_tokens")
-        return temp
-    elseif config.token_provider == 'fernet_token' then
-        local temp = require ("kong.plugins.keystone.views.fernet_tokens")
-        return temp
+    if config.identity_provider == 'uuid' then
+        return uuid_tokens
+    elseif config.identity_provider == 'fernet' then
+        return fernet_tokens
     end
 end
 

@@ -93,16 +93,16 @@ class TestKeystoneUsers(TestKeystoneBase):
         :return:
         '''
 
-        # body = {
-        #     "user": {
-        #         "enabled": "true",
-        #         "name": "not_admin",
-        #         "password": "not_admin",
-        #     }
-        # }
-        # self.res = requests.post(self.url, json = body, headers = self.headers)
-        # self.checkCode(201)
-        # self.user_id = self.res.json()['user']['id']
+        body = {
+            "user": {
+                "enabled": "true",
+                "name": "not_admin",
+                "password": "not_admin",
+            }
+        }
+        self.res = requests.post(self.url, json = body, headers = self.headers)
+        self.checkCode(201)
+        self.user_id = self.res.json()['user']['id']
 
         body = {
             'auth' : {
@@ -115,11 +115,11 @@ class TestKeystoneUsers(TestKeystoneBase):
                         }
                     }
                 },
-                'scope' : {
-                    'domain' : {
-                        'id' : self.domain_id
-                    }
-                }
+                # 'scope' : {
+                #     'domain' : {
+                #         'id' : self.domain_id
+                #     }
+                # }
             }
         }
         self.res = requests.post(self.host + '/v3/auth/tokens', json = body)

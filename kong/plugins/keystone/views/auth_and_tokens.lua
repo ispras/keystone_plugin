@@ -10,7 +10,6 @@ local endpoint = services_and_endpoints.endpoints
 local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
 local policies = require ("kong.plugins.keystone.policies")
-local Tokens = kutils.provider()
 
 local function check_user(user, dao_factory)
     local loc_user, domain
@@ -177,6 +176,7 @@ local function get_catalog(self,dao_factory)
 end
 
 local function check_token_user (token, dao_factory, allow_expired, validate)
+    local Tokens = kutils.provider()
     local token = Tokens.check(token, dao_factory, allow_expired, validate)
 
     if not token.user_id then
@@ -206,6 +206,7 @@ end
 local function auth_password_unscoped(self, dao_factory, user, loc_user_id, upasswd)
     user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
 
+    local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user)
 
     local resp = {
@@ -237,6 +238,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     end
     local roles = temp.roles
 
+    local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user, true, project.id)
 
     local resp = {
@@ -290,6 +292,7 @@ local function auth_password(self, dao_factory)
 end
 
 local function auth_token_unscoped(self, dao_factory, user)
+    local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user)
 
     local resp = {
@@ -318,6 +321,7 @@ local function auth_token_scoped(self, dao_factory, user)
     end
     local roles = temp.roles
 
+    local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user, true, project.id)
 
     local resp = {
@@ -373,6 +377,7 @@ local function get_token_info(self, dao_factory)
     local token = {
         id = auth_token
     }
+    local Tokens = kutils.provider()
     token = Tokens.check(token, dao_factory)
     token = {
         id = subj_token
@@ -424,6 +429,7 @@ local function check_token(self, dao_factory)
     local token = {
         id = auth_token
     }
+    local Tokens = kutils.provider()
     local token = Tokens.check(token, dao_factory)
     if auth_token ~= subj_token then
         token = {
@@ -444,6 +450,7 @@ local function revoke_token(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
     end
 
+    local Tokens = kutils.provider()
     Tokens.validate(dao_factory, subj_token, false)
 
     responses.send_HTTP_NO_CONTENT()
@@ -454,6 +461,7 @@ local function get_service_catalog(self, dao_factory)
     local token = {
         id = auth_token
     }
+    local Tokens = kutils.provider()
     local token = Tokens.check(token, dao_factory)
 
     local resp = {
@@ -541,6 +549,7 @@ local function revoke_token(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
     end
 
+    local Tokens = kutils.provider()
     Tokens.validate(dao_factory, subj_token, false)
 
     responses.send_HTTP_NO_CONTENT()

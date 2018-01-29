@@ -56,7 +56,7 @@ class TestKeystoneBase(unittest.TestCase):
             'X-Auth-Token': self.auth_token
         }
 
-    def init(self):
+    def base_init(self):
         self.res = requests.post(self.host + '/v3', json = {})
         self.checkCode(200)
 
@@ -68,6 +68,10 @@ class TestKeystoneBase(unittest.TestCase):
         self.admin_role_id = ids['admin_role_id']
         self.admin_user_id = ids['admin_user_id']
 
+
+
+    def init(self):
+        self.base_init()
 
         body = {
             "region": {
