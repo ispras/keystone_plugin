@@ -15,25 +15,6 @@ local function check_token(token, dao_factory, allow_expired, validate)
     -- return token: { id, user_id }
     return token
 end
-local function touuid(str)
-    str = str:gsub('.', function (c)
-        return string.format('%02x', string.byte(c))
-    end)
-    local uuids = {}
-    for i = 1, #str, 32 do
-        uuids[#uuids + 1] = str(i, i+7)..'-'..str(i+8, i+11)..'-'..str(i+12, i+15)..'-'..str(i+16, i+19)..'-'..str(i+20, i+31)
-    end
-    return uuids
-end
-local function from_uuid_to_bytes(uuid)
-    local format = '(..)(..)(..)(..)-(..)(..)-(..)(..)-(..)(..)-(..)(..)(..)(..)(..)(..)'
-    local temp = {uuid:match(format) }
-    local str = ''
-    for _, v in ipairs(temp) do
-        str = str..string.char(tonumber(v, 16))
-    end
-    return str
-end
 
 local function generate_token(dao_factory, user, cached, scope_id)
     -- user: { id }
