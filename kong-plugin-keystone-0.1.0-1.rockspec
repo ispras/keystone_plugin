@@ -38,7 +38,8 @@ dependencies = {
   "lua-resty-dns-client >= 0.6.2",
   "lua-resty-worker-events >= 0.3.0",
   "lua-resty-mediador >= 0.1.2",
-  "luaposix >= 33.4.0-1"
+  "luaposix >= 33.4.0-1",
+  "randbytes >= 0.0-2"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
