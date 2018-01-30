@@ -30,7 +30,7 @@ local function from_uuid_to_bytes(uuid)
     local temp = {uuid:match(format) }
     local str = ''
     for _, v in ipairs(temp) do
-        str = '\X'..str..string.char(tonumber(v, 16))
+        str = str..string.char(tonumber(v, 16))
     end
     return str
 end
@@ -43,7 +43,7 @@ local function generate_token(dao_factory, user, cached, scope_id)
     local secret = 'MmcGs0_iRH-GybC41AcxdtgvgIi4kk3T94bAqoL7l-k='
     local payload = fernet:verify(secret, token_str, 0).payload
     local uu = utils.uuid()
-    responses.send_HTTP_BAD_REQUEST({touuid(from_uuid_to_bytes(uu)), uu})
+    responses.send_HTTP_BAD_REQUEST({touuid(payload), uu})
 --    responses.send_HTTP_BAD_REQUEST({urandom(16), uu, uu:byte(1, #uu)})
 
     local token = {}

@@ -1,7 +1,9 @@
 from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 from pprint import pprint
+import uuid
 
+print(uuid.uuid4().bytes())
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
