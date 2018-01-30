@@ -1,6 +1,5 @@
 local M = {}
 
-local padding = require "resty.nettle.padding.pkcs7"
 local struct = require "struct"
 local os = require "os"
 local urandom = require 'randbytes'
