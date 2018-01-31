@@ -7,39 +7,12 @@ local aes = require "resty.aes"
 local hmac = require "resty.hmac"
 local kfernet = require ("kong.plugins.keystone.fernet")
 local redis = require ("kong.plugins.keystone.redis")
+local urandom = require 'randbytes'
 
-    local secret = 'MmcGs0_iRH-GybC41AcxdtgvgIi4kk3T94bAqoL7l-k='
-
-local function touuid(str)
-    str = str:gsub('.', function (c)
-        return string.format('%02x', string.byte(c))
-    end)
-    local uuids = {}
-    for i = 1, #str, 32 do
-        uuids[#uuids + 1] = str(i, i+7)..'-'..str(i+8, i+11)..'-'..str(i+12, i+15)..'-'..str(i+16, i+19)..'-'..str(i+20, i+31)
-    end
-    return uuids
-end
-local function from_uuid_to_bytes(uuid)
-    local format = '(..)(..)(..)(..)-(..)(..)-(..)(..)-(..)(..)-(..)(..)(..)(..)(..)(..)'
-    local temp = {uuid:match(format) }
-    local str = ''
-    for _, v in ipairs(temp) do
-        str = str..string.char(tonumber(v, 16))
-    end
-    return str
-end
-
---local function encode_base64url(secret)
---    secret = ngx.encode_base64(secret)
---    secret = secret:gsub("+", "-"):gsub("/", "_")
---    return secret
---end
-
-local function fernet_encode(raw_payload)
+local function encode_base64url(raw_payload)
     local token_str = ngx.encode_base64(raw_payload)
     token_str = token_str:gsub("+", "-"):gsub("/", "_")
-    token_str = ngx.escape_uri(token_str)
+    token_str = ngx.unescape_uri(token_str)
     return token_str
 end
 local function from_hex_to_bytes(hex_str)
@@ -64,7 +37,7 @@ local function join_fernet(fernet_obj)
         error("invalid fernet object")
     end
     local raw_payload = fernet_obj.signed..fernet_obj.sha256
-    local fernet_str = fernet_encode(raw_payload)
+    local fernet_str = encode_base64url(raw_payload)
     return fernet_str
 end
 
@@ -78,8 +51,7 @@ local function create_fernet_obj (secret, payload)
     local sign_secret = secret(1, secret_len)
     local crypt_secret = secret(1 + secret_len, -1)
 
-    fernet_obj.iv = from_uuid_to_bytes(utils.uuid())
---    fernet_obj.iv = from_hex_to_bytes('DE618783DD0F13AAE64BEE9A79862F74')
+    fernet_obj.iv = urandom(16)
     local aes_128_cbc_with_iv = assert(aes:new(crypt_secret, nil, aes.cipher(128,"cbc"), {iv=fernet_obj.iv}))
     fernet_obj.payload = aes_128_cbc_with_iv:encrypt(fernet_obj.payload)
 
@@ -104,19 +76,28 @@ function Token.check(token, dao_factory, allow_expired, validate)
     -- return token: { id, user_id }
 
     local payload = fernet:verify(secret, token.id, 0).payload
-    token.user_id = touuid(payload)[1]
+    token.user_id = '' -- TODO from payload
     return token
 end
+local function generate_key()
+    local secret = urandom(32)
+    secret = encode_base64url(secret)
+    return secret
+end
+
 function Token.generate(dao_factory, user, cached, scope_id)
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
-    local payload = '9602B01334F3ED7EB2483B91B8192BA043B58002B0423D45CDDEC84170BE365E0B31A1B15FCB41D5875002B443D991B07D6F4126D3664375957A5CBDD87B89BC'
+
+    local secret = generate_key()
+    local payload = '9602B01334F3ED7EB2483B91B8192BA043B58002B0423D45CDDEC84170BE365E0B31A1B15FCB41D5875002B443D991B07D6F4126D3664375957A5CBDD87B9'
     local fernet_obj = create_fernet_obj(secret, payload)
     local fernet_str = join_fernet(fernet_obj)
     if not fernet:verify(secret, fernet_str, 0).verified then
         error("failed to create verified token")
     end
+--    responses.send_HTTP_BAD_REQUEST({fernet_obj = fernet_obj, fernet_str = fernet_str, secret = secret})
 
     local token = {
         id = fernet_str,
@@ -143,7 +124,7 @@ function Token.get_info(token_id)
         id = token_id,
         issued_at = fernet_obj.ts,
         roles = cache.roles,
-        is_admin = cache.is_admin -- TODO relocate is_admin from token cache to roles cache
+        is_admin = cache.is_admin
     }
     return token
 end

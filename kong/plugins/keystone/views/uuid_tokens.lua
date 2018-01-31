@@ -20,7 +20,7 @@ local function validate_token(dao_factory, token_id, validate)
             kutils.assert_dao_error(err, "redis set")
         else
             local _, err = red:set(token_id, 'not_valid&'..temp)
-            kutils.assert_dao_error()
+            kutils.assert_dao_error(err, "redis set")
         end
     end
 end
