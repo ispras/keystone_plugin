@@ -426,6 +426,19 @@ local function create_payload(info_obj) --user_id, expires_at, audit_ids, method
 end
 
 local function parse_payload(payload)
+    payload = msgpack.unpack(payload)
+    local version = payload[1]
+    local not_versioned_payload = {}
+    for i = 1, #payload - 1 do
+        not_versioned_payload[i] = payload[i + 1]
+    end
+    local info_obj
+    for i = 1, #PayloadClasses do
+        if PayloadClasses[i].version == version then
+            info_obj = PayloadClasses[i].disassemble(not_versioned_payload)
+            break
+        end
+    end
     return info_obj
 end
 
