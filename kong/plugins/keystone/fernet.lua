@@ -1,4 +1,3 @@
-local M = {}
 
 local struct = require "struct"
 local os = require "os"
@@ -52,9 +51,28 @@ local function random_urlsafe_str_to_bytes(str)
     return ngx.decode_base64(str .. '==')
 end
 
-local function base64_encode(str)
-    return ngx.encode_base64(str)  --base64.urlsafe_b64encode(s).decode('utf-8').rstrip('=')
+local function base64_encode(raw_payload)
+    local token_str = ngx.encode_base64(raw_payload)
+    token_str = token_str:gsub("+", "-"):gsub("/", "_")
+    token_str = ngx.unescape_uri(token_str)
+    return token_str
 end
+local function from_hex_to_bytes(hex_str)
+    local len = string.len(hex_str)
+    if len < 16 then
+        hex_str = string.rep('0', 16-len)..hex_str
+    end
+    local byte_str = ''
+    for i = 1, #hex_str, 2 do
+        byte_str = byte_str..string.char(tonumber(hex_str(i, i+1), 16))
+    end
+    return byte_str
+end
+local function from_number_to_bytes(num)
+    local hex_str = string.format('%02X', num)
+    return from_hex_to_bytes(hex_str)
+end
+
 
 --Keystone fernet token is the base64 encoding of a collection of the following fields:
 --Version: Fixed versioning by keystone:
@@ -406,3 +424,17 @@ local function create_payload(info_obj) --user_id, expires_at, audit_ids, method
 
     return msgpack.pack(payload)
 end
+
+local function parse_payload(payload)
+    return info_obj
+end
+
+return {
+    create_payload = create_payload,
+    parse_payload = parse_payload,
+    touuid = touuid,
+    from_uuid_to_bytes = from_uuid_to_bytes,
+    base64_encode = base64_encode,
+    from_hex_to_bytes = from_hex_to_bytes,
+    from_number_to_bytes = from_number_to_bytes
+}

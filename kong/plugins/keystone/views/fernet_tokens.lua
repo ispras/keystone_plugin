@@ -8,28 +8,8 @@ local hmac = require "resty.hmac"
 local kfernet = require ("kong.plugins.keystone.fernet")
 local redis = require ("kong.plugins.keystone.redis")
 local urandom = require 'randbytes'
+local msgpack = require 'MessagePack'
 
-local function encode_base64url(raw_payload)
-    local token_str = ngx.encode_base64(raw_payload)
-    token_str = token_str:gsub("+", "-"):gsub("/", "_")
-    token_str = ngx.unescape_uri(token_str)
-    return token_str
-end
-local function from_hex_to_bytes(hex_str)
-    local len = string.len(hex_str)
-    if len < 16 then
-        hex_str = string.rep('0', 16-len)..hex_str
-    end
-    local byte_str = ''
-    for i = 1, #hex_str, 2 do
-        byte_str = byte_str..string.char(tonumber(hex_str(i, i+1), 16))
-    end
-    return byte_str
-end
-local function from_number_to_bytes(num)
-    local hex_str = string.format('%02X', num)
-    return from_hex_to_bytes(hex_str)
-end
 
 local function join_fernet(fernet_obj)
     -- fernet_obj: { ts, iv, payload, signed, sha256 }
@@ -37,14 +17,14 @@ local function join_fernet(fernet_obj)
         error("invalid fernet object")
     end
     local raw_payload = fernet_obj.signed..fernet_obj.sha256
-    local fernet_str = encode_base64url(raw_payload)
+    local fernet_str = kfernet.base64_encode(raw_payload)
     return fernet_str
 end
 
 local function create_fernet_obj (secret, payload)
     local secret = fernet.decode_base64url(secret)
     local fernet_obj = {
-        payload = from_hex_to_bytes(payload)
+        payload = payload
     }
 
     local secret_len = string.len(secret) / 2
@@ -56,7 +36,7 @@ local function create_fernet_obj (secret, payload)
     fernet_obj.payload = aes_128_cbc_with_iv:encrypt(fernet_obj.payload)
 
     fernet_obj.ts = os.time()
-    local raw_ts = from_number_to_bytes(fernet_obj.ts)
+    local raw_ts = kfernet.from_number_to_bytes(fernet_obj.ts)
     local version = string.char(0x80)
     fernet_obj.signed = version..raw_ts..fernet_obj.iv..fernet_obj.payload
     fernet_obj.sha256 = hmac:new(sign_secret, hmac.ALGOS.SHA256):final(fernet_obj.signed)
@@ -81,7 +61,7 @@ function Token.check(token, dao_factory, allow_expired, validate)
 end
 local function generate_key()
     local secret = urandom(32)
-    secret = encode_base64url(secret)
+    secret = kfernet.base64_encode(secret)
     return secret
 end
 
@@ -90,8 +70,16 @@ function Token.generate(dao_factory, user, cached, scope_id)
     -- bool cached
     -- return token: { id, expires, issued_at }
 
+--    local o = {utils.uuid(), utils.uuid(), utils.uuid(), utils.uuid() }
+--    responses.send_HTTP_BAD_REQUEST({msgpack.pack(o), o})
+    local info_obj = {
+        user_id = user.id,
+        project_id = scope_id, -- TODO project scoped or domain scoped
+        expires_at = 0
+    }
+    local payload = kfernet.create_payload(info_obj) -- byte view
+
     local secret = generate_key()
-    local payload = '9602B01334F3ED7EB2483B91B8192BA043B58002B0423D45CDDEC84170BE365E0B31A1B15FCB41D5875002B443D991B07D6F4126D3664375957A5CBDD87B9'
     local fernet_obj = create_fernet_obj(secret, payload)
     local fernet_str = join_fernet(fernet_obj)
     if not fernet:verify(secret, fernet_str, 0).verified then
@@ -110,6 +98,7 @@ end
 function Token.get_info(token_id)
     -- return token: { user_id, scope_id, roles, issued_at, is_admin }
     local fernet_obj = fernet:verify(secret, token_id, 0)
+    local info_obj = kfernet.parse_payload(fernet_obj.payload)
     local user_id, scope_id -- TODO payload parse
 
     local red, err = redis.connect() -- TODO cache
