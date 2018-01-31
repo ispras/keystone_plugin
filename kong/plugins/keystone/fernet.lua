@@ -4,7 +4,7 @@ local struct = require "struct"
 local os = require "os"
 local urandom = require 'randbytes'
 local kutils = require ("kong.plugins.keystone.utils")
-
+local msgpack = require "MessagePack"
 local methods_represent = {oauth1 = 1, password = 2, token = 3}
 
 local function touuid(str)
@@ -79,18 +79,8 @@ end
 --Expiration Time: Timestamp integer of expiration time in UTC
 
 --Audit IDs: Byte representation of URL-Safe string, restoring padding (==) at the end of the string
---local function create_token(version, user_id, methods, project_id, expiration_time, audit_ids)
---    --Fernet Format Version (0x80) – the only version available – 8 bits
---    --Current Timestamp – 64 bits:
---    local current_time = struct.pack(">L", os.time())
---
---    -- Initialization Vector (IV) – 128 bits
---    local iv = urandom(16)
---
---
---end
---
---
+
+
 local UnscopedPayload = {}
 
 UnscopedPayload.version = 0
@@ -402,3 +392,17 @@ local PayloadClasses = {
     DomainScopedPayload,
     UnscopedPayload
 }
+
+local function create_payload(info_obj) --user_id, expires_at, audit_ids, methods=None, domain_id=None, project_id=None, trust_id=None, federated_info=None, access_token_id=None
+    local payload
+    for i = 1, #PayloadClasses do
+        if PayloadClasses[i].create_arguments_aply(info_obj.user_id, info_obj.methods, info_obj.project_id,
+                                                    info_obj.domain_id, info_obj.expires_at, info_obj.audit_ids, info_obj.trust_id,
+                                                        info_obj.federated_info, info_obj.access_token_id) then  
+            payload = {PayloadClasses[i].version, PayloadClasses[i].assemmble(info_obj)}
+            break
+        end
+    end
+
+    return msgpack.pack(payload)
+end
