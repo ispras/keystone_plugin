@@ -1,4 +1,4 @@
-
+local responses = require "kong.tools.responses"
 local struct = require "struct"
 local os = require "os"
 local urandom = require 'randbytes'
@@ -120,9 +120,9 @@ UnscopedPayload.assemble = function (user_id, methods, project_id, domain_id, ex
 end
 
 UnscopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local expires_at_str = kutils.time_to_string(payload[3])
+    local expires_at_str = payload[3]
     local audit_ids = {}
     for i = 1, #payload[4] do
         audit_ids[i] = base64_encode(payload[4][i])
@@ -156,10 +156,10 @@ DomainScopedPayload.assemble = function (user_id, methods, project_id, domain_id
 end
 
 DomainScopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local domain_id = touuid(payload[3])[0]
-    local expires_at_str = kutils.time_to_string(payload[4])
+    local domain_id = touuid(payload[3])[1]
+    local expires_at_str = payload[4]
     local audit_ids = {}
     for i = 1, #payload[5] do
         audit_ids[i] = base64_encode(payload[5][i])
@@ -192,10 +192,10 @@ ProjectScopedPayload.assemble = function (user_id, methods, project_id, domain_i
 end
 
 ProjectScopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local project_id = touuid(payload[3])[0]
-    local expires_at_str = kutils.time_to_string(payload[4])
+    local project_id = touuid(payload[3])[1]
+    local expires_at_str = payload[4]
     local audit_ids = {}
     for i = 1, #payload[5] do
         audit_ids[i] = base64_encode(payload[5][i])
@@ -229,15 +229,15 @@ TrustScopedPayload.assemble = function (user_id, methods, project_id, domain_id,
 end
 
 TrustScopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local project_id = touuid(payload[3])[0]
-    local expires_at_str = kutils.time_to_string(payload[4])
+    local project_id = touuid(payload[3])[1]
+    local expires_at_str = payload[4]
     local audit_ids = {}
     for i = 1, #payload[5] do
         audit_ids[i] = base64_encode(payload[5][i])
     end
-    local trust_id = touuid(payload[6])[0]
+    local trust_id = touuid(payload[6])[1]
     local domain_id = nil
     local federated_info = nil
     local access_token_id = nil
@@ -270,15 +270,15 @@ FederatedUnscopedPayload.assemble = function (user_id, methods, project_id, doma
 end
 
 FederatedUnscopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
     local group_ids = {}
     for i = 1, #payload[3] do
-        group_ids[i] = touuid(payload[3][i])[0]
+        group_ids[i] = touuid(payload[3][i])[1]
     end
-    local idp_id = touuid(payload[4])[0]
+    local idp_id = touuid(payload[4])[1]
     local protocol_id = payload[5]
-    local expires_at_str = kutils.time_to_string(payload[6])
+    local expires_at_str = payload[6]
     local audit_ids = {}
     for i = 1, #payload[7] do
         audit_ids[i] = base64_encode(payload[7][i])
@@ -314,9 +314,9 @@ FederatedScopedPayload.assemble = function (user_id, methods, project_id, domain
 end
 
 FederatedScopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local scope_id = touuid(payload[3])[0]
+    local scope_id = touuid(payload[3])[1]
     local project_id = nil
     local domain_id = nil
     if FederatedScopedPayload.version == FederatedProjectScopedPayload.version then
@@ -326,11 +326,11 @@ FederatedScopedPayload.disassemble = function (payload)
     end
     local group_ids = {}
     for i = 1, #payload[4] do
-        group_ids[i] = touuid(payload[4][i])[0]
+        group_ids[i] = touuid(payload[4][i])[1]
     end
-    local idp_id = touuid(payload[5])[0]
+    local idp_id = touuid(payload[5])[1]
     local protocol_id = payload[6]
-    local expires_at_str = kutils.time_to_string(payload[7])
+    local expires_at_str = payload[7]
     local audit_ids = {}
     for i = 1, #payload[8] do
         audit_ids[i] = base64_encode(payload[8][i])
@@ -385,11 +385,11 @@ OauthScopedPayload.assemble = function (user_id, methods, project_id, domain_id,
 end
 
 OauthScopedPayload.disassemble = function (payload)
-    local user_id = touuid(payload[1])[0]
+    local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
-    local project_id = touuid(payload[3])[0]
-    local access_token_id = touuid(payload[4])[0]
-    local expires_at_str = kutils.time_to_string(payload[5])
+    local project_id = touuid(payload[3])[1]
+    local access_token_id = touuid(payload[4])[1]
+    local expires_at_str = payload[5]
     local audit_ids = {}
     for i = 1, #payload[6] do
         audit_ids[i] = base64_encode(payload[6][i])
@@ -414,10 +414,10 @@ local PayloadClasses = {
 local function create_payload(info_obj) --user_id, expires_at, audit_ids, methods=None, domain_id=None, project_id=None, trust_id=None, federated_info=None, access_token_id=None
     local payload
     for i = 1, #PayloadClasses do
-        if PayloadClasses[i].create_arguments_aply(info_obj.user_id, info_obj.methods, info_obj.project_id,
+        if PayloadClasses[i].create_arguments_aply(info_obj) then
+            payload = {PayloadClasses[i].version, PayloadClasses[i].assemble(info_obj.user_id, info_obj.methods, info_obj.project_id,
                                                     info_obj.domain_id, info_obj.expires_at, info_obj.audit_ids, info_obj.trust_id,
-                                                        info_obj.federated_info, info_obj.access_token_id) then  
-            payload = {PayloadClasses[i].version, PayloadClasses[i].assemmble(info_obj)}
+                                                        info_obj.federated_info, info_obj.access_token_id) }
             break
         end
     end
@@ -435,11 +435,14 @@ local function parse_payload(payload)
     local info_obj
     for i = 1, #PayloadClasses do
         if PayloadClasses[i].version == version then
-            info_obj = PayloadClasses[i].disassemble(not_versioned_payload)
+            info_obj = {PayloadClasses[i].disassemble(not_versioned_payload)}
             break
         end
     end
-    return info_obj
+    local result_obj = {user_id = info_obj[1], methods = info_obj[2], project_id = info_obj[3],
+                        domain_id = info_obj[4], expires_at = info_obj[5], audit_ids = info_obj[6],
+                            trust_id = info_obj[7], federated_info = info_obj[8], access_token_id = info_obj[9]} --user_id, methods, project_id, domain_id, expires_at_str, audit_ids, trust_id, federated_info, access_token_id
+    return result_obj
 end
 
 return {

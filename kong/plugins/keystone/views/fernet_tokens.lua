@@ -72,10 +72,11 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain)
         user_id = user.id,
         project_id = not is_domain and scope_id or nil,
         domain_id = is_domain and scope_id or nil,
-        expires_at = 0
+        expires_at = 0,
+        methods = {},
+        audit_ids = {}
     }
     local payload = kfernet.create_payload(info_obj) -- byte view
-
     local secret = generate_key()
     local fernet_obj = create_fernet_obj(secret, payload)
     local fernet_str = join_fernet(fernet_obj)
