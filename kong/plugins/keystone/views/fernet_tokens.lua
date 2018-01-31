@@ -8,7 +8,6 @@ local hmac = require "resty.hmac"
 local kfernet = require ("kong.plugins.keystone.fernet")
 local redis = require ("kong.plugins.keystone.redis")
 local urandom = require 'randbytes'
-local msgpack = require 'MessagePack'
 
 
 local function join_fernet(fernet_obj)
@@ -56,7 +55,7 @@ function Token.check(token, dao_factory, allow_expired, validate)
     -- return token: { id, user_id }
 
     local payload = fernet:verify(secret, token.id, 0).payload
-    token.user_id = '' -- TODO from payload
+    token.user_id = kfernet.parse_payload(payload).user_id
     return token
 end
 local function generate_key()
@@ -65,16 +64,14 @@ local function generate_key()
     return secret
 end
 
-function Token.generate(dao_factory, user, cached, scope_id)
+function Token.generate(dao_factory, user, cached, scope_id, is_domain)
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
-
---    local o = {utils.uuid(), utils.uuid(), utils.uuid(), utils.uuid() }
---    responses.send_HTTP_BAD_REQUEST({msgpack.pack(o), o})
     local info_obj = {
         user_id = user.id,
-        project_id = scope_id, -- TODO project scoped or domain scoped
+        project_id = not is_domain and scope_id or nil,
+        domain_id = is_domain and scope_id or nil,
         expires_at = 0
     }
     local payload = kfernet.create_payload(info_obj) -- byte view
@@ -99,7 +96,7 @@ function Token.get_info(token_id)
     -- return token: { user_id, scope_id, roles, issued_at, is_admin }
     local fernet_obj = fernet:verify(secret, token_id, 0)
     local info_obj = kfernet.parse_payload(fernet_obj.payload)
-    local user_id, scope_id -- TODO payload parse
+    local user_id, scope_id = info_obj.user_id, info_obj.project_id or info_obj.domain_id
 
     local red, err = redis.connect() -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
@@ -111,6 +108,8 @@ function Token.get_info(token_id)
     local cache = cjson.decode(temp).roles
     local token = {
         id = token_id,
+        user_id = user_id,
+        scope_id = scope_id,
         issued_at = fernet_obj.ts,
         roles = cache.roles,
         is_admin = cache.is_admin

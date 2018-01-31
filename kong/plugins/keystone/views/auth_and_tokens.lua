@@ -239,7 +239,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     local roles = temp.roles
 
     local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id)
+    local token = Tokens.generate(dao_factory, user, true, project.id, scope.project and false or true)
 
     local resp = {
         token = {
@@ -322,7 +322,7 @@ local function auth_token_scoped(self, dao_factory, user)
     local roles = temp.roles
 
     local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id)
+    local token = Tokens.generate(dao_factory, user, true, project.id, scope.project and false or true)
 
     local resp = {
         token = {
