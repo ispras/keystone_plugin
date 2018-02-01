@@ -5,6 +5,7 @@ local SERVER_IP = '127.0.0.1'
 local projects = require ('kong.plugins.keystone.views.projects')
 local roles = require ('kong.plugins.keystone.views.roles')
 local users = require ('kong.plugins.keystone.views.users')
+local fkeys = require ("kong.plugins.keystone.views.fernet_keys")
 
 local function v3()
     local body = {
@@ -121,6 +122,8 @@ local function init(self, dao_factory)
         role_id = resp.admin_role_id
     }
     roles.assignment.assign(self, dao_factory, "UserDomain", false, true)
+
+    fkeys.rotate_keys()
 
     return resp
 end

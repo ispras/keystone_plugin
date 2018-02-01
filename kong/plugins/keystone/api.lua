@@ -48,4 +48,7 @@ add_routes(users.routes)
 local v3 = require ('kong.plugins.keystone.views.v3')
 add_routes(v3)
 
+local fkeys = require ('kong.plugins.keystone.views.fernet_keys')
+add_routes(fkeys.routes)
+
 return views

@@ -127,3 +127,8 @@ class TestKeystoneBase(unittest.TestCase):
         }
         self.res = requests.post(self.host + '/v3/endpoints/', json=body)
         self.checkCode(201)
+
+    def rotate_fernet_keys(self):
+        self.admin_auth()
+        self.res = requests.post(self.host + '/v3/fernet_keys', headers = self.headers)
+        self.checkCode(201)
