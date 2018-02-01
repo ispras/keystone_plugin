@@ -238,6 +238,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     end
     local roles = temp.roles
 
+    local red, err = redis.connect()
     local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user, true, project.id, scope.project and false or true)
 

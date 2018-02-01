@@ -1,14 +1,13 @@
 local responses = require "kong.tools.responses"
-local utils = require "kong.tools.utils"
-local kutils = require ("kong.plugins.keystone.utils")
+--local kutils = require ("kong.plugins.keystone.utils")
 local cjson = require "cjson"
 local fernet = require ("resty.fernet")
 local aes = require "resty.aes"
 local hmac = require "resty.hmac"
 local kfernet = require ("kong.plugins.keystone.fernet")
-local redis = require ("kong.plugins.keystone.redis")
+--local redis = require ("kong.plugins.keystone.redis")
 local urandom = require 'randbytes'
-
+local fkeys = require ("kong.plugins.keystone.views.fernet_keys")
 
 local function join_fernet(fernet_obj)
     -- fernet_obj: { ts, iv, payload, signed, sha256 }
@@ -53,17 +52,19 @@ function Token.check(token, dao_factory, allow_expired, validate)
     -- token: { id }
     -- bool allow_expired:
     -- return token: { id, user_id }
-
-    local payload = fernet:verify(secret, token.id, 0).payload
+    local keys = fkeys.get()
+    local fernet_obj
+    for i = #keys, 0, -1 do
+        fernet_obj = fernet:verify(keys[i], token.id, 0)
+        if fernet_obj.verified then break end
+    end
+    if not fernet_obj.verified then
+        responses.send_HTTP_BAD_REQUEST("Token is not verified")
+    end
+    local payload = fernet_obj.payload
     token.user_id = kfernet.parse_payload(payload).user_id
     return token
 end
-local function generate_key()
-    local secret = urandom(32)
-    secret = kfernet.base64_encode(secret)
-    return secret
-end
-
 function Token.generate(dao_factory, user, cached, scope_id, is_domain)
     -- user: { id }
     -- bool cached
@@ -77,7 +78,7 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain)
         audit_ids = {}
     }
     local payload = kfernet.create_payload(info_obj) -- byte view
-    local secret = generate_key()
+    local secret = fkeys.get_primary()
     local fernet_obj = create_fernet_obj(secret, payload)
     local fernet_str = join_fernet(fernet_obj)
     if not fernet:verify(secret, fernet_str, 0).verified then
@@ -95,18 +96,27 @@ end
 
 function Token.get_info(token_id)
     -- return token: { user_id, scope_id, roles, issued_at, is_admin }
-    local fernet_obj = fernet:verify(secret, token_id, 0)
+    local keys = fkeys.get()
+    local fernet_obj
+    for i = #keys, 0, -1 do
+        fernet_obj = fernet:verify(keys[i], token_id, 0)
+        if fernet_obj.verified then break end
+    end
+    if not fernet_obj.verified then
+        responses.send_HTTP_BAD_REQUEST("Token is not verified")
+    end
     local info_obj = kfernet.parse_payload(fernet_obj.payload)
     local user_id, scope_id = info_obj.user_id, info_obj.project_id or info_obj.domain_id
 
+    local redis = require ("kong.plugins.keystone.redis")
     local red, err = redis.connect() -- TODO cache
-    kutils.assert_dao_error(err, "redis connect")
-    local temp, err = red:get(user_id..scope_id)
-    kutils.assert_dao_error(err, "redis get")
+    if err then error(err) end
+    local temp, err = red:get(user_id..'&'..scope_id)
+    if err then error(err) end
     if temp == ngx.null then
         responses.send_HTTP_CONFLICT("No scope info for token")
     end
-    local cache = cjson.decode(temp).roles
+    local cache = cjson.decode(temp)
     local token = {
         id = token_id,
         user_id = user_id,
