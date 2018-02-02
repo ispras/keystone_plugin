@@ -107,5 +107,20 @@
     "identity:list_user_groups": "rule:admin_or_owner",
     "identity:list_user_projects": "rule:admin_or_owner",
 
-    "identity:fernet_tokens": "!"
+    "identity:fernet_tokens": "!",
+
+    "identity:create_policy_association_for_endpoint": "rule:cloud_admin",
+    "identity:check_policy_association_for_endpoint": "rule:cloud_admin",
+    "identity:delete_policy_association_for_endpoint": "rule:cloud_admin",
+    "identity:create_policy_association_for_service": "rule:cloud_admin",
+    "identity:check_policy_association_for_service": "rule:cloud_admin",
+    "identity:delete_policy_association_for_service": "rule:cloud_admin",
+    "identity:create_policy_association_for_region_and_service": "rule:cloud_admin",
+    "identity:check_policy_association_for_region_and_service": "rule:cloud_admin",
+    "identity:delete_policy_association_for_region_and_service": "rule:cloud_admin",
+    "identity:get_policy_for_endpoint": "rule:cloud_admin",
+    "identity:list_endpoints_for_policy": "rule:cloud_admin",
+    "identity:show policy for endpoint": "rule:cloud_admin",
+    "identity:check_policy_and_service_endpoint_association": "rule:cloud_admin"
+
 }
