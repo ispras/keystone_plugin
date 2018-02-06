@@ -92,9 +92,12 @@ local function handle_match(rule, user_id, scope_id, target, obj)
     if token_attr == "user_id" then
         token_attr = user_id
     elseif token_attr == "project_id" or "domain_id" then
+        if not scope_id then
+            return false
+        end
         token_attr = scope_id
     elseif token_attr == "None" then
-        token_attr = null
+        token_attr = nil
     else
         responses.send_HTTP_CONFLICT("unknown attribute "..token_attr)
     end
@@ -141,7 +144,7 @@ local function check_policy_rule(token, rule, target, obj)
     end
     local kutils = require ("kong.plugins.keystone.utils")
     local Tokens = kutils.provider()
-    local token = Tokens.get_info(token)
+    local token = Tokens.get_info(token, target) --NOTE: there are unscoped tokens
     if token.is_admin then
         return
     end

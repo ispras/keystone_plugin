@@ -86,7 +86,7 @@ local function generate_token(dao_factory, user, cached, scope_id)
     return token
 end
 
-local function get_token_info(token_id)
+local function get_token_info(token_id, dao_factory)
     local red, err = redis.connect() -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local key, err = red:get(token_id)
@@ -104,8 +104,14 @@ local function get_token_info(token_id)
         token.user_id, token.scope_id = key:match("(.*)&(.*)")
         token.issued_at = tonumber(token.issued_at)
         return token
+    else
+        local token, err = dao_factory.token:find({id = token_id})
+        kutils.assert_dao_error(err, "token find")
+        if not token then
+            responses.send_HTTP_BAD_REQUEST("Authorization token is not found")
+        end
+        return token
     end
-    responses.send_HTTP_BAD_REQUEST("No scope info for token")
 end
 
 return {

@@ -5,7 +5,8 @@ local urandom = require 'randbytes'
 local cjson = require "cjson"
 
 -- NOTE: some modules are called inside functions
--- because of luapis error "attempt to index upvalue (a userdata value)
+-- because of lapis error "attempt to index upvalue (a userdata value)
+-- for more information https://github.com/Neopallium/lua-pb/issues/28
 
 local function get_keys()
     local redis = require ("kong.plugins.keystone.redis")
