@@ -55,6 +55,10 @@ local headers = function()
     return headers
 end
 local has_id = function(array, id, field)
+    if not array then
+        return false
+    end
+
     for i = 1, #array do
         if array[i] and (field and array[i][field] == id or array[i].id == id) then
             return i
