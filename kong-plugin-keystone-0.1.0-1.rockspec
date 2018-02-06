@@ -66,6 +66,8 @@ build = {
     ["kong.plugins.keystone.views.domains"] = "kong/plugins/keystone/views/domains.lua",
     ["kong.plugins.keystone.views.domain_configuration"] = "kong/plugins/keystone/views/domain_configuration.lua",
     ["kong.plugins.keystone.views.credentials"] = "kong/plugins/keystone/views/credentials.lua",
-    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua"
+    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua",
+    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua",
+    ["kong.plugins.keystone.utils"] = "kong/plugins/keystone/utils.lua"
   }
 }
