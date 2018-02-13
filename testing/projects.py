@@ -6,7 +6,8 @@ class TestKeystoneProjects(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneProjects, self).setUp()
         self.url = self.host + '/v3/projects/'
-        self.project_id = '899f724c-80ad-456a-a584-040d3748a5b8'
+        self.project_id = 'f9c9f2b6-c717-4fec-9dec-f09e7a7e62ad'
+        self.admin_auth()
 
     def create(self):
         body = {
@@ -18,7 +19,7 @@ class TestKeystoneProjects(TestKeystoneBase):
                 "domain_id": self.admin_domain_id
             }
         }
-        self.res = requests.post(self.url, json = body)
+        self.res = requests.post(self.url, json = body, headers = self.headers)
         self.checkCode(201)
 
     def list(self):
@@ -30,11 +31,11 @@ class TestKeystoneProjects(TestKeystoneBase):
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
         }
-        self.res = requests.get(self.url, params=query)
+        self.res = requests.get(self.url, params=query, headers = self.headers)
         self.checkCode(200)
 
     def get_info(self):
-        self.res = requests.get(self.url + self.project_id)
+        self.res = requests.get(self.url + self.project_id, headers = self.headers)
         self.checkCode(200)
 
     def update(self):
@@ -44,28 +45,28 @@ class TestKeystoneProjects(TestKeystoneBase):
             "name": "myUpdatedProject"
             }
         }
-        self.res = requests.patch(self.url + self.project_id, json=body)
+        self.res = requests.patch(self.url + self.project_id, json=body, headers = self.headers)
         self.checkCode(200)
 
     def delete(self):
-        self.res = requests.delete(self.url + self.project_id)
+        self.res = requests.delete(self.url + self.project_id, headers = self.headers)
         self.checkCode(204)
 
     def tags(self):
         tag = 'keystone'
-        self.res = requests.put(self.url + self.project_id + '/tags/' + tag, json={})
+        self.res = requests.put(self.url + self.project_id + '/tags/' + tag, json={}, headers = self.headers)
         self.checkCode(201)
-        self.res = requests.get(self.url + self.project_id + '/tags/' + tag)
+        self.res = requests.get(self.url + self.project_id + '/tags/' + tag, headers = self.headers)
         self.checkCode(204)
-        self.res = requests.delete(self.url + self.project_id + '/tags/' + tag)
+        self.res = requests.delete(self.url + self.project_id + '/tags/' + tag, headers = self.headers)
         self.checkCode(204)
 
         body = {
             'tags' : ['keystone', 'admin']
         }
-        self.res = requests.put(self.url + self.project_id + '/tags/', json = body)
+        self.res = requests.put(self.url + self.project_id + '/tags/', json = body, headers = self.headers)
         self.checkCode(200)
-        self.res = requests.get(self.url + self.project_id + '/tags/')
+        self.res = requests.get(self.url + self.project_id + '/tags/', headers = self.headers)
         self.checkCode(200)
-        self.res = requests.delete(self.url + self.project_id + '/tags/')
+        self.res = requests.delete(self.url + self.project_id + '/tags/', headers = self.headers)
         self.checkCode(204)

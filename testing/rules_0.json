@@ -1,0 +1,94 @@
+{
+    "rules": [
+        {
+            "local": [
+                {
+                    "user": {
+                        "name": "admin",
+                        "type": "local",
+                        "domain": {
+                            "name": "admin"
+                        }
+                    }
+                },
+                {
+                    "projects": [
+                        {
+                            "name": "Development project for {0}",
+                            "roles": [
+                                {
+                                    "name": "admin"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "remote": [
+                {
+                    "type": "FirstName"
+                },
+                {
+                    "type": "LastName"
+                },
+                {
+                    "type": "Email"
+                },
+                {
+                    "type": "orgPerson",
+                    "not_any_of" : [
+                        "Guest"
+                    ]
+                }
+            ]
+        },
+        {
+            "local": [
+                {
+                    "user": {
+                        "name": "{0} {1}",
+                        "email": "{2}"
+                    }
+                },
+                {
+                    "group": {
+                        "name": "{3} Users",
+                        "domain": {
+                            "id": "0cd5e9"
+                        }
+                    }
+                },
+                {
+                    "projects": [
+                        {
+                            "name" : "Federated",
+                            "roles" : [
+                                {
+                                    "name":"member"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "remote": [
+                {
+                    "type": "FirstName"
+                },
+                {
+                    "type": "LastName"
+                },
+                {
+                    "type": "Email"
+                },
+                {
+                    "type": "orgPerson",
+                    "any_one_of" : [
+                        "Contractor",
+                        "Guest"
+                    ]
+                }
+            ]
+        }
+    ]
+}

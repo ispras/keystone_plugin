@@ -611,4 +611,7 @@ local routes =  {
 
 routes["/v2.0/auth/tokens"] = routes["/v3/auth/tokens"]
 
-return routes
+return {
+    routes = routes,
+    get_scopes = get_scopes
+}

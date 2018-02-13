@@ -10,13 +10,14 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.user_id = 'dce048f3-756e-4a21-a9d4-77791410ef6d'
         self.group_id = ''
         self.role_id = 'be464947-a2bc-4cb4-b782-4d1a656c9a29'
+        self.admin_auth()
 
     def list(self):
         query = {
-            # 'use' : 'admin',
+            # 'name' : 'admin',
             # 'domain_id' : 'domain'
         }
-        self.res = requests.get(self.url, params = query)
+        self.res = requests.get(self.url, params = query, headers = self.headers)
         self.checkCode(200)
 
     def create(self):
