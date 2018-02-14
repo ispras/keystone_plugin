@@ -41,7 +41,8 @@ dependencies = {
   "luaposix >= 33.4.0-1",
   "randbytes >= 0.0-2",
   "struct >= 1.4-1",
-  "lua-messagepack >= 0.5.1-1"
+  "lua-messagepack >= 0.5.1-1",
+  "lua-resty-http >= 0.12-0"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
@@ -72,6 +73,13 @@ build = {
     ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua",
     ["kong.plugins.keystone.views.uuid_tokens"] = "kong/plugins/keystone/views/uuid_tokens.lua",
     ["kong.plugins.keystone.views.fernet_tokens"] = "kong/plugins/keystone/views/fernet_tokens.lua",
-    ["kong.plugins.keystone.views.fernet_keys"] = "kong/plugins/keystone/views/fernet_keys.lua"
+    ["kong.plugins.keystone.views.fernet_keys"] = "kong/plugins/keystone/views/fernet_keys.lua",
+    ["kong.plugins.keystone.extensions.os_endpoint_policy"] = "kong/plugins/keystone/extensions/os_endpoint_policy.lua",
+    ["kong.plugins.keystone.extensions.os_ep_filter"] = "kong/plugins/keystone/extensions/os_ep_filter.lua",
+    ["kong.plugins.keystone.extensions.os_federation"] = "kong/plugins/keystone/extensions/os_federation.lua",
+    ["kong.plugins.keystone.extensions.os_oauth1"] = "kong/plugins/keystone/extensions/os_oauth1.lua",
+    ["kong.plugins.keystone.extensions.os_revoke"] = "kong/plugins/keystone/extensions/os_revoke.lua",
+    ["kong.plugins.keystone.extensions.os_simple_cert"] = "kong/plugins/keystone/extensions/os_simple_cert.lua",
+    ["kong.plugins.keystone.extensions.os_trust"] = "kong/plugins/keystone/extensions/os_trust.lua"
   }
 }

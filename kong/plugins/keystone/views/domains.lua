@@ -31,7 +31,7 @@ local function update_params(params)
     params.domain = true
 end
 
-return {
+local routes = {
     ["/v3/domains"] = {
         GET = function (self, dao_factory)
             self.params.is_domain = true
@@ -61,4 +61,7 @@ return {
             projects["/v3/projects/:project_id"].DELETE(self, dao_factory)
         end
     }
+}
+return {
+    routes = routes
 }

@@ -55,6 +55,10 @@ local headers = function()
     return headers
 end
 local has_id = function(array, id, field)
+    if not array then
+        return false
+    end
+
     for i = 1, #array do
         if array[i] and (field and array[i][field] == id or array[i].id == id) then
             return i
@@ -103,6 +107,26 @@ local function provider()
     end
 end
 
+local function request_uri(uri)
+    local http = require("resty.http")
+    local httpc = http.new()
+    httpc:set_timeout(5000)
+    local res, err = httpc:request_uri(uri, { method = "GET", ssl_verify = false })
+    assert_dao_error(err, "request ")
+    if res.status == 302 then
+        local new_uri = res.headers['Location']
+        res, err = httpc:request_uri(new_uri, { method = "GET", ssl_verify = false })
+        assert_dao_error(err, "request ")
+    end
+    return res
+end
+
+local function federated_group(dao_factory)
+    local group, err = dao_factory.group:find_all({name = 'federated'})
+    assert_dao_error(err, "group find all")
+    return group[1] and group[1].id or nil
+end
+
 return {
     bool = bool,
     default_domain = default_domain,
@@ -114,5 +138,6 @@ return {
     has_id = has_id,
     subtree = subtree,
     config_from_dao = config_from_dao,
-    provider = provider
+    provider = provider,
+    federated_group = federated_group
 }

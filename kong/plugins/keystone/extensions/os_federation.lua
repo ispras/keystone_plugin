@@ -1,8 +1,1095 @@
---
--- Created by IntelliJ IDEA.
--- User: lenaaxenova
--- Date: 2/1/18
--- Time: 2:00 PM
--- To change this template use File | Settings | File Templates.
---
+local responses = require "kong.tools.responses"
+local kutils = require ("kong.plugins.keystone.utils")
+local policies = require ("kong.plugins.keystone.policies")
+local utils = require "kong.tools.utils"
+local projects = require ("kong.plugins.keystone.views.projects")
+local cjson = require "cjson"
+local assign_role = require ("kong.plugins.keystone.views.roles").assignment.assign
+local add_member = require ("kong.plugins.keystone.views.groups").add_member
 
+local function register_identity_provider(self, dao_factory)
+    local request = self.params.identity_provider
+    if not request then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    local temp, err = dao_factory.identity_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if temp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider with requested id already exists")
+    end
+    local idp = {
+        id = self.params.id,
+        description = request.description,
+        enabled = request.enabled or false,
+    }
+    if not request.domain_id then
+        local s = self
+        s.params = {
+            project = {
+                is_domain = true,
+                description = "Domain for identity provider"..(request.description and ": "..request.description or ''),
+                enabled = true,
+                name = 'Domain for Identity Provider '..idp.id
+            }
+        }
+        local code, resp = projects.create(s, dao_factory)
+        if code ~= 201 then
+            responses.send(code, resp)
+        end
+        idp.domain_id = resp.project.id
+    else
+        local temp, err = dao_factory.identity_provider:find_all({domain_id = request.domain_id})
+        kutils.assert_dao_error(err, "identity provider find all")
+        if next(temp) then
+            responses.send_HTTP_BAD_REQUEST("The specified domain_id already maps an existing identity provider")
+        end
+        idp.domain_id = request.domain_id
+    end
+    local _, err = dao_factory.identity_provider:insert(idp)
+    kutils.assert_dao_error(err, "identity provider insert")
+    idp.remote_ids = {}
+    idp.links = {
+        self = self:build_url(self.req.parsed_url.path),
+        protocols = self:build_url(self.req.parsed_url.path..'/protocols')
+    }
+
+    if request.remote_ids then
+        for i, v in ipairs(request.remote_ids) do
+            local temp, err = dao_factory.idp_remote_ids:find({remote_id = v})
+            kutils.assert_dao_error(err, "idp remote ids find")
+            if not temp then
+                local remote_id = {
+                    idp_id = idp.id,
+                    remote_id = v
+                }
+                local _, err = dao_factory.idp_remote_ids:insert(remote_id)
+                kutils.assert_dao_error(err, "idp remote ids insert")
+                idp.remote_ids[#idp.remote_ids] = v
+            end
+        end
+    end
+    return 201, {
+        identity_provider = idp
+    }
+end
+
+local function list_identity_providers(self, dao_factory)
+    local args = (self.params.id or self.params.enabled) and {id = self.params.id, enabled = self.params.enabled} or nil
+    local idps, err = dao_factory.identity_provider:find_all(args)
+    kutils.assert_dao_error(err, "identity provider find all")
+    for i = 1, #idps do
+        idps[i].links = {
+            self = self:build_url(self.req.parsed_url.path..idps[i].id),
+            protocols = self:build_url(self.req.parsed_url.path..idps[i].id..'/protocols')
+        }
+        local remote_ids, err = dao_factory.idp_remote_ids:find_all({idp_id = idps[i].id})
+        kutils.assert_dao_error(err, "idp remote ids find all")
+        idps[i].remote_ids = {}
+        for j, v in pairs(remote_ids) do
+            idps[i].remote_ids[j] = v.remote_id
+        end
+    end
+    return 200, {
+        identity_providers = idps,
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        }
+    }
+end
+
+local function get_identity_provider(self, dao_factory)
+    local idp, err = dao_factory.identity_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if not idp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider is not found")
+    end
+    local remote_ids, err = dao_factory.idp_remote_ids:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "idp remote ids find all")
+    idp.remote_ids = {}
+    for i, v in pairs(remote_ids) do
+        idp.remote_ids[i] = v.remote_id
+    end
+    idp.links = {
+        self = self:build_url(self.req.parsed_url.path),
+        protocols = self:build_url(self.req.parsed_url.path..'/protocols')
+    }
+    return 200, {
+        identity_provider = idp
+    }
+end
+
+local function delete_identity_provider(self, dao_factory)
+    -- NOTE: all tokens generated by the provider must be revoked
+    local idp, err = dao_factory.identity_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if not idp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider is not found")
+    end
+    local remote_ids, err = dao_factory.idp_remote_ids:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "idp remote ids find all")
+    for _, v in pairs(remote_ids) do
+        local _, err = dao_factory.idp_remote_ids:delete({remote_id = v.remote_id})
+        kutils.assert_dao_error(err, "idp remote ids delete")
+    end
+    local fps, err = dao_factory.federation_protocol:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "federation protocol find all")
+    for _, v in pairs(fps) do
+        local _, err = dao_factory.federation_protocol:delete({id = v.id, idp_id = idp.id})
+        kutils.assert_dao_error(err, "federation protocol delete")
+    end
+    local fusers, err = dao_factory.federated_user:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "federated user find all")
+    for _, v in pairs(fusers) do
+        local _, err = dao_factory.federated_user:delete({id = v.id})
+        kutils.assert_dao_error(err, "federated user delete")
+    end
+    local _, err = dao_factory.identity_provider:delete({id = idp.id})
+    kutils.assert_dao_error(err, "identity provider delete")
+
+    return 204
+end
+
+local function update_identity_provider(self, dao_factory)
+    local idp, err = dao_factory.identity_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if not idp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider is not found")
+    end
+    local uidp = self.params.identity_provider
+    if not uidp or uidp.domain_id then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    if uidp.enabled then
+        idp, err = dao_factory.identity_provider:update({enabled = uidp.enabled}, {id = idp.id})
+        kutils.assert_dao_error(err, "identity provider update")
+    end
+    local remote_ids, err = dao_factory.idp_remote_ids:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "idp eremote ids find all")
+    idp.remote_ids = {}
+    if uidp.remote_ids then
+        for _, v in pairs(remote_ids) do
+            if not kutils.has_id(uidp.remote_ids, v.remote_id) then
+                local _, err = dao_factory.idp_remote_ids:delete({remote_id = v.remote_id})
+                kutils.assert_dao_error(err, "idp remote ids delete")
+            end
+        end
+        for _, v in pairs(uidp.remote_ids) do
+            local temp, err = dao_factory.idp_remote_ids:find({remote_id = v})
+            kutils.assert_dao_error(err, "idp remote ids find")
+            if not temp then
+                local _, err = dao_factory.idp_remote_ids:insert({idp_id = idp.id, remote_id = v})
+                kutils.assert_dao_error(err, "idp remote ids insert")
+                idp.remote_ids[#idp.remote_ids] = v
+            elseif temp.idp_id == idp.id then
+                idp.remote_ids[#idp.remote_ids] = temp.remote_id
+            end
+        end
+        idp.remote_ids = uidp.remote_ids
+    else
+        for _, v in pairs(remote_ids) do
+            idp.remote_ids[#idp.remote_ids] = v.remote_id
+        end
+    end
+    idp.links = {
+        self = self:build_url(self.req.parsed_url.path),
+        protocols = self:build_url(self.req.parsed_url.path..'/protocols')
+    }
+    return 200, {identity_provider = idp}
+end
+
+local function list_protocol_and_attr_maps_of_identity_provider(self, dao_factory)
+    local idp, err = dao_factory.identity_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if not idp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider is not found")
+    end
+    local protocols, err = dao_factory.federation_protocol:find_all({idp_id = idp.id})
+    kutils.assert_dao_error(err, "federation protocol find all")
+    for i, v in pairs(protocols) do
+        protocols[i].idp_id = nil
+        protocols[i].links = {
+            identity_provider = self:build_url(self.req.parsed_url.path:match('(.*)/protocols')),
+            self = self:build_url(self.req.parsed_url.path..'/'..protocols[i].id)
+        }
+    end
+    local resp = {
+        protocols = protocols,
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        }
+    }
+
+    return 200, resp
+end
+
+local function get_protocol_and_attr_maps_for_identity_provider(self, dao_factory)
+    local protocol, err = dao_factory.federation_protocol:find({id = self.params.protocol_id, idp_id = self.params.idp_id})
+    kutils.assert_dao_error(err, "federation protocol find")
+    if not protocol then
+        responses.send_HTTP_BAD_REQUEST("Protocol doesn't exist")
+    end
+    protocol.links = {
+        identity_provider = self:build_url(self.req.parsed_url.path:match('(.*)/protocols/'..protocol.id)),
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    protocol.idp_id = nil
+
+    return 200, protocol
+end
+local function add_protocol_and_attr_maps_to_identity_provider(self, dao_factory)
+    local idp, err = dao_factory.identity_provider:find({id = self.params.idp_id})
+    kutils.assert_dao_error(err, "identity provider find")
+    if not idp then
+        responses.send_HTTP_BAD_REQUEST("Identity Provider is not found")
+    end
+    if not self.params.protocol or not self.params.protocol.mapping_id then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    local protocol = {
+        id = self.params.protocol_id,
+        idp_id = idp.id,
+        mapping_id = self.params.protocol.mapping_id,
+    }
+    local map, err = dao_factory.mapping:find({id = protocol.mapping_id})
+    kutils.assert_dao_error(err, "mapping find")
+    if not map then
+        responses.send_HTTP_BAD_REQUEST("Mapping is not found")
+    end
+    local temp, err = dao_factory.federation_protocol:find({id = protocol.id, idp_id = protocol.idp_id})
+    kutils.assert_dao_error(err, "federation protocol find")
+    if temp then
+        responses.send_HTTP_BAD_REQUEST("Federation Protocol with requested id already exists")
+    end
+    local _, err = dao_factory.federation_protocol:insert(protocol)
+    protocol.links = {
+        identity_provider = self:build_url(self.req.parsed_url.path:match('(.*)/protocols/'..protocol.id)),
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    protocol.idp_id = nil
+
+    return 201, protocol
+end
+
+local function update_attr_maps_for_identity_provider_and_protocol(self, dao_factory)
+    local protocol, err = dao_factory.federation_protocol:find({id = self.params.protocol_id, idp_id = self.params.idp_id})
+    kutils.assert_dao_error(err, "federation protocol find")
+    if not protocol then
+        responses.send_HTTP_BAD_REQUEST("Protocol doesn't exist")
+    end
+
+    if not self.params.protocol or not self.params.protocol.mapping_id then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    protocol.mapping_id = self.params.protocol.mapping_id
+
+    local map, err = dao_factory.mapping:find({id = protocol.mapping_id})
+    kutils.assert_dao_error(err, "mapping find")
+    if not map then
+        responses.send_HTTP_BAD_REQUEST("Mapping is not found")
+    end
+
+    local _, err = dao_factory.federation_protocol:update({mapping_id = protocol.mapping_id}, {id = protocol.id, idp_id = protocol.idp_id})
+    kutils.assert_dao_error(err, "federation protocol update")
+
+    protocol.links = {
+        identity_provider = self:build_url(self.req.parsed_url.path:match('(.*)/protocols/'..protocol.id)),
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    protocol.idp_id = nil
+
+    return 200, protocol
+end
+
+local function delete_protocol_and_attr_maps_from_identity_provider(self, dao_factory)
+    local protocol, err = dao_factory.federation_protocol:find({id = self.params.protocol_id, idp_id = self.params.idp_id})
+    kutils.assert_dao_error(err, "federation protocol find")
+    if not protocol then
+        responses.send_HTTP_BAD_REQUEST("Protocol doesn't exist")
+    end
+    local fusers, err = dao_factory.federated_user:find_all({protocol_id = protocol.id})
+    kutils.assert_dao_error(err, "federated user find all")
+    for _, v in pairs(fusers) do
+        local _, err = dao_factory.federated_user:delete({id = v.id})
+        kutils.assert_dao_error(err, "federated user delete")
+    end
+    local _, err = dao_factory.federation_protocol:delete({id = protocol.id, idp_id = protocol.idp_id})
+    kutils.assert_dao_error(err, "federation protocol delete")
+
+    return 204
+end
+
+local function list_mappings(self, dao_factory)
+    local maps, err = dao_factory.mapping:find_all()
+    kutils.assert_dao_error(err, "mapping find all")
+    for i, v in pairs(maps) do
+        maps[i].rules = cjson.decode(maps[i].rules)
+        maps[i].links = {
+            self = self:build_url(self.req.parsed_url.path..'/'..maps[i].id)
+        }
+    end
+
+    local resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        },
+        mappings = maps
+    }
+
+    return 200, resp
+end
+
+local function get_mapping(self, dao_factory)
+    local map, err = dao_factory.mapping:find({id = self.params.id})
+    kutils.assert_dao_error(err, "mapping find all")
+    if not map then
+        responses.send_HTTP_BAD_REQUEST("Mapping is not found")
+    end
+    map.rules = cjson.decode(map.rules)
+    map.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+
+    return 200, {mapping = map}
+end
+
+local function check_rules_for_mapping(rules, dao_factory)
+    for _, rule in pairs(rules) do
+        if not (rule.remote and rule['local'] and next(rule.remote)) then
+            responses.send_HTTP_BAD_REQUEST("Incorrect structure or rules object")
+        else
+            local has_user = false
+            for _, v in pairs(rule['local']) do
+                -- v contains only one object
+                local i = 0
+                for _, _ in pairs(v) do
+                    if i > 0 then
+                        responses.send_HTTP_BAD_REQUEST("Incorrect structure of rule.local object")
+                    end
+                    i = i + 1
+                end
+                -- rule.local object contains one user and optionally groups and projects
+                if v.user then
+                    if has_user then
+                        responses.send_HTTP_BAD_REQUEST("rule.local object has multiple user objects")
+                    else
+                        has_user = true
+                    end
+                end
+            end
+            if not has_user then
+                responses.send_HTTP_BAD_REQUEST("rule.local object has no user object")
+            end
+            for _, v in pairs(rule.remote) do
+                if not v.type then
+                    responses.send_HTTP_BAD_REQUEST("Object in list of rule.remote has no attribute type")
+                end
+                if v.not_any_of and v.any_one_of then
+                    responses.send_HTTP_BAD_REQUEST("any_one_of mutually exclusive with not_any_of")
+                end
+                if v.blacklist and v.whitelist then
+                    responses.send_HTTP_BAD_REQUEST("blacklist mutually exclusive with whitelist")
+                end
+            end
+        end
+    end
+end
+
+local function create_mapping(self, dao_factory)
+    if not self.params.mapping or not self.params.mapping.rules then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    check_rules_for_mapping(self.params.mapping.rules, dao_factory)
+    local map = {
+        id = self.params.id,
+        rules = cjson.encode(self.params.mapping.rules)
+    }
+    local temp, err = dao_factory.mapping:find({id = map.id})
+    kutils.assert_dao_error(err, "mapping find")
+    if temp then
+        responses.send_HTTP_BAD_REQUEST("Mapping with requested id already exists")
+    end
+    local _, err = dao_factory.mapping:insert(map)
+    kutils.assert_dao_error(err, "mapping insert")
+    local resp = {
+        mapping = {
+            id = map.id,
+            rules = self.params.mapping.rules,
+            links = self:build_url(self.req.parsed_url.path)
+        }
+    }
+    return 201, resp
+end
+
+local function update_mapping(self, dao_factory)
+    local map, err = dao_factory.mapping:find({id = self.params.id})
+    kutils.assert_dao_error(err, "mapping find")
+    if not map then
+        responses.send_HTTP_BAD_REQUEST("Mapping is not found")
+    end
+    if not self.params.mapping or not self.params.mapping.rules then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    check_rules_for_mapping(self.params.mapping.rules, dao_factory)
+    map.rules = self.params.mapping.rules
+    local _, err = dao_factory.mapping:update({rules = cjson.encode(map.rules)}, {id = map.id})
+    kutils.assert_dao_error(err, "mapping update")
+    map.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+
+    return 200, {mapping = map}
+end
+
+local function delete_mapping(self, dao_factory)
+    local map, err = dao_factory.mapping:find({id = self.params.id})
+    kutils.assert_dao_error(err, "mapping find")
+    if not map then
+        responses.send_HTTP_BAD_REQUEST("Mapping is not found")
+    end
+    local protocols, err = dao_factory.federation_protocol:find_all({mapping_id = map.id})
+    kutils.assert_dao_error(err, "federation protocol find all")
+    for _, v in pairs(protocols) do
+        self.params.protocol_id = v.id
+        self.params.idp_id = v.idp_id
+        delete_protocol_and_attr_maps_from_identity_provider(self, dao_factory)
+    end
+    local _, err = dao_factory.mapping:delete({id = map.id})
+    kutils.assert_dao_error(err, "mapping delete")
+
+    return 204
+end
+
+local function list_service_providers(self, dao_factory)
+    local sps, err = dao_factory.service_provider:find_all()
+    kutils.assert_dao_error(err, "service provider find all")
+    for i, v in pairs(sps) do
+        sps[i].links = {
+            self = self:build_url(self.req.parsed_url.path..'/'..sps[i].id)
+        }
+    end
+    local resp = {
+        links = {
+            next = 'null',
+            previous = 'null',
+            self = self:build_url(self.req.parsed_url.path)
+        },
+        service_providers = sps
+    }
+    return 200, resp
+end
+
+local function get_service_provider(self, dao_factory)
+    local sp, err = dao_factory.service_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "service provider find")
+    if not sp then
+        responses.send_HTTP_BAD_REQUEST("Service Provider is not found")
+    end
+    sp.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    return 200, {
+        service_provider = sp
+    }
+end
+
+local function register_service_provider(self, dao_factory)
+    -- TODO If set to false the SP will not appear in the catalog and requests to generate an assertion will result in a 403 error.
+    if not self.params.service_provider or not (self.params.service_provider.auth_url and self.params.service_provider.sp_url) then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+    local sp = {
+        id = self.params.id,
+        auth_url = self.params.service_provider.auth_url,
+        description = self.params.service_provider.description,
+        enabled = self.params.service_provider.enabled or false,
+        sp_url = self.params.service_provider.sp_url,
+        relay_state_prefix = self.params.service_provider.relay_state_prefix or 'ss:mem:'
+    }
+    local temp, err = dao_factory.service_provider:find({id = sp.id})
+    kutils.assert_dao_error(err, "service provider find")
+    if temp then
+        responses.send_HTTP_BAD_REQUEST("Service Provider with requested name exists")
+    end
+    local _, err = dao_factory.service_provider:insert(sp)
+    kutils.assert_dao_error(err, "service provider insert")
+    sp.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+
+    return 201, {service_provider = sp}
+end
+
+local function update_service_provider(self, dao_factory)
+    local sp, err = dao_factory.service_provider:find({id = self.params.id})
+    kutils.assert_dao_error(err, "service provider find")
+    if not sp then
+        responses.send_HTTP_BAD_REQUEST("Service Provider is not found")
+    end
+    if not self.params.service_provider then
+        responses.send_HTTP_BAD_REQUEST()
+    end
+
+    local args = {
+        auth_url = self.params.service_provider.auth_url,
+        enabled = self.params.service_provider.enabled,
+        description = self.params.service_provider.description,
+        sp_url = self.params.service_provider.sp_url,
+        relay_state_prefix = self.params.service_provider.relay_state_prefix
+    }
+    if next(args) then
+        sp, err = dao_factory.service_provider:update(args, {id = sp.id})
+        kutils.assert_dao_error(err, "servise  provider update")
+    end
+    sp.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+
+    return 200, {
+        service_provider = sp
+    }
+end
+
+local function delete_service_provider(self, dao_factory)
+    local sp, err = dao_factory.service_provider:delete({id = self.params.id})
+    kutils.assert_dao_error(err, "service provider delete")
+    if not sp then
+        responses.send_HTTP_BAD_REQUEST("Service Provider is not found")
+    end
+
+    return 204
+end
+
+local function match_rules(rules, remote_parameters)
+    local function match_conditions(rule, params)
+        for _, v in pairs(rule) do
+            if not params[v.type] then
+                return false
+            end
+            if v.not_any_of then
+                for _, w in pairs(v.not_any_of) do
+                    if params[v.type] == w then
+                        return false
+                    end
+                end
+            end
+            if v.any_one_of then
+                local check = false
+                for _, w in pairs(v.any_one_of) do
+                    if params[v.type] == w then
+                        check = true
+                        break
+                    end
+                end
+                if not check then
+                    return false
+                end
+            end
+            if v.blacklist then
+                for _, w in pairs(v.blacklist) do
+                    -- TODO list groups?
+                end
+            end
+            if v.whitelist then
+                for _, w in pairs(v.whitelist) do
+                    -- TODO list groups?
+                end
+            end
+        end
+        return true
+    end
+
+    for _, rule in ipairs(rules) do
+        if match_conditions(rule.remote, remote_parameters) then
+            return rule
+        end
+    end
+    return
+end
+
+local function direct_mapping(rule, params)
+    local function replace(obj)
+        -- obj = { id, name, domain = { id, name }, type }
+        if obj.id then
+            local temp = obj.id
+            _, _ = temp:gsub('{(%d)}', function(c)
+                obj.id = obj.id:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+            end)
+        end
+        if obj.name then
+            local temp = obj.name
+            _, _ = temp:gsub('{(%d)}', function(c)
+                obj.name = obj.name:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+            end)
+        end
+        if obj.type then
+            local temp = obj.type
+            _, _ = temp:gsub('{(%d)}', function(c)
+                obj.type = obj.type:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+            end)
+        end
+        if obj.domain and obj.domain.id then
+            local temp = obj.domain.id
+            _, _ = temp:gsub('{(%d)}', function(c)
+                obj.domain.id = obj.domain.id:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+            end)
+        end
+        if obj.domain and obj.domain.name then
+            local temp = obj.domain.name
+            _, _ = temp:gsub('{(%d)}', function(c)
+                obj.domain.name = obj.domain.name:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+            end)
+        end
+        if obj.roles then
+            for i, _ in pairs(obj.roles) do
+                local temp = obj.roles[i].name
+                _, _ = temp:gsub('{(%d)}', function(c)
+                    obj.roles[i].name = obj.roles[i].name:gsub("{"..c.."}", params[rule.remote[c + 1].type])
+                end)
+            end
+        end
+        return obj
+    end
+
+    local rule_loc = {}
+    for _, v in pairs(rule['local']) do
+        local obj = not rule_loc.user and v.user or v.group
+        if obj then
+--            responses.send_HTTP_BAD_REQUEST(obj)
+            obj = replace(obj)
+            if v.user then
+                rule_loc.user = obj
+            else
+                if not rule_loc.groups then
+                    rule_loc.groups = {}
+                end
+                rule_loc.groups[#rule_loc.groups] = obj
+            end
+        elseif v.projects and not rule_loc.projects then
+            rule_loc.projects = {}
+            for _, obj in pairs(v.projects) do
+                obj = replace(obj)
+                rule_loc.projects[#rule_loc.projects] = obj
+            end
+        end
+    end
+    local user = rule_loc.user
+    user.groups = rule_loc.groups or {}
+    user.projects = rule_loc.projects or {}
+    return user
+end
+
+local function map_local_user(user, dao_factory)
+    if user.domain.id then
+        local domain, err = dao_factory.project:find({id = user.domain.id})
+        kutils.assert_dao_error(err, "project find")
+        if not domain or not domain.is_domain or user.domain.name and user.domain.name ~= domain.name then
+            responses.send_HTTP_UNAUTHORIZED()
+        end
+        user.domain.name = domain.name
+    elseif user.domain.name then
+        local temp, err = dao_factory.project:find_all({name = user.domain.name, is_domain = true})
+        kutils.assert_dao_error(err, "project find all")
+        if not next(temp) then
+            responses.send_HTTP_UNAUTHORIZED()
+        end
+        user.domain.id = temp[1].id
+    else
+        responses.send_HTTP_UNAUTHORIZED()
+    end
+
+    if user.id then
+        local temp, err = dao_factory.local_user:find_all({user_id = user.id})
+        kutils.assert_dao_error(err, "local user find all")
+        if not next(temp) or temp[1].domain_id ~= user.domain.id or user.name and temp[1].name ~= user.name then
+            responses.send_HTTP_UNAUTHORIZED()
+        end
+        user.name = temp[1].name
+    elseif user.name then
+        local temp, err = dao_factory.local_user:find_all({name = user.name, domain_id = user.domain.id})
+        kutils.assert_dao_error(err, "local user find all")
+        if not next(temp) then
+            responses.send_HTTP_UNAUTHORIZED()
+        end
+        user.id = temp[1].id
+    else
+        responses.send_HTTP_UNAUTHORIZED()
+    end
+
+    return user
+end
+
+local function request_unscoped_token(self, dao_factory) -- TODO how? remote parameters???
+    local remote_parameters = {
+        FirstName = 'kukushkova',
+        LastName = 'kukushka',
+        Email = 'kukushka@ispras.ru',
+        orgPerson = 'notGuest'
+    }
+    -- If the user id and name are not specified in the mapping, the server tries to directly map REMOTE_USER environment variable.
+    -- If this variable is also unavailable the server returns an HTTP 401 Unauthorized error.
+    -- If no domain then by defualt domain of identity provider
+    -- If in remote object regex is true then there are regular expressions
+    local protocol, err = dao_factory.federation_protocol:find({id = self.params.protocol_id, idp_id = self.params.idp_id})
+    kutils.assert_dao_error(err, "federation protocol find")
+    if not protocol then
+        responses.send_HTTP_BAD_REQUEST("Protocol doesn't exist")
+    end
+    local idp, err = dao_factory.identity_provider:find({id = self.params.idp_id})
+    kutils.assert_dao_error(err, "identity provider find")
+
+    local temp, err = dao_factory.mapping:find({id = protocol.mapping_id})
+    kutils.assert_dao_error(err, "mapping find")
+
+    local rule = match_rules(cjson.decode(temp.rules), remote_parameters)
+    if not rule  then
+        responses.send_HTTP_UNAUTHORIZED()
+    end
+
+    local user = direct_mapping(rule, remote_parameters)
+    if user.type == "local" and user.domain then
+        user = map_local_user(user, dao_factory)
+    end
+    -- TODO create federated user?
+    if not user.domain then
+        local temp, err = dao_factory.project:find_all({name = "Federated", is_domain = true})
+        kutils.assert_dao_error(err, "project find all")
+        if not next(temp) then
+            responses.send_HTTP_BAD_REQUEST("Create domain Federated")
+        end
+        user.domain = {
+            id = temp[1].id,
+            name = temp[1].name
+        }
+    end
+
+    for i, project in pairs(user.projects) do
+        if not project.roles then
+             user.projects[i].roles = {
+                 {
+                     name = "member"
+                 }
+             }
+             project.roles = user.projects[i].roles
+        end
+        for k, role in pairs(project.roles) do
+            if role.name then
+                local temp, err = dao_factory.role:find_all({name = role.name})
+                kutils.assert_dao_error(err, "role find all")
+                if temp[1] then
+                    user.projects[i].roles[k].id = temp[1].id
+                end
+            end
+        end
+        if project.id then
+            local temp, err = dao_factory.project:find({id = project.id})
+            kutils.assert_dao_error(err, "project find")
+            if not temp or project.name and project.name ~= temp.name then
+                responses.send_HTTP_BAD_REQUEST()
+            end
+            user.projects[i].name = temp.name
+        elseif project.name then
+            local temp, err = dao_factory.project:find_all({name = project.name, is_domain = false})
+            kutils.assert_dao_error(err, "project find all")
+            if not temp[1] then
+                local s = self
+                s.params = {
+                    project = {
+                        is_domain = false,
+                        name = project.name,
+                        enabled = true
+                    }
+                }
+                local code, resp = projects.create(s, dao_factory)
+                if code ~= 201 then
+                    responses.send(code, resp)
+                end
+                user.projects[i].id = resp.project.id
+            else
+                user.projects[i].id = temp[1].id
+            end
+        else
+            responses.send_HTTP_BAD_REQUEST()
+        end
+    end
+    for i, project in pairs(user.projects) do
+        for k, role in pairs(project.roles) do
+            local s = self
+            s.params = {
+                user_id = user.id,
+                project_id = project.id,
+                role_id = role.id
+            }
+            assign_role(s, dao_factory, "UserProject", false, true)
+        end
+    end
+
+    for i, group in pairs(user.groups) do
+        if group.domain then
+            if group.domain.id then
+                local temp, err = dao_factory.project:find({id = group.domain.id})
+                kutils.assert_dao_error(err, "project find")
+                if not temp or group.domain.name and group.domain.name ~= temp.name then
+                    responses.send_HTTP_BAD_REQUEST()
+                end
+                user.groups[i].name = temp.name
+            elseif group.domain.name then
+                local temp, err = dao_factory.project:find_all({name = group.domain.name, is_domain = true})
+                kutils.assert_dao_error(err, "project find all")
+                if not temp[1] then
+                    responses.send_HTTP_BAD_REQUEST("Create domain with name: "..group.domain.name)
+                end
+                user.groups[i].id = temp[1].id
+            end
+        end
+        if group.id then
+            local temp, err = dao_factory.group:find({id = group.id})
+            kutils.assert_dao_error(err, "group find")
+            if not temp or group.name and group.name ~= temp.name then
+                responses.send_HTTP_BAD_REQUEST()
+            end
+            user.groups[i].name = temp.name
+        elseif group.name and group.domain then
+            local temp, err = dao_factory.group:find_all({name = group.name, domain_id = group.domain.id})
+            kutils.assert_dao_error(err, "group find all")
+            if not temp[1] then
+                responses.send_HTTP_BAD_REQUEST()
+            end
+            user.groups[i].id = temp[1].id
+        else
+            responses.send_HTTP_BAD_REQUEST()
+        end
+    end
+    for i, group in pairs(user.groups) do
+        local s = self
+        s.params = {
+            user_id = user.id,
+            group_id = group.id
+        }
+        add_member(s, dao_factory)
+    end
+
+    responses.send_HTTP_BAD_REQUEST(user)
+
+
+    local token = {
+        methods = {'mapped'},
+        user = {
+            domain = user.domain,
+            id = user.id,
+            name = user.name,
+            ['OS-FEDERATION'] = {
+                identity_provider = self.params.idp_id,
+                protocol = protocol.id,
+                groups = user.groups
+            }
+        }
+    }
+
+    local Tokens = kutils.provider()
+    local temp = Tokens.generate(dao_factory, user)
+    local token_id = temp.id
+
+    local headers = {
+        ['X-Subject-Token'] = token_id
+    }
+    local resp = {
+        token = token
+    }
+
+    return 200, resp, headers
+end
+
+local function list_projects_allowed_for_federated_user(self, dao_factory, is_domain)
+    local group_id = kutils.federated_group(dao_factory)
+    if not group_id then
+        responses.send_HTTP_BAD_REQUEST("Create group federated")
+    end
+    local assignments, err = dao_factory.assignment:find_all({actor_id = group_id,
+        type = is_domain and "GroupDomain" or "GroupProject", inherited = false})
+    kutils.assert_dao_error (err, "assignmnet find all")
+
+    local scopes = {}
+    for i, v in pairs(assignments) do
+        local scope, err = dao_factory.project:find({id = v.target_id})
+        kutils.assert_dao_error(err, "project find ")
+        if scope and scope.enabled and not kutils.has_id(scopes, scope.id) then
+            scopes[#scopes] = {
+                id = scope.id,
+                links = {
+                    self = self:build_url('/v3/projects/'..scope.id)
+                },
+                enabled = scope.enabled,
+                domain_id = scope.domain_id or "null",
+                name = scope.name
+            }
+        end
+    end
+
+    local resp = {
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        }
+    }
+    if is_domain then
+        resp.domains = scopes
+    else
+        resp.projects = scopes
+    end
+
+    return 200, resp
+end
+
+local IdentityProvider = {
+    list = list_identity_providers,
+    get = get_identity_provider,
+    create = register_identity_provider,
+    update = update_identity_provider,
+    delete = delete_identity_provider
+}
+local Protocol = {
+    list = list_protocol_and_attr_maps_of_identity_provider,
+    get = get_protocol_and_attr_maps_for_identity_provider,
+    create = add_protocol_and_attr_maps_to_identity_provider,
+    update = update_attr_maps_for_identity_provider_and_protocol,
+    delete = delete_protocol_and_attr_maps_from_identity_provider
+}
+local Mapping = {
+    list = list_mappings,
+    get = get_mapping,
+    create = create_mapping,
+    update = update_mapping,
+    delete = delete_mapping
+}
+local ServiceProvider = {
+    list = list_service_providers,
+    get = get_service_provider,
+    create = register_service_provider,
+    update = update_service_provider,
+    delete = delete_service_provider
+}
+
+local routes = {
+    ['/v3/OS-FEDERATION/identity_providers'] = {
+        GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_identity_providers", dao_factory, self.params)
+            responses.send(list_identity_providers(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/identity_providers/:id'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_identity_provider", dao_factory, self.params)
+            responses.send(get_identity_provider(self, dao_factory))
+        end,
+        PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:register_identity_provider", dao_factory, self.params)
+            responses.send(register_identity_provider(self, dao_factory))
+        end,
+        PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_identity_provider", dao_factory, self.params)
+            responses.send(update_identity_provider(self, dao_factory))
+        end,
+        DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_identity_provider", dao_factory, self.params)
+            responses.send(delete_identity_provider(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/identity_providers/:id/protocols'] = {
+        GET = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_protocol_and_attr_maps_of_identity_provider", dao_factory, self.params)
+            responses.send(list_protocol_and_attr_maps_of_identity_provider(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_protocol_and_attr_maps_for_identity_provider", dao_factory, self.params)
+            responses.send(get_protocol_and_attr_maps_for_identity_provider(self, dao_factory))
+        end,
+        PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:add_protocol_and_attr_maps_to_identity_provider", dao_factory, self.params)
+            responses.send(add_protocol_and_attr_maps_to_identity_provider(self, dao_factory))
+        end,
+        PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_attr_maps_for_identity_provider_and_protocol", dao_factory, self.params)
+            responses.send(update_attr_maps_for_identity_provider_and_protocol(self, dao_factory))
+        end,
+        DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_protocol_and_attr_maps_from_identity_provider", dao_factory, self.params)
+            responses.send(delete_protocol_and_attr_maps_from_identity_provider(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id/auth'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:request_unscoped_token", dao_factory, self.params)
+            responses.send(request_unscoped_token(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/mappings'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_mappings", dao_factory, self.params)
+            responses.send(list_mappings(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/mappings/:id'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_mapping", dao_factory, self.params)
+            responses.send(get_mapping(self, dao_factory))
+        end,
+        PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_mapping", dao_factory, self.params)
+            responses.send(create_mapping(self, dao_factory))
+        end,
+        PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_mapping", dao_factory, self.params)
+            responses.send(update_mapping(self, dao_factory))
+        end,
+        DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_mapping", dao_factory, self.params)
+            responses.send(delete_mapping(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/service_providers'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_service_providers", dao_factory, self.params)
+            responses.send(list_service_providers(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/service_providers/:id'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_service_provider", dao_factory, self.params)
+            responses.send(get_service_provider(self, dao_factory))
+        end,
+        PUT = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:register_service_provider", dao_factory, self.params)
+            responses.send(register_service_provider(self, dao_factory))
+        end,
+        PATCH = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_service_provider", dao_factory, self.params)
+            responses.send(update_service_provider(self, dao_factory))
+        end,
+        DELETE = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_service_provider", dao_factory, self.params)
+            responses.send(delete_service_provider(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/projects'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects_allowed_for_federated_user", dao_factory, self.params)
+            responses.send(list_projects_allowed_for_federated_user(self, dao_factory))
+        end
+    },
+    ['/v3/OS-FEDERATION/domains'] = {
+        GET = function (self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_domains_allowed_for_federated_user", dao_factory, self.params)
+            responses.send(list_projects_allowed_for_federated_user(self, dao_factory, true))
+        end
+    }
+}
+return routes

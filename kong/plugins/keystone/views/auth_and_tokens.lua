@@ -385,22 +385,26 @@ local function get_token_info(self, dao_factory)
     }
     local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
 
-    local cache = Tokens.get_info(token.id)
+    local cache = Tokens.get_info(token.id, dao_factory)
 
-    local temp, err = dao_factory.project:find({id = cache.scope_id})
-    kutils.assert_dao_error(err, "project:find")
-    local project = {
-        id = temp.id,
-        name = temp.name,
-        domain = (temp.domain_id) and {
-            id = temp.domain_id
-        }
-    }
-    if temp.domain_id then
-        local temp, err = dao_factory.project:find({id = temp.domain_id})
+    local project
+    if cache.scope_id then
+        local temp, err = dao_factory.project:find({id = cache.scope_id})
         kutils.assert_dao_error(err, "project:find")
-        project.domain.name = temp.name
+        project = {
+            id = temp.id,
+            name = temp.name,
+            domain = (temp.domain_id) and {
+                id = temp.domain_id
+            }
+        }
+        if temp.domain_id then
+            local temp, err = dao_factory.project:find({id = temp.domain_id})
+            kutils.assert_dao_error(err, "project:find")
+            project.domain.name = temp.name
+        end
     end
+
 
     local resp = {
         token = {
@@ -518,16 +522,17 @@ local function get_scopes(self, dao_factory, domain_scoped)
             end
         end
     end
-    for i = 1, #projects do
-        local project, err = dao_factory.project:find({id = projects[i].id})
-        kutils.assert_dao_error(err, "project:find")
-        if project then
-            projects[i] = {
+    local prjs = {}
+    for _, v in pairs(projects) do
+        local project, err = dao_factory.project:find({id = v.id})
+        kutils.assert_dao_error(err, "project find")
+        if project and project.enabled then
+            prjs[#prjs] = {
                 id = project.id,
                 links = {
                     self = self:build_url('/v3/projects/'..project.id)
                 },
-                enabled = project.enabled or "null",
+                enabled = project.enabled,
                 domain_id = project.domain_id or "null",
                 name = project.name
             }
@@ -535,9 +540,9 @@ local function get_scopes(self, dao_factory, domain_scoped)
     end
 
     if domain_scoped then
-        resp.domains = projects
+        resp.domains = prjs
     else
-        resp.projects = projects
+        resp.projects = prjs
     end
 
     responses.send_HTTP_OK(resp)
@@ -606,4 +611,7 @@ local routes =  {
 
 routes["/v2.0/auth/tokens"] = routes["/v3/auth/tokens"]
 
-return routes
+return {
+    routes = routes,
+    get_scopes = get_scopes
+}

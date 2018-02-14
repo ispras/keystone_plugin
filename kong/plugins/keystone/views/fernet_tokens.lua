@@ -108,15 +108,19 @@ function Token.get_info(token_id)
     local info_obj = kfernet.parse_payload(fernet_obj.payload)
     local user_id, scope_id = info_obj.user_id, info_obj.project_id or info_obj.domain_id
 
-    local redis = require ("kong.plugins.keystone.redis")
-    local red, err = redis.connect() -- TODO cache
-    if err then error(err) end
-    local temp, err = red:get(user_id..'&'..scope_id)
-    if err then error(err) end
-    if temp == ngx.null then
-        responses.send_HTTP_CONFLICT("No scope info for token")
+    local cache = {}
+    if scope_id then
+        local redis = require ("kong.plugins.keystone.redis")
+        local red, err = redis.connect() -- TODO cache
+        if err then error(err) end
+        local temp, err = red:get(user_id..'&'..scope_id)
+        if err then error(err) end
+        if temp == ngx.null then
+            responses.send_HTTP_CONFLICT("No scope info for token")
+        end
+        cache = cjson.decode(temp)
     end
-    local cache = cjson.decode(temp)
+
     local token = {
         id = token_id,
         user_id = user_id,

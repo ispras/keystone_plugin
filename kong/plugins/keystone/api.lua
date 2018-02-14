@@ -7,7 +7,7 @@ local function add_routes(obj)
 end
 
 local auth_and_tokens = require ("kong.plugins.keystone.views.auth_and_tokens")
-add_routes(auth_and_tokens)
+add_routes(auth_and_tokens.routes)
 
 local credentials = require ("kong.plugins.keystone.views.credentials")
 add_routes(credentials.routes)
@@ -16,10 +16,10 @@ local domain_configuration = require ("kong.plugins.keystone.views.domain_config
 add_routes(domain_configuration)
 
 local domains = require ('kong.plugins.keystone.views.domains')
-add_routes(domains)
+add_routes(domains.routes)
 
 local groups = require ('kong.plugins.keystone.views.groups')
-add_routes(groups)
+add_routes(groups.routes)
 
 local os_inherit_api = require ('kong.plugins.keystone.views.os_inherit_api')
 add_routes(os_inherit_api)
@@ -51,10 +51,17 @@ add_routes(v3)
 local fkeys = require ('kong.plugins.keystone.views.fernet_keys')
 add_routes(fkeys.routes)
 
+
 local os_endpoint_policy = require ('kong.plugins.keystone.extensions.os_endpoint_policy')
 add_routes(os_endpoint_policy)
 
 local policies = require ('kong.plugins.keystone.views.policies')
 add_routes(policies)
+
+local os_federation = require('kong.plugins.keystone.extensions.os_federation')
+add_routes(os_federation)
+
+local os_oauth1 = require('kong.plugins.keystone.extensions.os_oauth1')
+add_routes(os_oauth1.routes)
 
 return views

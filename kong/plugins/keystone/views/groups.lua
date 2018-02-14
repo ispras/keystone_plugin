@@ -181,7 +181,7 @@ local function add_user_to_group(self, dao_factory)
     local _, err = dao_factory.user_group_membership:insert({user_id = self.params.user_id, group_id = self.params.group_id})
     kutils.assert_dao_error(err, "user_group_membership:insert")
 
-    return responses.send_HTTP_OK()
+    return 200
 end
 
 local function check_user_in_group(self, dao_factory)
@@ -238,7 +238,7 @@ local routes = {
     ['/v3/groups/:group_id/users/:user_id'] = {
         PUT = function (self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:add_user_to_group", dao_factory, self.params)
-            add_user_to_group(self, dao_factory)
+            responses.send(add_user_to_group(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:check_user_in_group", dao_factory, self.params)
@@ -251,4 +251,7 @@ local routes = {
     }
 }
 
-return routes
+return {
+    routes = routes,
+    add_member = add_user_to_group
+}
