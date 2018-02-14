@@ -6,6 +6,9 @@ local function add_routes(obj)
     end
 end
 
+local auth_routes = require ("kong.plugins.keystone.views.auth_routes")
+add_routes(auth_routes)
+
 local auth_and_tokens = require ("kong.plugins.keystone.views.auth_and_tokens")
 add_routes(auth_and_tokens.routes)
 
@@ -52,7 +55,7 @@ local fkeys = require ('kong.plugins.keystone.views.fernet_keys')
 add_routes(fkeys.routes)
 
 local os_federation = require('kong.plugins.keystone.extensions.os_federation')
-add_routes(os_federation)
+add_routes(os_federation.routes)
 
 local os_oauth1 = require('kong.plugins.keystone.extensions.os_oauth1')
 add_routes(os_oauth1.routes)

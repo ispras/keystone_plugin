@@ -11,6 +11,8 @@ local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
 local policies = require ("kong.plugins.keystone.policies")
 
+local _M = {}
+
 local function check_user(user, dao_factory)
     local loc_user, domain
     local password = user.password
@@ -270,7 +272,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
-local function auth_password(self, dao_factory)
+function _M.auth_password(self, dao_factory)
     local user = self.params.auth.identity.password and self.params.auth.identity.password.user
     if not user then
         return responses.send_HTTP_BAD_REQUEST({message = "Authentication information is required"})
@@ -353,7 +355,7 @@ local function auth_token_scoped(self, dao_factory, user)
     responses.send_HTTP_CREATED(resp, {["X-Subject-Token"] = token.id})
 end
 
-local function auth_token (self, dao_factory)
+function _M.auth_token (self, dao_factory)
     local user, default_project_id = check_token_user(self.params.auth.identity.token, dao_factory)
 
     if not self.params.auth.scope and default_project_id then
@@ -371,7 +373,7 @@ local function auth_token (self, dao_factory)
     end
 end
 
-local function get_token_info(self, dao_factory)
+function _M.get_token_info(self, dao_factory)
     local auth_token = self.req.headers["X-Auth-Token"]
     local subj_token = self.req.headers["X-Subject-Token"]
 
@@ -427,7 +429,7 @@ local function get_token_info(self, dao_factory)
     responses.send_HTTP_OK(resp, {["X-Subject-Token"] = token.id})
 end
 
-local function check_token(self, dao_factory)
+function _M.check_token(self, dao_factory)
     local auth_token = self.req.headers["X-Auth-Token"]
     local subj_token = self.req.headers["X-Subject-Token"]
 
@@ -448,7 +450,7 @@ local function check_token(self, dao_factory)
     responses.send_HTTP_OK()
 end
 
-local function revoke_token(self, dao_factory)
+function _M.revoke_token(self, dao_factory)
     -- TODO revocation event?
     local subj_token = self.req.headers["X-Subject-Token"]
     if not subj_token then
@@ -548,7 +550,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
     responses.send_HTTP_OK(resp)
 end
 
-local function revoke_token(self, dao_factory)
+function _M.revoke_token(self, dao_factory)
     -- TODO revocation event?
     local subj_token = self.req.headers["X-Subject-Token"]
     if not subj_token then
@@ -562,33 +564,6 @@ local function revoke_token(self, dao_factory)
 end
 
 local routes =  {
-    ["/v3/auth/tokens"] = {
-        POST = function(self, dao_factory)
-            if self.params.auth and self.params.auth.identity then
-                if self.params.auth.identity.methods[1] == "token" then
-                    auth_token(self, dao_factory)
-                elseif self.params.auth.identity.methods[1] == "password" then
-                    auth_password(self, dao_factory)
-                else
-                    responses.send_HTTP_BAD_REQUEST("Unknown authentication method")
-                end
-            else
-                responses.send_HTTP_BAD_REQUEST()
-            end
-        end,
-        GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_and_show_token", dao_factory, self.params)
-            get_token_info(self, dao_factory)
-        end,
-        HEAD = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_token_head", dao_factory, self.params)
-            check_token(self, dao_factory)
-        end,
-        DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_token", dao_factory, self.params)
-            revoke_token(self, dao_factory)
-        end
-    },
     ["/v3/auth/catalog"] = {
         GET = function(self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
@@ -609,9 +584,8 @@ local routes =  {
     }
 }
 
-routes["/v2.0/auth/tokens"] = routes["/v3/auth/tokens"]
-
 return {
     routes = routes,
-    get_scopes = get_scopes
+    get_scopes = get_scopes,
+    auth = _M
 }

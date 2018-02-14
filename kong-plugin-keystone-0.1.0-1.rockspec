@@ -71,6 +71,7 @@ build = {
     ["kong.plugins.keystone.views.domain_configuration"] = "kong/plugins/keystone/views/domain_configuration.lua",
     ["kong.plugins.keystone.views.credentials"] = "kong/plugins/keystone/views/credentials.lua",
     ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua",
+    ["kong.plugins.keystone.views.auth_routes"] = "kong/plugins/keystone/views/auth_routes.lua",
     ["kong.plugins.keystone.views.uuid_tokens"] = "kong/plugins/keystone/views/uuid_tokens.lua",
     ["kong.plugins.keystone.views.fernet_tokens"] = "kong/plugins/keystone/views/fernet_tokens.lua",
     ["kong.plugins.keystone.views.fernet_keys"] = "kong/plugins/keystone/views/fernet_keys.lua",

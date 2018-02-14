@@ -1092,4 +1092,7 @@ local routes = {
         end
     }
 }
-return routes
+return {
+    routes = routes,
+    auth = request_scoped_token
+}
