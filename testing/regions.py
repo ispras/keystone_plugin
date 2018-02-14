@@ -4,16 +4,17 @@ import requests
 class TestKeystoneRegions(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneRegions, self).setUp()
-        self.host = self.host + '/v3/regions/'
+        self.url = self.host + '/v3/regions/'
+        self.admin_auth()
 
     def create(self):
         body = {
             "region": {
-                "description": "My subregion",
+                "description": "My region",
                 "id": "RegionOne",
             }
         }
-        self.res = requests.post(self.host, json = body)
+        self.res = requests.post(self.url, json = body, headers=self.headers)
         self.checkCode(201)
 
     def list(self):

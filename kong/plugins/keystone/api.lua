@@ -51,4 +51,10 @@ add_routes(v3)
 local fkeys = require ('kong.plugins.keystone.views.fernet_keys')
 add_routes(fkeys.routes)
 
+local os_endpoint_policy = require ('kong.plugins.keystone.extensions.os_endpoint_policy')
+add_routes(os_endpoint_policy)
+
+local policies = require ('kong.plugins.keystone.views.policies')
+add_routes(policies)
+
 return views

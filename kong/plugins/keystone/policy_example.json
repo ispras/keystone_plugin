@@ -109,6 +109,12 @@
 
     "identity:fernet_tokens": "!",
 
+    "identity:get_policy": "rule:admin_required",
+    "identity:list_policies": "rule:admin_required",
+    "identity:create_policy": "rule:admin_required",
+    "identity:update_policy": "rule:admin_required",
+    "identity:delete_policy": "rule:admin_required",
+
     "identity:create_policy_association_for_endpoint": "rule:cloud_admin",
     "identity:check_policy_association_for_endpoint": "rule:cloud_admin",
     "identity:delete_policy_association_for_endpoint": "rule:cloud_admin",

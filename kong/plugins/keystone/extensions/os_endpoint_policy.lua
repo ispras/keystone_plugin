@@ -104,7 +104,7 @@ local function associate_policy_service(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: no such endpoints for this service")
     end
 
-    endpoint = next(endpoint)
+    endpoint = endpoint[1]
     local policy_assoiation_id = utils.uuid()
     local policy_association = {id = policy_assoiation_id, policy_id = policy_id, service_id = service_id,
                                 endpoint_id = endpoint.id}
@@ -222,10 +222,13 @@ local function associate_policy_in_region(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: no such endpoints for this service")
     end
 
-    endpoint = next(endpoint)
+    endpoint = endpoint[1]
     local policy_assoiation_id = utils.uuid()
     local policy_association = {id = policy_assoiation_id, policy_id = policy_id, service_id = service_id,
                                 endpoint_id = endpoint.id, region_id = region_id }
+
+    local _, err = dao_factory.policy_association:insert(policy_association)
+    kutils.assert_dao_error(err, "policy association insert")
 
     return responses.send_HTTP_NO_CONTENT()
 end
@@ -314,7 +317,7 @@ local function get_policy_for_endpoint(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: no such associations")
     end
 
-    local policy, err = dao_factory.policy:find({id=policy_association.policy_id})
+    local policy, err = dao_factory.policy:find({id=policy_association[1].policy_id})
     kutils.assert_dao_error(err, "endpoint find")
     policy.extra = nil
     policy.links = {
@@ -358,7 +361,7 @@ return {
             OsEndpointPolicy.delete_policy_endpoint_association(self, dao_factory)
         end
     },
-    ["/v3/policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:service_id"] = {
+    ["/v3/policies/:policy_id/OS-ENDPOINT-POLICY/services/:service_id"] = {
         GET = function(self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:check_policy_association_for_service", dao_factory, self.params)
             OsEndpointPolicy.verify_policy_service_association(self, dao_factory)
@@ -387,6 +390,10 @@ return {
         end
     },
     ["/v3/policies/:policy_id/OS-ENDPOINT-POLICY/services/:service_id/regions/:region_id"] = {
+        HEAD = function(self, dao_factory)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:check_policy_association_for_region_and_service", dao_factory, self.params)
+            OsEndpointPolicy.verify_policy_in_region(self, dao_factory)
+        end,
         GET = function(self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:check_policy_association_for_region_and_service", dao_factory, self.params)
             OsEndpointPolicy.verify_policy_in_region(self, dao_factory)
