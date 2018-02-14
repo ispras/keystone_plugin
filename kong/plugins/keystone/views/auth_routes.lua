@@ -1,4 +1,5 @@
 local responses = require "kong.tools.responses"
+local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
 local auth = require ("kong.plugins.keystone.views.auth_and_tokens").auth
 local oauth1 = require ("kong.plugins.keystone.extensions.os_oauth1").auth
@@ -10,7 +11,19 @@ local routes = {
         POST = function(self, dao_factory)
             if self.params.auth and self.params.auth.identity then
                 if self.params.auth.identity.methods[1] == "token" then
-                    auth.auth_token(self, dao_factory)
+                    if self.params.auth.scope and self.params.auth.scope['OS-TRUST:trust'] then
+                        trust(self, dao_factory)
+                    elseif self.params.auth.identity.token['OS-OAUTH1'] then
+                        oauth1(self, dao_factory)
+                    else
+                        local Tokens = kutils.provider()
+                        self.params.auth.identity.token = Tokens.check(self.params.auth.identity.token, dao_factory)
+                        if self.params.auth.identity.token.federated then
+                            feder(self, dao_factory)
+                        else
+                            auth.auth_token(self, dao_factory)
+                        end
+                    end
                 elseif self.params.auth.identity.methods[1] == "password" then
                     auth.auth_password(self, dao_factory)
                 else
@@ -19,9 +32,6 @@ local routes = {
             else
                 responses.send_HTTP_BAD_REQUEST()
             end
-            -- oauth1(self, dao_factory)
-            -- trust(self, dao_factory)
-            -- feder(self, dao_factory)
         end,
         GET = function(self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:validate_and_show_token", dao_factory, self.params)

@@ -177,10 +177,7 @@ local function get_catalog(self,dao_factory)
     return catalog
 end
 
-local function check_token_user (token, dao_factory, allow_expired, validate)
-    local Tokens = kutils.provider()
-    local token = Tokens.check(token, dao_factory, allow_expired, validate)
-
+local function check_token_user (token, dao_factory)
     if not token.user_id then
         return responses.send_HTTP_NOT_FOUND("Error: user id is required")
     end
@@ -385,7 +382,9 @@ function _M.get_token_info(self, dao_factory)
     token = {
         id = subj_token
     }
-    local user = check_token_user(token, dao_factory, self.params.allow_expired, true)
+    local Tokens = kutils.provider()
+    token = Tokens.check(token, dao_factory, self.params.allow_expired, true)
+    local user = check_token_user(token, dao_factory)
 
     local cache = Tokens.get_info(token.id, dao_factory)
 
@@ -491,6 +490,8 @@ local function get_scopes(self, dao_factory, domain_scoped)
     local token = {
         id = auth_token
     }
+    local Tokens = kutils.provider()
+    token = Tokens.check(token, dao_factory)
     local user = check_token_user(token, dao_factory)
 
     local resp = {

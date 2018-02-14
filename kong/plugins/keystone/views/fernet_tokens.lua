@@ -61,8 +61,9 @@ function Token.check(token, dao_factory, allow_expired, validate)
     if not fernet_obj.verified then
         responses.send_HTTP_BAD_REQUEST("Token is not verified")
     end
-    local payload = fernet_obj.payload
-    token.user_id = kfernet.parse_payload(payload).user_id
+    local payload = kfernet.parse_payload(fernet_obj.payload)
+    token.user_id = payload.user_id
+    token.federated = payload.federated_info and true or false
     return token
 end
 function Token.generate(dao_factory, user, cached, scope_id, is_domain)

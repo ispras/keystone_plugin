@@ -7,9 +7,9 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneAuthAndTokens, self).setUp()
         self.url = self.host + '/v3/auth/'
-        self.auth = ''
         self.token = ''
-        self.user_id = '62260c42-4ccb-41ec-a631-998bfb0119d4'
+        self.user_id = 'ac74734b-c604-4ba4-ba53-b45f88655fee'
+        self.password_unscoped()
 
     def password_unscoped(self):
         body = {
@@ -20,10 +20,10 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                         'user' : {
                             # 'name' : 'admin',
                             # 'domain' : {
-                            #     'name' : 'Default'
+                            #     'name' : 'Admin'
                             # },
                             'id' : self.user_id,
-                            'password' : 'myadminpass'
+                            'password' : 'myadminpassword'
                         }
                     }
                 }
@@ -44,7 +44,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                 },
                 'scope' : {
                     'domain' : {
-                        'name' : 'Default'
+                        'name' : 'admin'
                     }
                 }
             }
@@ -54,9 +54,9 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.token = self.res.headers['X-Subject-Token']
 
     def get_catalog(self):
-        self.password_unscoped()
+        self.token_scoped()
         headers = {
-            "X-Auth-Token" : self.auth
+            "X-Auth-Token" : self.token
         }
         self.res = requests.get(self.url + 'catalog', headers=headers)
         self.checkCode(200)

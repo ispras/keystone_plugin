@@ -26,6 +26,7 @@ local function validate_token(dao_factory, token_id, validate)
 end
 
 local function check_token(token, dao_factory, allow_expired, validate)
+    -- TODO check federated!!!
     if not token or not token.id then
         responses.send_HTTP_BAD_REQUEST("Token id is required")
     end
