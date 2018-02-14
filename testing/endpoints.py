@@ -4,7 +4,8 @@ import requests
 class TestKeystoneEndpoints(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneEndpoints, self).setUp()
-        self.host = self.host + '/v3/endpoints/'
+        self.url = self.host + '/v3/endpoints/'
+        self.admin_auth()
 
     def create(self):
         body = {
@@ -12,10 +13,10 @@ class TestKeystoneEndpoints(TestKeystoneBase):
                 "interface": "internal",
                 "region_id": "RegionOne",
                 "url": "http://localhost:8001/v3/",
-                "service_id": "bd4e7e49-ddcb-414f-ab88-1871a7c256fc"
+                "service_id": "8b2e74b0-9a6e-47bf-aa24-1c4fb6c9af1c"
             }
         }
-        self.res = requests.post(self.host, json = body)
+        self.res = requests.post(self.url, json = body, headers=self.headers)
         self.checkCode(201)
 
     def list(self):

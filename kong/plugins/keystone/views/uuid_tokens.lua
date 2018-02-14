@@ -5,6 +5,8 @@ local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
 
 local function validate_token(dao_factory, token_id, validate)
+    local kutils = require ("kong.plugins.keystone.utils")
+    local redis = require ("kong.plugins.keystone.redis")
     local _, err = dao_factory.token:update({valid = validate}, {id = token_id})
     kutils.assert_dao_error(err, "token update")
 
@@ -27,6 +29,7 @@ end
 
 local function check_token(token, dao_factory, allow_expired, validate)
     -- TODO check federated!!!
+    local kutils = require ("kong.plugins.keystone.utils")
     if not token or not token.id then
         responses.send_HTTP_BAD_REQUEST("Token id is required")
     end
@@ -59,6 +62,8 @@ local function check_token(token, dao_factory, allow_expired, validate)
 end
 
 local function generate_token(dao_factory, user, cached, scope_id)
+    local kutils = require ("kong.plugins.keystone.utils")
+    local redis = require ("kong.plugins.keystone.redis")
     local token = {
         id = utils.uuid(),
         valid = true,
@@ -88,6 +93,8 @@ local function generate_token(dao_factory, user, cached, scope_id)
 end
 
 local function get_token_info(token_id, dao_factory)
+    local kutils = require ("kong.plugins.keystone.utils")
+    local redis = require ("kong.plugins.keystone.redis")
     local red, err = redis.connect() -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local key, err = red:get(token_id)

@@ -4,17 +4,18 @@ import requests
 class TestKeystoneServices(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneServices, self).setUp()
-        self.host = self.host + '/v3/services/'
+        self.url = self.host + '/v3/services/'
+        self.admin_auth()
 
     def create(self):
         body = {
             "service": {
                 "type": "identity",
                 "name": "keystone",
-                "description": "test2 service"
+                "description": "test service"
             }
         }
-        self.res = requests.post(self.host, json=body)
+        self.res = requests.post(self.url, json=body, headers=self.headers)
         self.checkCode(201)
 
     def list(self):
