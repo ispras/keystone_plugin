@@ -399,6 +399,9 @@ local TRUST_SCHEMA = {
         deleted_at = { type = "timestamp" },
         expires_at = { type = "timestamp" },
         remaining_uses = { type = "number" },
+        allow_redelegation = { type = "boolean" },
+        redelegated_trust_id = { type = "string" },
+        redelegation_count  = { type = "integer"},
         extra = { type = "string" }
     }
 }

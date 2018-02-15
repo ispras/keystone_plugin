@@ -465,6 +465,9 @@ return {
         deleted_at timestamp,
         expires_at timestamp,
         remaining_users int,
+        allow_redelegation boolean,
+        redelegated_trust_id varchar(64),
+        redelegation_count int,
         extra text,
         PRIMARY KEY (id)
       );
