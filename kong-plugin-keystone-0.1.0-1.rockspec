@@ -60,7 +60,7 @@ build = {
     ["kong.plugins.keystone.saml"] = "kong/plugins/keystone/saml.lua",
     ["kong.plugins.keystone.schema"] = "kong/plugins/keystone/schema.lua",
     ["kong.plugins.keystone.sha512"] = "kong/plugins/keystone/sha512.lua",
-    ["kong.plugins.keystone.utils"] = "kong/plugins/keystone/utils.lua"
+    ["kong.plugins.keystone.utils"] = "kong/plugins/keystone/utils.lua",
     ["kong.plugins.keystone.uuid4"] = "kong/plugins/keystone/uuid4.lua",
     ["kong.plugins.keystone.migrations.cassandra"] = "kong/plugins/keystone/migrations/cassandra.lua",
     ["kong.plugins.keystone.migrations.postgres"] = "kong/plugins/keystone/migrations/postgres.lua",
@@ -89,6 +89,6 @@ build = {
     ["kong.plugins.keystone.extensions.os_revoke"] = "kong/plugins/keystone/extensions/os_revoke.lua",
     ["kong.plugins.keystone.extensions.os_simple_cert"] = "kong/plugins/keystone/extensions/os_simple_cert.lua",
     ["kong.plugins.keystone.extensions.os_trust"] = "kong/plugins/keystone/extensions/os_trust.lua",
-    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua",
+    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua"
   }
 }
