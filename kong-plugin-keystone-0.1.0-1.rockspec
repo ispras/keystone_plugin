@@ -42,7 +42,9 @@ dependencies = {
   "randbytes >= 0.0-2",
   "struct >= 1.4-1",
   "lua-messagepack >= 0.5.1-1",
-  "lua-resty-http >= 0.12-0"
+  "lua-resty-http >= 0.12-0",
+  "lua-resty-session >= 2.19-1",
+  "lua-resty-openidc >= 1.5.3-1"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
@@ -58,6 +60,7 @@ build = {
     ["kong.plugins.keystone.uuid4"] = "kong/plugins/keystone/uuid4.lua",
     ["kong.plugins.keystone.redis"] = "kong/plugins/keystone/redis.lua",
     ["kong.plugins.keystone.policies"] = "kong/plugins/keystone/policies.lua",
+    ["kong.plugins.keystone.saml"] = "kong/plugins/keystone/saml.lua",
     ["kong.plugins.keystone.views.users"] = "kong/plugins/keystone/views/users.lua",
     ["kong.plugins.keystone.views.services_and_endpoints"] = "kong/plugins/keystone/views/services_and_endpoints.lua",
     ["kong.plugins.keystone.views.roles"] = "kong/plugins/keystone/views/roles.lua",
