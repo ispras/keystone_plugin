@@ -84,6 +84,9 @@ build = {
     ["kong.plugins.keystone.extensions.os_oauth1"] = "kong/plugins/keystone/extensions/os_oauth1.lua",
     ["kong.plugins.keystone.extensions.os_revoke"] = "kong/plugins/keystone/extensions/os_revoke.lua",
     ["kong.plugins.keystone.extensions.os_simple_cert"] = "kong/plugins/keystone/extensions/os_simple_cert.lua",
-    ["kong.plugins.keystone.extensions.os_trust"] = "kong/plugins/keystone/extensions/os_trust.lua"
+    ["kong.plugins.keystone.extensions.os_trust"] = "kong/plugins/keystone/extensions/os_trust.lua",
+    ["kong.plugins.keystone.views.auth_and_tokens"] = "kong/plugins/keystone/views/auth_and_tokens.lua",
+    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua",
+    ["kong.plugins.keystone.utils"] = "kong/plugins/keystone/utils.lua"
   }
 }
