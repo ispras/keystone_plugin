@@ -9,7 +9,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.url = self.host + '/v3/auth/'
         self.token = ''
         self.user_id = 'ac74734b-c604-4ba4-ba53-b45f88655fee'
-        self.password_unscoped()
+        # self.password_unscoped()
 
     def password_unscoped(self):
         body = {
@@ -35,17 +35,29 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
 
     def token_scoped(self):
         body = {
-            'auth' : {
-                'identity' : {
-                    'methods' : [ 'token' ],
-                    'token' : {
-                        'id' : self.auth
+            "auth": {
+                "scope": {
+                    "project": {
+                        "domain": {
+                            "name": "admin"
+                        },
+                        "name": "admin"
+
                     }
                 },
-                'scope' : {
-                    'domain' : {
-                        'name' : 'admin'
-                    }
+                "identity": {
+                    "password": {
+                        "user": {
+                            "domain": {
+                                "name": "admin"
+                            },
+                            "password": "myadminpassword",
+                            "name": "admin"
+                        }
+                    },
+                    "methods": [
+                        "password"
+                    ]
                 }
             }
         }
