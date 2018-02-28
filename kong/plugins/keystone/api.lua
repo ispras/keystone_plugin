@@ -64,7 +64,7 @@ add_routes(policies)
 local os_federation = require('kong.plugins.keystone.extensions.os_federation')
 add_routes(os_federation.routes)
 
-local os_oauth1 = require('kong.plugins.keystone.extensions.os_oauth1')
-add_routes(os_oauth1.routes)
+local os_oauth2 = require('kong.plugins.keystone.extensions.os_oauth2')
+add_routes(os_oauth2.routes)
 
 return views

@@ -9,7 +9,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.url = self.host + '/v3/auth/'
         self.token = ''
         self.user_id = 'ac74734b-c604-4ba4-ba53-b45f88655fee'
-        self.password_unscoped()
+        # self.password_unscoped()
 
     def password_unscoped(self):
         body = {
@@ -18,15 +18,16 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                     'methods' : [ 'password' ],
                     'password' : {
                         'user' : {
-                            # 'name' : 'admin',
-                            # 'domain' : {
-                            #     'name' : 'Admin'
-                            # },
-                            'id' : self.user_id,
+                            'name' : 'admin',
+                            'domain' : {
+                                'name' : 'admin'
+                            },
+                            # 'id' : self.user_id,
                             'password' : 'myadminpassword'
                         }
                     }
-                }
+                },
+                "scope" : "unscoped"
             }
         }
         self.res = requests.post(self.url + 'tokens', json = body)
@@ -34,18 +35,25 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.auth = self.res.headers['X-Subject-Token']
 
     def token_scoped(self):
+        self.password_unscoped()
         body = {
-            'auth' : {
-                'identity' : {
-                    'methods' : [ 'token' ],
-                    'token' : {
-                        'id' : self.auth
-                    }
-                },
-                'scope' : {
-                    'domain' : {
-                        'name' : 'admin'
-                    }
+            "auth": {
+                # "scope": {
+                #     "project": {
+                #         "domain": {
+                #             "name": "admin"
+                #         },
+                #         "name": "admin"
+                #
+                #     }
+                # },
+                "identity": {
+                    "token": {
+                        "id" : self.auth
+                    },
+                    "methods": [
+                        "token"
+                    ]
                 }
             }
         }

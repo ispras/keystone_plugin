@@ -1,12 +1,12 @@
 from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
-class TestKeystoneOSOAuth1(TestKeystoneBase):
+class TestKeystoneOSOAuth2(TestKeystoneBase):
     #requires domain, role and user be created in given order
 
     def setUp(self):
-        super(TestKeystoneOSOAuth1, self).setUp()
-        self.url = self.host + '/v3/OS-OAUTH1/'
+        super(TestKeystoneOSOAuth2, self).setUp()
+        self.url = self.host + '/v3/OS-OAUTH2/'
         self.admin_auth()
 
     def request_token(self):

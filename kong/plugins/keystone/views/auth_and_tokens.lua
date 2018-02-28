@@ -116,8 +116,8 @@ local function check_scope(scope, dao_factory)
             end
             domain_name = scope.project.domain.name
 
---            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
-            local temp, err = dao_factory.project:find_all({name = scope.project.name})
+            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id, is_domain = false})
+--            local temp, err = dao_factory.project:find_all({name = scope.project.name})
             kutils.assert_dao_error(err, "project:find_all")
             if not next(temp) then
                 responses.send_HTTP_BAD_REQUEST("No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name)
