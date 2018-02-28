@@ -18,15 +18,16 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                     'methods' : [ 'password' ],
                     'password' : {
                         'user' : {
-                            # 'name' : 'admin',
-                            # 'domain' : {
-                            #     'name' : 'Admin'
-                            # },
-                            'id' : self.user_id,
+                            'name' : 'admin',
+                            'domain' : {
+                                'name' : 'admin'
+                            },
+                            # 'id' : self.user_id,
                             'password' : 'myadminpassword'
                         }
                     }
-                }
+                },
+                "scope" : "unscoped"
             }
         }
         self.res = requests.post(self.url + 'tokens', json = body)
@@ -34,29 +35,24 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.auth = self.res.headers['X-Subject-Token']
 
     def token_scoped(self):
+        self.password_unscoped()
         body = {
             "auth": {
-                "scope": {
-                    "project": {
-                        "domain": {
-                            "name": "admin"
-                        },
-                        "name": "admin"
-
-                    }
-                },
+                # "scope": {
+                #     "project": {
+                #         "domain": {
+                #             "name": "admin"
+                #         },
+                #         "name": "admin"
+                #
+                #     }
+                # },
                 "identity": {
-                    "password": {
-                        "user": {
-                            "domain": {
-                                "name": "admin"
-                            },
-                            "password": "myadminpassword",
-                            "name": "admin"
-                        }
+                    "token": {
+                        "id" : self.auth
                     },
                     "methods": [
-                        "password"
+                        "token"
                     ]
                 }
             }
