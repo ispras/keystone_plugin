@@ -6,10 +6,10 @@ class TestKeystoneRoles(TestKeystoneBase):
         super(TestKeystoneRoles, self).setUp()
         self.url = self.host + '/v3/roles/'
         self.domain_id = 'e469c1b6-115e-42f6-99d6-482b352339bc'
-        self.project_id = 'c70e9648-9309-4b13-89e1-087552158ce3'
-        self.user_id = 'dce048f3-756e-4a21-a9d4-77791410ef6d'
+        self.project_id = '31683f12-f291-406d-a709-a34ce4d9939f'
+        self.user_id = 'c1eb8b3c-bae1-43a9-b29d-33de343a4dc1'
         self.group_id = ''
-        self.role_id = 'be464947-a2bc-4cb4-b782-4d1a656c9a29'
+        self.role_id = '906dad95-08c8-4e38-95c6-31d3f126fc08'
         self.admin_auth()
 
     def list(self):
@@ -49,16 +49,16 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(204)
 
     def check_assign(self):
-        # self.res = requests.put(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}) #json object is required
-        # self.checkCode(400)
-        self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
+        self.res = requests.put(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}, headers = self.headers) #json object is required
         self.checkCode(204)
-        self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
-        self.checkCode(204)
-        self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
-        self.checkCode(204)
-        self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
-        self.checkCode(404)
+        # self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
+        # self.checkCode(204)
+        # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
+        # self.checkCode(204)
+        # self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
+        # self.checkCode(204)
+        # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
+        # self.checkCode(404)
 
     def list_implied(self):
         self.res = requests.get(self.url + self.role_id + '/implies/')

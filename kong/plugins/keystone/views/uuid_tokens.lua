@@ -61,7 +61,7 @@ local function check_token(token, dao_factory, allow_expired, validate)
     return token
 end
 
-local function generate_token(dao_factory, user, cached, scope_id)
+local function generate_token(dao_factory, user, cached, scope_id, is_domain, trust_id)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
     local token = {
@@ -70,6 +70,9 @@ local function generate_token(dao_factory, user, cached, scope_id)
         user_id = user.id,
         expires = os.time() + 24*60*60
     }
+    if trust_id then
+        token.trust_id = trust_id
+    end
     local _, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 

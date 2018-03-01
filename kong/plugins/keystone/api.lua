@@ -67,4 +67,7 @@ add_routes(os_federation.routes)
 local os_oauth2 = require('kong.plugins.keystone.extensions.os_oauth2')
 add_routes(os_oauth2.routes)
 
+local os_trust = require('kong.plugins.keystone.extensions.os_trust')
+add_routes(os_trust.routes)
+
 return views

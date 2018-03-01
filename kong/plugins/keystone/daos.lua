@@ -401,7 +401,8 @@ local TRUST_SCHEMA = {
         remaining_uses = { type = "number" },
         allow_redelegation = { type = "boolean" },
         redelegated_trust_id = { type = "string" },
-        redelegation_count  = { type = "integer"},
+        redelegated_trust_id = { type = "string" },
+        redelegation_count  = { type = "number"},
         extra = { type = "string" }
     }
 }

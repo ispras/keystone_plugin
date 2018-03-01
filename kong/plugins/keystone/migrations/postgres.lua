@@ -464,7 +464,7 @@ return {
         impersonation boolean,
         deleted_at timestamp,
         expires_at timestamp,
-        remaining_users int,
+        remaining_uses int,
         allow_redelegation boolean,
         redelegated_trust_id varchar(64),
         redelegation_count int,
