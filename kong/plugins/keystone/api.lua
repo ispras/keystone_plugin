@@ -70,4 +70,7 @@ add_routes(os_oauth2.routes)
 local os_trust = require('kong.plugins.keystone.extensions.os_trust')
 add_routes(os_trust.routes)
 
+local os_ep_filter = require("kong.plugins.keystone.extensions.os_ep_filter")
+add_routes(os_ep_filter)
+
 return views

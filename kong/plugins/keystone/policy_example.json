@@ -165,6 +165,26 @@
     "identity:get_policy_for_endpoint": "rule:cloud_admin",
     "identity:list_endpoints_for_policy": "rule:cloud_admin",
     "identity:show policy for endpoint": "rule:cloud_admin",
-    "identity:check_policy_and_service_endpoint_association": "rule:cloud_admin"
+    "identity:check_policy_and_service_endpoint_association": "rule:cloud_admin",
+
+    "identity:list_endpoint_groups": "rule:cloud_admin",
+    "identity:create_endpoint_group": "rule:cloud_admin",
+    "identity:get_endpoint_group": "rule:cloud_admin",
+    "identity:check_endpoint_group": "rule:cloud_admin",
+    "identity:update_endpoint_group": "rule:cloud_admin",
+    "identity:delete_endpoint_group": "rule:cloud_admin",
+    "identity:identity:create_association": "rule:cloud_admin",
+    "identity:check_association": "rule:cloud_admin",
+    "identity:delete_association": "rule:cloud_admin",
+    "identity:list_associations_by_project": "rule:cloud_admin",
+    "identity:list_associations_by_endpoint": "rule:cloud_admin",
+    "identity:get_ep_to_project_association": "rule:cloud_admin",
+    "identity:create_ep_to_project_association": "rule:cloud_admin",
+    "identity:check_ep_to_project_association": "rule:cloud_admin",
+    "identity:delete_ep_to_project_association": "rule:cloud_admin",
+    "identity:list_projects_by_endpoint_group": "rule:cloud_admin",
+    "identity:list_endpoints_by_endpoint_group": "rule:cloud_admin",
+    "identity:list_endpoint_groups_by_project": "rule:cloud_admin"
+
 
 }

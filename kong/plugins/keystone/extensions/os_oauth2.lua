@@ -3,7 +3,7 @@ local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
 local utils = require "kong.tools.utils"
 local cjson = require "cjson"
-local oidc = require ("resty.openidc")
+--local oidc = require ("resty.openidc")
 
 local function list_consumers(self, dao_factory)
     local consumers, err = dao_factory.consumer:find_all()

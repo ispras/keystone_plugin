@@ -43,12 +43,14 @@ local function create_trust(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such trustor_user_id in the system")
     end
 
+    local old_redelegation_count
     if self.params.trust.redelegated_trust_id then
-        local tmp, err = dao_factory.user:find({id = self.params.redelegated_trust_id})
-        kutils.assert_dao_error(err, "user:find")
+        local redelegated_trust, err = dao_factory.trust:find({id = self.params.redelegated_trust_id})
+        kutils.assert_dao_error(err, "trust:find")
         if not tmp then
             responses.send_HTTP_BAD_REQUEST("No such redelegated_trust_id in the system")
         end
+        old_redelegation_count = redelegated_trust.redelegation_count
     end
 
     local trust_obj = self.params.trust
@@ -58,8 +60,21 @@ local function create_trust(self, dao_factory)
         trust_obj.redelegaion_count = 0
         trust_obj.remaining_uses = nil
     else
-        trust_obj.redelegation_count = trust_obj.redelegation_count or kutils.config_from_dao()['max_redelegation_count']
+        if old_redelegation_count and old_redelegation_count > 0 then
+            trust_obj.redelegation_count = old_redelegation_count - 1
+        elseif old_redelegation_count == 0 then
+            responses.send_HTTP_BAD_REQUEST("Redelegation of this trust is forbidden")
+        else
+            local max_redelegation_count = kutils.config_from_dao()['max_redelegation_count']
+            trust_obj.redelegation_count = trust_obj.redelegation_count or max_redelegation_count
+            if trust_obj.redelegation_count > max_redelegation_count then
+                trust_obj.redelegation_count = max_redelegation_count
+            elseif trust_obj.redelegation_count < 0 then
+                responses.send_HTTP_BAD_REQUEST("Bad redelegation count")
+            end
+        end
     end
+
     if trust_obj.expires_at then
         trust_obj.expires_at = kutils.string_to_time(trust_obj.expires_at)
     end
