@@ -9,22 +9,27 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.url = self.host + '/v3/auth/'
         self.token = ''
         self.user_id = 'ac74734b-c604-4ba4-ba53-b45f88655fee'
-        self.password_unscoped()
+        # self.password_unscoped()
 
-    def password_unscoped(self):
+    def password_scoped(self):
         body = {
             'auth' : {
                 'identity' : {
                     'methods' : [ 'password' ],
                     'password' : {
                         'user' : {
-                            # 'name' : 'admin',
-                            # 'domain' : {
-                            #     'name' : 'Admin'
-                            # },
-                            'id' : self.user_id,
-                            'password' : 'myadminpassword'
+                            'name' : 'trustee',
+                            'domain' : {
+                                'name' : 'admin'
+                            },
+                            # 'id' : self.user_id,
+                            'password' : 'myadminpass'
                         }
+                    }
+                },
+                "scope" : {
+                    "project": {
+                        'id': 'faee67cd-59e8-4e32-85ab-1c128b627587'
                     }
                 }
             }
@@ -33,19 +38,47 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.checkCode(201)
         self.auth = self.res.headers['X-Subject-Token']
 
-    def token_scoped(self):
+    def trust_scoped(self):
         body = {
             'auth' : {
                 'identity' : {
-                    'methods' : [ 'token' ],
+                    'methods' : ['token'],
                     'token' : {
-                        'id' : self.auth
+                            # 'id' : self.user_id,
+                            'id' : '18dfcb24-29a2-4328-a067-7ef0e3434423'
                     }
                 },
-                'scope' : {
-                    'domain' : {
-                        'name' : 'admin'
-                    }
+                "scope" : {
+                     "OS-TRUST:trust": {
+                        "id": "41eb9cb6-9f26-4769-80ea-f6ba895a2eea"
+                     }
+                }
+            }
+        }
+        self.res = requests.post(self.url + 'tokens', json = body)
+        self.checkCode(201)
+        self.auth = self.res.headers['X-Subject-Token']
+
+    def token_scoped(self):
+        self.password_unscoped()
+        body = {
+            "auth": {
+                # "scope": {
+                #     "project": {
+                #         "domain": {
+                #             "name": "admin"
+                #         },
+                #         "name": "admin"
+                #
+                #     }
+                # },
+                "identity": {
+                    "token": {
+                        "id" : self.auth
+                    },
+                    "methods": [
+                        "token"
+                    ]
                 }
             }
         }

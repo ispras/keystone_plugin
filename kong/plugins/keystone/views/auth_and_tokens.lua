@@ -116,8 +116,8 @@ local function check_scope(scope, dao_factory)
             end
             domain_name = scope.project.domain.name
 
---            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id})
-            local temp, err = dao_factory.project:find_all({name = scope.project.name})
+            local temp, err = dao_factory.project:find_all({name = scope.project.name, domain_id = scope.project.domain.id, is_domain = false})
+--            local temp, err = dao_factory.project:find_all({name = scope.project.name})
             kutils.assert_dao_error(err, "project:find_all")
             if not next(temp) then
                 responses.send_HTTP_BAD_REQUEST("No requested project found for scope, domain id is: " ..  scope.project.domain.id .. " and project name is " .. scope.project.name)
@@ -177,7 +177,7 @@ local function get_catalog(self,dao_factory)
     return catalog
 end
 
-local function check_token_user (token, dao_factory)
+local function check_token_user(token, dao_factory)
     if not token.user_id then
         return responses.send_HTTP_NOT_FOUND("Error: user id is required")
     end
@@ -239,7 +239,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
 
     local red, err = redis.connect()
     local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id, scope.project and false or true)
+    local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
 
     local resp = {
         token = {
@@ -322,7 +322,7 @@ local function auth_token_scoped(self, dao_factory, user)
     local roles = temp.roles
 
     local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id, scope.project and false or true)
+    local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
 
     local resp = {
         token = {
@@ -588,5 +588,6 @@ local routes =  {
 return {
     routes = routes,
     get_scopes = get_scopes,
-    auth = _M
+    auth = _M,
+    check_token = check_token_user
 }

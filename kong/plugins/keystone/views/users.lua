@@ -222,6 +222,7 @@ local function create_local_user(self, dao_factory)
             password_expires_at = kutils.time_to_string(passwd.expires_at)
         }
     }
+
     return 201, resp
 end
 

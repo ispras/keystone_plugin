@@ -21,6 +21,17 @@ class TestKeystoneOSFederation(TestKeystoneBase):
         self.res = requests.get(self.url + 'identity_providers/' + 'test_provider' + '/protocols' + '/test_protocol' + '/auth', headers = self.headers)
         self.checkCode(200)
 
+    def access_token(self):
+        params = {
+            'code' : '4/AAB4QLXuX7BaEudzXsJEYWUVag5Yvkne5gnDgfLoGMkO2uzQjz5mgJq4FvqRwlgMUduATkJbQbEA4iBkGUSR1t0',
+            'redirect_uri' : "http://localhost:8001/v3/OS-OAUTH2/callback",
+            'client_id' : '649174633040-h5urg19giljnv4262ihsbh75a4hjtfrj.apps.googleusercontent.com',
+            'client_secret' : 'LMUHFLQJSRF2YB4zU8cRJTdY',
+            'grant_type' : 'authorization_code'
+        }
+        self.res = requests.post("https://www.googleapis.com/oauth2/v4/token", json = params)
+        self.checkCode(200)
+
     def identity_provider(self):
         # self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id, headers = self.headers)
         # self.checkCode(204)

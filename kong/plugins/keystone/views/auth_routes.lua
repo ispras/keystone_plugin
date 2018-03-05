@@ -2,7 +2,7 @@ local responses = require "kong.tools.responses"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
 local auth = require ("kong.plugins.keystone.views.auth_and_tokens").auth
-local oauth1 = require ("kong.plugins.keystone.extensions.os_oauth1").auth
+local oauth1 = require ("kong.plugins.keystone.extensions.os_oauth2").auth
 local trust = require ("kong.plugins.keystone.extensions.os_trust").auth
 local feder = require ("kong.plugins.keystone.extensions.os_federation").auth
 
@@ -12,6 +12,8 @@ local routes = {
             if self.params.auth and self.params.auth.identity then
                 if self.params.auth.identity.methods[1] == "token" then
                     if self.params.auth.scope and self.params.auth.scope['OS-TRUST:trust'] then
+                        local Tokens = kutils.provider()
+                        self.params.auth.identity.token = Tokens.check(self.params.auth.identity.token, dao_factory)
                         trust(self, dao_factory)
                     elseif self.params.auth.identity.token['OS-OAUTH1'] then
                         oauth1(self, dao_factory)

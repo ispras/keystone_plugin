@@ -6,6 +6,7 @@ local projects = require ("kong.plugins.keystone.views.projects")
 local cjson = require "cjson"
 local assign_role = require ("kong.plugins.keystone.views.roles").assignment.assign
 local add_member = require ("kong.plugins.keystone.views.groups").add_member
+--local saml = require ("kong.plugins.keystone.saml")
 
 local function register_identity_provider(self, dao_factory)
     local request = self.params.identity_provider
@@ -1027,7 +1028,7 @@ local routes = {
     },
     ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id/auth'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:request_unscoped_token", dao_factory, self.params)
+--            policies.check(self.req.headers['X-Auth-Token'], "identity:request_unscoped_token", dao_factory, self.params)
             responses.send(request_unscoped_token(self, dao_factory))
         end
     },
