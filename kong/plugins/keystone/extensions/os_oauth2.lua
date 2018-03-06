@@ -216,7 +216,7 @@ local function request_unscoped_token_callback(self, dao_factory)
     local res, err = httpc:request_uri(url, {method = "GET", ssl_verify = false})
     if err then error(err) end
     local user_info = cjson.decode(res.body)
-    responses.send_HTTP_BAD_REQUEST(user_info)
+--    responses.send_HTTP_BAD_REQUEST(user_info)
 
     -- Check if user name was authorized before
     local temp, err = dao_factory.nonlocal_user:find_all({name = user_info.email})
@@ -249,10 +249,10 @@ local function request_unscoped_token_callback(self, dao_factory)
     -- Creating access token in base
     local access_token = {
         id = resp.access_token,
-        access_secret = '?',
+        access_secret = nil,
         authorizing_user_id = user_info.id,
-        project_id = '', --TODO Default?
-        role_ids = {},
+        project_id = nil, --TODO Default?
+        role_ids = nil,
         consumer_id = consumer.id,
         expires_at = resp.expires_in + os.time()
     }
@@ -301,8 +301,47 @@ local function request_unscoped_token_callback(self, dao_factory)
     return 201, resp, {["X-Subject-Token"] = token.id}
 end
 
-local function check_response(self, dao_factory)
-    responses.send_HTTP_OK(self.params)
+local function list_access_tokens(self, dao_factory)
+    local user_id = self.params.user_id
+    local tokens, err = dao_factory.access_token:find_all ({authorizing_user_id = user_id})
+    kutils.assert_dao_error(err, "access token find all")
+    for i, v in pairs(tokens) do
+        tokens[i].links = {
+            self = self:build_url(self.req.parsed_url.path..'/'..v.id)
+        }
+    end
+    local resp = {
+        access_tokens = tokens,
+        links = {
+            next = "null",
+            previous = "null",
+            self = self:build_url(self.req.parsed_url.path)
+        }
+    }
+    return 200, resp
+end
+
+local function get_access_token (self, dao_factory)
+    local access_token, err = dao_factory.access_token:find({id = self.params.access_token_id})
+    kutils.assert_dao_error(err, "access token find")
+    if not access_token or access_token.authorizing_user_id ~= self.params.user_id then
+        responses.send_HTTP_NOT_FOUND()
+    end
+    access_token.links = {
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    return 200, {access_token = access_token}
+end
+local function revoke_access_token(self, dao_factory)
+    local access_token, err = dao_factory.access_token:find({id = self.params.access_token_id})
+    kutils.assert_dao_error(err, "access token find")
+    if not access_token or access_token.authorizing_user_id ~= self.params.user_id then
+        responses.send_HTTP_NOT_FOUND()
+    end
+    local _, err = dao_factory.access_token:delete({id = self.params.access_token_id})
+    kutils.assert_dao_error(err, "access token delete")
+
+    return 204
 end
 
 local Consumer = {
@@ -341,13 +380,11 @@ local routes = {
     },
     ['/v3/OS-OAUTH2/auth'] = {
         GET = function (self, dao_factory)
---            policies.check(self.req.headers['X-Auth-Token'], "identity:create_request_token", dao_factory, self.params)
             responses.send(request_unscoped_token(self, dao_factory))
         end
     },
     ['/v3/OS-OAUTH2/auth/callback/:consumer_id'] = {
         GET = function (self, dao_factory)
---            policies.check(self.req.headers['X-Auth-Token'], "identity:create_access_token", dao_factory, self.params)
             responses.send(request_unscoped_token_callback(self, dao_factory))
         end
     },
@@ -366,28 +403,10 @@ local routes = {
             policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_access_token", dao_factory, self.params)
             responses.send(revoke_access_token(self, dao_factory))
         end
-    },
-    ['/v3/users/:user_id/OS-OAUTH2/access_tokens/:access_token_id/roles'] = {
-        GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_roles_for_access_token", dao_factory, self.params)
-            responses.send(list_roles_for_access_token(self, dao_factory))
-        end
-    },
-    ['/v3/users/:user_id/OS-OAUTH2/access_tokens/:access_token_id/roles'] = {
-        GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role_for_access_token", dao_factory, self.params)
-            responses.send(get_role_for_access_token(self, dao_factory))
-        end
-    },
-    ['/v3/check_response'] = {
-        GET = function(self, dao_factory)
-            responses.send(check_response(self, dao_factory))
-        end
     }
 }
 
 return {
     routes = routes,
-    auth = authenticate_with_identity_api,
     consumer = Consumer
 }

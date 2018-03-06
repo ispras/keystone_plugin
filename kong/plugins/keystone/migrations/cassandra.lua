@@ -9,7 +9,7 @@ return {
         project_id varchar,
         role_ids text,
         consumer_id varchar,
-        expires_at varchar,
+        expires_at timestamp,
         PRIMARY KEY (id)
       );
 
