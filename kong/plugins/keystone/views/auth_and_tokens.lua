@@ -177,14 +177,7 @@ local function get_catalog(self,dao_factory)
     return catalog
 end
 
-<<<<<<< HEAD
-local function check_token_user (token, dao_factory)
---    local Tokens = kutils.provider()
---    token = Tokens.check(token, dao_factory)
-
-=======
 local function check_token_user(token, dao_factory)
->>>>>>> faaf98f49a771f230112d7804ee5e834136149b9
     if not token.user_id then
         responses.send_HTTP_NOT_FOUND("Error: user id is required")
     end

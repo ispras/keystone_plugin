@@ -95,7 +95,7 @@ local function list_users(self, dao_factory, helpers)
                 protocol_id = user_info.protocol_id,
                 unique_id = user_info.unique_id,
                 links = {
-                    self = resp.links.self .. '/' .. user_info.id
+                    self = resp.links.self .. user_info.id
                 },
                 password_expires_at = user_info.password_expires_at,
                 default_project_id = user_info.default_project_id
@@ -700,7 +700,7 @@ local routes = {
 
 local User = {
     create_local = create_local_user,
-    create_nonlocal_user = create_nonlocal_user,
+    create_nonlocal = create_nonlocal_user,
     get = get_user_info
 }
 

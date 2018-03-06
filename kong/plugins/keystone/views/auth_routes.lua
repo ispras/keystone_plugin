@@ -2,7 +2,6 @@ local responses = require "kong.tools.responses"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
 local auth = require ("kong.plugins.keystone.views.auth_and_tokens").auth
-local oauth2 = require ("kong.plugins.keystone.extensions.os_oauth2").auth
 local trust = require ("kong.plugins.keystone.extensions.os_trust").auth
 local feder = require ("kong.plugins.keystone.extensions.os_federation").auth
 
