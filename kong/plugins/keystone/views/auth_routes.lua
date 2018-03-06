@@ -12,6 +12,8 @@ local routes = {
             if self.params.auth and self.params.auth.identity then
                 if self.params.auth.identity.methods[1] == "token" then
                     if self.params.auth.scope and self.params.auth.scope['OS-TRUST:trust'] then
+                        local Tokens = kutils.provider()
+                        self.params.auth.identity.token = Tokens.check(self.params.auth.identity.token, dao_factory)
                         trust(self, dao_factory)
                     elseif self.params.auth.identity.token['OS-OAUTH2'] then
                         oauth2(self, dao_factory)

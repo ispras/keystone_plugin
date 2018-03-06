@@ -66,7 +66,7 @@ function Token.check(token, dao_factory, allow_expired, validate)
     token.federated = payload.federated_info and true or false
     return token
 end
-function Token.generate(dao_factory, user, cached, scope_id, is_domain)
+function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id)
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
@@ -78,6 +78,9 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain)
         methods = {},
         audit_ids = {}
     }
+    if trust_id then
+        info_obj.trust_id = trust_id
+    end
     local payload = kfernet.create_payload(info_obj) -- byte view
     local secret = fkeys.get_primary()
     local fernet_obj = create_fernet_obj(secret, payload)

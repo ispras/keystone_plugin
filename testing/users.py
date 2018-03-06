@@ -30,15 +30,13 @@ class TestKeystoneUsers(TestKeystoneBase):
         body = {
             "user": {
                 "enabled": "true",
-                "name": "test_default_project",
-                "password": "myadminpass",
-                'default_project_id': self.project_id
-                # "domain_id": self.domain_id,
+                "name": "trustee",
+                "password": "myadminpass"
             }
         }
         self.res = requests.post(self.url, json = body, headers = self.headers)
         self.checkCode(201)
-        self.user_id = self.res.json()['user']['id']
+        #self.user_id = self.res.json()['user']['id']
 
     def create_nonlocal(self):
         body = {

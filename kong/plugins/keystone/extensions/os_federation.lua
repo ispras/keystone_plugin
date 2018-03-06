@@ -6,7 +6,7 @@ local projects = require ("kong.plugins.keystone.views.projects")
 local cjson = require "cjson"
 local assign_role = require ("kong.plugins.keystone.views.roles").assignment.assign
 local add_member = require ("kong.plugins.keystone.views.groups").add_member
-local saml = require ("kong.plugins.keystone.saml")
+--local saml = require ("kong.plugins.keystone.saml")
 
 local function register_identity_provider(self, dao_factory)
     local request = self.params.identity_provider

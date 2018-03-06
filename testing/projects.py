@@ -12,11 +12,11 @@ class TestKeystoneProjects(TestKeystoneBase):
     def create(self):
         body = {
             "project": {
-                "name": "admin",
-                "description": "Admin project for testing",
+                "name": "new_test",
+                "description": "Test project for testing",
                 "enabled": True,
                 "is_domain": False,
-                "domain_id": self.admin_domain_id
+                "domain_id": "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
             }
         }
         self.res = requests.post(self.url, json = body, headers = self.headers)

@@ -9,7 +9,8 @@ return {
         redis_timeout = { type = "number", default = 2000 },
         redis_password = { type = "string", default = '' },
         identity_provider = {type = "string", enum = {"uuid", "fernet"}, default = "uuid"},
-        max_active_fernet_keys = {type = "number", default = 3}
+        max_active_fernet_keys = {type = "number", default = 3},
+        max_redelegation_count = {type = "number", default = 100}
     },
     self_check = function(schema, conf, dao, is_updating)
         local red, err = redis.connect(conf)
