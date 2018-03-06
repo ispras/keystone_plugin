@@ -4,7 +4,7 @@ local json = require('cjson')
 local SERVER_IP = '127.0.0.1'
 local projects = require ('kong.plugins.keystone.views.projects')
 local roles = require ('kong.plugins.keystone.views.roles')
-local users = require ('kong.plugins.keystone.views.users')
+local users = require ('kong.plugins.keystone.views.users').User
 local fkeys = require ("kong.plugins.keystone.views.fernet_keys")
 
 local function v3()
@@ -105,7 +105,7 @@ local function init(self, dao_factory)
         name = name,
         password = password
     }
-    users.create(self, dao_factory)
+    users.create_local(self, dao_factory)
     local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.admin_domain_id})
     kutils.assert_dao_error(err, "local_user find all")
     resp.admin_user_id = temp[1].user_id

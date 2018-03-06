@@ -43,8 +43,8 @@ local function check_user(user, dao_factory)
                 user.domain.id = domain.id
             end
 
---            local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
-            local temp, err = dao_factory.local_user:find_all ({name = user.name})
+            local temp, err = dao_factory.local_user:find_all ({name = user.name, domain_id = user.domain.id})
+--            local temp, err = dao_factory.local_user:find_all ({name = user.name})
             kutils.assert_dao_error(err, "local_user find_all")
 
             if not next(temp) then
@@ -177,9 +177,16 @@ local function get_catalog(self,dao_factory)
     return catalog
 end
 
+<<<<<<< HEAD
+local function check_token_user (token, dao_factory)
+--    local Tokens = kutils.provider()
+--    token = Tokens.check(token, dao_factory)
+
+=======
 local function check_token_user(token, dao_factory)
+>>>>>>> faaf98f49a771f230112d7804ee5e834136149b9
     if not token.user_id then
-        return responses.send_HTTP_NOT_FOUND("Error: user id is required")
+        responses.send_HTTP_NOT_FOUND("Error: user id is required")
     end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
@@ -187,8 +194,16 @@ local function check_token_user(token, dao_factory)
     kutils.assert_dao_error(err, "project:find")
     local loc_user, err = dao_factory.local_user:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "local_user:find_all")
-    local password, err = dao_factory.password:find_all({local_user_id = loc_user[1].id})
-    kutils.assert_dao_error(err, "password:find_all")
+    if loc_user[1] then
+        user.name = loc_user[1].name
+        local password, err = dao_factory.password:find_all({local_user_id = loc_user[1].id})
+        kutils.assert_dao_error(err, "password:find_all")
+        user.password_expires_at = kutils.time_to_string(password[1].expires_at)
+    else
+        local nonloc_user, err = dao_factory.nonlocal_user:find_all({user_id = user.id})
+        kutils.assert_dao_error(err, "nonlocal user find all")
+        user.name = nonloc_user[1] and nonloc_user[1].name or nil
+    end
 
     local resp = {
         domain = {
@@ -197,7 +212,7 @@ local function check_token_user(token, dao_factory)
         },
         id = user.id,
         name = user.name,
-        password_expires_at = kutils.time_to_string(password[1].expires_at)
+        password_expires_at = user. password_expires_at
     }
     return resp, user.default_project_id
 end

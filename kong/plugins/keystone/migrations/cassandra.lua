@@ -39,6 +39,9 @@ return {
         description varchar,
         secret varchar,
         extra text,
+        auth_url text,
+        token_url text,
+        userinfo_url text,
         PRIMARY KEY (id)
       );
 

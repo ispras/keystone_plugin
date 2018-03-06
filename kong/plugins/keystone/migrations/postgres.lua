@@ -53,6 +53,9 @@ return {
         description varchar(64),
         secret varchar(64),
         extra text,
+        auth_url text,
+        token_url text,
+        userinfo_url text,
         PRIMARY KEY (id)
       );
 
