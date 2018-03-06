@@ -61,6 +61,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
 
     def token_scoped(self):
         self.password_unscoped()
+        # self.auth = 'gAAAAABalrIoWlY330c46LrdKOtcv_2Upai7C8CqlorqvxHAXQunpDjC-ETKPDS63eM0WKxDoozGr3MI0JbsCvM-0uxK_0p-fg=='
         body = {
             "auth": {
                 # "scope": {
@@ -72,6 +73,7 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                 #
                 #     }
                 # },
+                # "scope" : "unscoped",
                 "identity": {
                     "token": {
                         "id" : self.auth
