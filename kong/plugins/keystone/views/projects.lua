@@ -230,11 +230,11 @@ local function get_project_info(self, dao_factory)
     local project, err
 
     if self.params.domain then
-        project, err = dao_factory.project:find_all({id=project_id, is_domain = True})
+        project, err = dao_factory.project:find_all({id=project_id, is_domain = true})
         kutils.assert_dao_error(err, "project find_all")
 
         if not next(project) then
-            project, err = dao_factory.project:find_all({name=project_id, is_domain = True})
+            project, err = dao_factory.project:find_all({name=project_id, is_domain = true})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
@@ -244,13 +244,13 @@ local function get_project_info(self, dao_factory)
         local domain = False
         for i = 1, #project do
             if project[i].is_domain then
-                domain = True
+                domain = true
                 project = project[i]
                 break
             end
         end
 
-        if domain ~= True then
+        if domain ~= true then
             return responses.send_HTTP_BAD_REQUEST("No such domain in the system")
         end
     else

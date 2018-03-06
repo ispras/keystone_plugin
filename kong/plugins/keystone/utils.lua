@@ -95,7 +95,7 @@ local config_from_dao = function()
     local dao = singletons.dao
     local temp, err = dao.plugins:find_all({name='keystone'})
     assert_dao_error(err, "plugins find all")
-    return temp[1].config
+    return temp[1] and temp[1].config or error("Config keystone not found")
 end
 
 local function provider()
@@ -125,6 +125,20 @@ local function federated_group(dao_factory)
     local group, err = dao_factory.group:find_all({name = 'federated'})
     assert_dao_error(err, "group find all")
     return group[1] and group[1].id or nil
+end
+
+local function parse_header(header)
+    local _, num = header:gsub('\",', '')
+    local format = '(.*)=\"(.*)\",%s*(.*)=\"(.*)\"'
+    for i = 2, num do
+        format = format..",%s*(.*)=\"(.*)\""
+    end
+    local a = {header:match(format) }
+    local ret = {}
+    for i = 1, #a, 2 do
+        ret[a[i]] = a[i + 1]
+    end
+    return ret
 end
 
 return {

@@ -41,7 +41,10 @@ local CONSUMER_SCHEMA = {
         id = { type = "string", required = true },
         description = { type = "string" },
         secret = { type = "string", required = true },
-        extra = { type = "string" }
+        extra = { type = "string" },
+        auth_url = { type = "url", required = true },
+        token_url = { type = "url", required = true },
+        userinfo_url = { type = "url", required = true }
     }
 }
 

@@ -16,7 +16,7 @@ class TestKeystoneUsers(TestKeystoneBase):
     def list(self):
         query = {
             # 'domain_id' : 'domain_id',
-            'enabled': 'true',
+            # 'enabled': 'true',
             # 'idp_id': 'idp_id',
             # 'name': 'name',
             # 'password_expires_at': 'lte:2017-12-08T13:00:00Z',

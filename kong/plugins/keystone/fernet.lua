@@ -103,8 +103,8 @@ local UnscopedPayload = {}
 
 UnscopedPayload.version = 0
 
-UnscopedPayload.create_arguments_aply = function (kwargs)
-    return True
+UnscopedPayload.create_arguments_apply = function (kwargs)
+    return true
 end
 
 UnscopedPayload.assemble = function (user_id, methods, project_id, domain_id, expires_at, --expires_at must be a number
@@ -139,7 +139,7 @@ local DomainScopedPayload = {}
 
 DomainScopedPayload.version = 1
 
-DomainScopedPayload.create_arguments_aply = function (kwargs)
+DomainScopedPayload.create_arguments_apply = function (kwargs)
     return kwargs.domain_id
 end
 
@@ -175,7 +175,7 @@ local ProjectScopedPayload = {}
 
 ProjectScopedPayload.version = 2
 
-ProjectScopedPayload.create_arguments_aply = function (kwargs)
+ProjectScopedPayload.create_arguments_apply = function (kwargs)
     return kwargs.project_id
 end
 
@@ -183,7 +183,7 @@ ProjectScopedPayload.assemble = function (user_id, methods, project_id, domain_i
                                     audit_ids, trust_id, federated_info, access_token_id)
     local b_user_id = from_uuid_to_bytes(user_id)
     local int_methods = methods_to_int(methods)
-    local b_project_id = from_uuid_to_bytes(domain_id)
+    local b_project_id = from_uuid_to_bytes(project_id)
     local b_audit_ids = {}
     for i = 1, #audit_ids do
         b_audit_ids[i] = random_urlsafe_str_to_bytes(audit_ids[i])
@@ -211,7 +211,7 @@ local TrustScopedPayload = {}
 
 TrustScopedPayload.version = 3
 
-TrustScopedPayload.create_arguments_aply = function (kwargs)
+TrustScopedPayload.create_arguments_apply = function (kwargs)
     return kwargs.trust_id
 end
 
@@ -248,7 +248,7 @@ local FederatedUnscopedPayload = {}
 
 FederatedUnscopedPayload.version = 4
 
-FederatedUnscopedPayload.create_arguments_aply = function (kwargs)
+FederatedUnscopedPayload.create_arguments_apply = function (kwargs)
     return kwargs.federated_info
 end
 
@@ -344,7 +344,7 @@ end
 local FederatedProjectScopedPayload = {}
 
 FederatedProjectScopedPayload.version = 5
-FederatedProjectScopedPayload.create_arguments_aply = function (kwargs)
+FederatedProjectScopedPayload.create_arguments_apply = function (kwargs)
     FederatedScopedPayload.version = FederatedProjectScopedPayload.version
     return kwargs.project_id and kwargs.federated_info
 end
@@ -355,7 +355,7 @@ FederatedProjectScopedPayload.disassemble = FederatedScopedPayload.disassemble
 local FederatedDomainScopedPayload = {}
 
 FederatedDomainScopedPayload.version = 6
-FederatedDomainScopedPayload.create_arguments_aply = function (kwargs)
+FederatedDomainScopedPayload.create_arguments_apply = function (kwargs)
     FederatedScopedPayload.version = FederatedDomainScopedPayload.version
     return kwargs.domain_id and kwargs.federated_info
 end
@@ -367,7 +367,7 @@ local OauthScopedPayload = {}
 
 OauthScopedPayload.version = 7
 
-OauthScopedPayload.create_arguments_aply = function (kwargs)
+OauthScopedPayload.create_arguments_apply = function (kwargs)
     return kwargs.access_token_id
 end
 
@@ -414,7 +414,7 @@ local PayloadClasses = {
 local function create_payload(info_obj) --user_id, expires_at, audit_ids, methods=None, domain_id=None, project_id=None, trust_id=None, federated_info=None, access_token_id=None
     local payload
     for i = 1, #PayloadClasses do
-        if PayloadClasses[i].create_arguments_aply(info_obj) then
+        if PayloadClasses[i].create_arguments_apply(info_obj) then
             payload = {PayloadClasses[i].version, PayloadClasses[i].assemble(info_obj.user_id, info_obj.methods, info_obj.project_id,
                                                     info_obj.domain_id, info_obj.expires_at, info_obj.audit_ids, info_obj.trust_id,
                                                         info_obj.federated_info, info_obj.access_token_id) }

@@ -61,7 +61,7 @@ local function check_token(token, dao_factory, allow_expired, validate)
     return token
 end
 
-local function generate_token(dao_factory, user, cached, scope_id)
+local function generate_token(dao_factory, user, cached, scope_id, is_domain)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
     local token = {
