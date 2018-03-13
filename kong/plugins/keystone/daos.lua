@@ -4,12 +4,12 @@ local ACCESS_TOKEN_SCHEMA = {
     table = "access_token",
     fields = {
         id = { type = "string", required = true },
-        access_secret = { type = "string", required = true },
+        access_secret = { type = "string" },
         authorizing_user_id = { type = "string", required = true, queryable = true },
-        project_id = { type = "string", required = true },
-        role_ids = { type = "string", required = true },
+        project_id = { type = "string" },
+        role_ids = { type = "string" },
         consumer_id = { type = "string", required = true, queryable = true },
-        expires_at = { type = "string" },
+        expires_at = { type = "timestamp" },
     }
 }
 
