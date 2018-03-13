@@ -306,7 +306,7 @@ local PROJECT_ENDPOINT_SCHEMA = {
 }
 
 local PROJECT_ENDPOINT_GROUP_SCHEMA = {
-    primary_key = {"enpoint_group_id", "project_id"},
+    primary_key = {"endpoint_group_id", "project_id"},
     table = "project_endpoint_group",
     fields = {
         endpoint_group_id = { type = "string", required = true },

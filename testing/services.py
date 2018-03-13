@@ -19,7 +19,7 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(201)
 
     def list(self):
-        self.res = requests.get(self.host)
+        self.res = requests.get(self.url, headers=self.headers)
         self.checkCode(200)
 
     def get_info(self):
