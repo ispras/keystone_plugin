@@ -13,6 +13,32 @@ local ACCESS_TOKEN_SCHEMA = {
     }
 }
 
+local APPLICATION_CREDENTIAL_SCHEMA = {
+    primary_key = { "internal_id" },
+    table = "application_credentil",
+    fields = {
+        internal_id = { type = "number", required = true },
+        id = { type = "string", required = true },
+        name = { type = "string", required = true },
+        secret_hash = { type = "string", required = true },
+        description = { type = "string" },
+        user_id = { type = "string", required = true },
+        project_id = { type = "string", required = true },
+        expires_at = { type = "timestamp" },
+        system = { type = "string" },
+        unrestricted = { type = "boolean" },
+    }
+}
+
+local APPLICATION_CREDENTIAL_ROLE_SCHEMA = {
+    primary_key = { "application_credential_id", "role_id" },
+    table = "application_credential_role",
+    fields = {
+        application_credential_role = { type = "number", required = true },
+        role_id = { type = "string", required = true }
+    }
+}
+
 local ASSIGNMENT_SCHEMA = {
     primary_key = {"type", "actor_id", "target_id", "role_id", "inherited"},
     table = "assignment",
@@ -163,6 +189,19 @@ local IMPLIED_ROLE_SCHEMA = {
     }
 }
 
+local LIMIT_SCHEMA = {
+    primary_key = { "id" },
+    table = "limit",
+    fileds = {
+        id = { type = "string", required = true },
+        project_id = { type = "string" },
+        service_id = { type = "string" },
+        region_id = { type = "string" },
+        resource_name = { type = "string" },
+        resource_limit = { type = "number", required = true },
+    }
+}
+
 local LOCAL_USER_SCHEMA = {
     primary_key = {"id"},
     table = "local_user",
@@ -295,6 +334,18 @@ local REGION_SCHEMA = {
     }
 }
 
+local REGISTERED_LIMIT_SCHEMA = {
+    primary_key = { "id" },
+    table = "registered_limit",
+    fileds = {
+        id = { type = "string", required = true },
+        service_id = { type = "string" },
+        region_id = { type = "string" },
+        resource_name = { type = "string" },
+        default_limit = { type = "number", required = true }
+    }
+}
+
 local REQUEST_TOKEN_SCHEMA = {
     primary_key = {"id"},
     table = "request_token",
@@ -377,6 +428,18 @@ local SERVICE_PROVIDER_SCHEMA = {
     }
 }
 
+local SYSTEM_ASSIGNMENT_SCHEMA = {
+    primary_key = { "type", "actor_id", "target_id", "role_id", "inherited" },
+    table = "system_assignment",
+    fields = {
+        type = { type = "string", required = true },
+        actor_id = { type = "string", required = true },
+        target_id = { type = "string", required = true, queryable = true },
+        role_id = { type = "string", required = true, queryable = true },
+        inherited = { type = "boolean", required = true }
+    }
+}
+
 local TOKEN_SCHEMA = {
     primary_key = {"id"},
     table = "token_",
@@ -403,7 +466,6 @@ local TRUST_SCHEMA = {
         expires_at = { type = "timestamp" },
         remaining_uses = { type = "number" },
         allow_redelegation = { type = "boolean" },
-        redelegated_trust_id = { type = "string" },
         redelegated_trust_id = { type = "string" },
         redelegation_count  = { type = "number"},
         extra = { type = "string" }
@@ -465,6 +527,8 @@ local WHITELISTED_CONFIG_SCHEMA = {
 
 return {
     access_token = ACCESS_TOKEN_SCHEMA,
+--    application_credential = APPLICATION_CREDENTIAL_SCHEMA, -- NEW
+--    application_credential_role = APPLICATION_CREDENTIAL_ROLE_SCHEMA, -- NEW
     assignment = ASSIGNMENT_SCHEMA,
     config_register = CONFIG_REGISTER_SCHEMA,
     consumer = CONSUMER_SCHEMA,
@@ -478,6 +542,7 @@ return {
     identity_provider = IDENTITY_PROVIDER_SCHEMA,
     idp_remote_ids = IDP_REMOTE_IDS_SCHEMA,
     implied_role = IMPLIED_ROLE_SCHEMA,
+--    limit = LIMIT_SCHEMA, -- NEW
     local_user = LOCAL_USER_SCHEMA,
     mapping = MAPPING_SCHEMA,
     migrate_version = MIGRATE_VERSION_SCHEMA,
@@ -490,12 +555,14 @@ return {
     project_endpoint_group = PROJECT_ENDPOINT_GROUP_SCHEMA,
     project_tag = PROJECT_TAG_SCHEMA,
     region = REGION_SCHEMA,
+--    registered_limit = REGISTERED_LIMIT_SCHEMA, -- NEW
     request_token = REQUEST_TOKEN_SCHEMA,
     revocation_event = REVOCATION_EVENT_SCHEMA,
     role = ROLE_SCHEMA,
     sensitive_config = SENSITIVE_CONFIG_SCHEMA,
     service = SERVICE_SCHEMA,
     service_provider = SERVICE_PROVIDER_SCHEMA,
+--    system_assignment = SYSTEM_ASSIGNMENT_SCHEMA, -- NEW
     token = TOKEN_SCHEMA,
     trust = TRUST_SCHEMA,
     trust_role = TRUST_ROLE_SCHEMA,

@@ -73,4 +73,10 @@ add_routes(os_trust.routes)
 local os_ep_filter = require("kong.plugins.keystone.extensions.os_ep_filter")
 add_routes(os_ep_filter)
 
+local os_revoke = require("kong.plugins.keystone.extensions.os_revoke")
+add_routes(os_revoke.routes)
+
+local os_simple_cert = require("kong.plugins.keystone.extensions.os_simple_cert")
+add_routes(os_simple_cert.routes)
+
 return views
