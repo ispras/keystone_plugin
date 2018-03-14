@@ -10,7 +10,7 @@ class TestKeystoneEndpoints(TestKeystoneBase):
     def create(self):
         body = {
             "endpoint": {
-                "interface": "internal",
+                "interface": "admin",
                 "region_id": "RegionOne",
                 "url": "http://localhost:8001/v3/",
                 "service_id": "8c1a13ae-61a9-43d4-992d-b5544e593d06"

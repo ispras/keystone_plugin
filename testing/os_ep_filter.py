@@ -15,7 +15,7 @@ class TestKeystoneOsEpFilter(TestKeystoneBase):
                     "interface": "admin",
                     "service_id": "8c1a13ae-61a9-43d4-992d-b5544e593d06"
                 },
-                "name": "endpoint group name 3"
+                "name": "endpoint group name 4"
             }
         }
 
@@ -51,7 +51,7 @@ class TestKeystoneOsEpFilter(TestKeystoneBase):
         self.checkCode(200)
 
     def delete_endpoint_group(self):
-        endpoint_id = '61ca440a-5cf5-4c66-9813-4fd96b0b753e'
+        endpoint_id = 'dd6c4b95-6e3d-4a54-9793-bbf966dd6669'
         #/policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
         self.res = requests.delete(self.url + "endpoint_groups/" + endpoint_id,
                                 headers=self.headers)
@@ -90,9 +90,49 @@ class TestKeystoneOsEpFilter(TestKeystoneBase):
         self.checkCode(200)
 
     def create_ep_association(self):
-        endpoint_group_id = 'dd6c4b95-6e3d-4a54-9793-bbf966dd6669'
+        endpoint_group_id = '5d578fd8-3eb3-424a-ac48-5538c310856e'
         project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
         # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
         self.res = requests.put(self.url + "endpoint_groups/" + endpoint_group_id + "/projects/" + project_id, json={},
                                 headers=self.headers)
         self.checkCode(204)
+
+    def get_ep_association(self):
+        endpoint_group_id = 'dd6c4b95-6e3d-4a54-9793-bbf966dd6669'
+        project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
+        # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
+        self.res = requests.head(self.url + "endpoint_groups/" + endpoint_group_id + "/projects/" + project_id, json={},
+                                headers=self.headers)
+        self.checkCode(200)
+
+    def delete_ep_association(self):
+        endpoint_group_id = 'dd6c4b95-6e3d-4a54-9793-bbf966dd6669'
+        project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
+        # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
+        self.res = requests.delete(self.url + "endpoint_groups/" + endpoint_group_id + "/projects/" + project_id, json={},
+                                 headers=self.headers)
+        self.checkCode(204)
+
+    def list_projects_by_ep_group(self):
+        endpoint_group_id = 'dd6c4b95-6e3d-4a54-9793-bbf966dd6669'
+        project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
+        # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
+        self.res = requests.get(self.url + "endpoint_groups/" + endpoint_group_id + "/projects/", json={},
+                                 headers=self.headers)
+        self.checkCode(200)
+
+    def list_ep_by_ep_group(self):
+        endpoint_group_id = '5d578fd8-3eb3-424a-ac48-5538c310856e'
+        # project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
+        # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
+        self.res = requests.get(self.url + "endpoint_groups/" + endpoint_group_id + "/endpoints/", json={},
+                                 headers=self.headers)
+        self.checkCode(200)
+
+    def list_ep_groups_by_project(self):
+        # endpoint_group_id = '5d578fd8-3eb3-424a-ac48-5538c310856e'
+        project_id = "e64747bd-c21d-450a-9d13-ab4d6ce118ac"
+        # /policies/:policy_id/OS-ENDPOINT-POLICY/endpoints/:endpoint_id
+        self.res = requests.get(self.url + "projects/" + project_id + "/endpoint_groups/", json={},
+                                 headers=self.headers)
+        self.checkCode(200)

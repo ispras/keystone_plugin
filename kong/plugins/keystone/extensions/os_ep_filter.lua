@@ -24,6 +24,7 @@ local function list_endpoint_groups(self, dao_factory)
         endpoint_groups[i].links = {
                 self = self:build_url(self.req.parsed_url.path)
         }
+        endpoint_groups[i].filters = cjson.decode(endpoint_groups[i].filters)
         resp.endpoint_groups[i] = endpoint_groups[i]
     end
 
@@ -50,15 +51,15 @@ local function create_endpoint_group(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Bad interface type")
     end
 
-    if endpoint_group.service_id then
-        local tmp, err = dao_factory.service:find({id = endpoint_group.service_id})
+    if endpoint_group.filters.service_id then
+        local tmp, err = dao_factory.service:find({id = endpoint_group.filters.service_id})
         kutils.assert_dao_error(err, "service:find")
         if not tmp then
             responses.send_HTTP_BAD_REQUEST("No such service in the system")
         end
     end
 
-    if endpoint_group.region_id then
+    if endpoint_group.filters.region_id then
         local tmp, err = dao_factory.region:find({id = endpoint_group.region_id})
         kutils.assert_dao_error(err, "region:find")
         if not tmp then
@@ -320,16 +321,11 @@ local function create_ep_to_project_association(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
 
---    if true then
---        local association, err = dao_factory.project_endpoint_group:find_all()
---        responses.send_HTTP_BAD_REQUEST(association)
---    end
-
-    local association, err = dao_factory.project_endpoint_group:find_all({endpoint_group_id = endpoint_group_id,
+    local association, err = dao_factory.project_endpoint_group:find({endpoint_group_id = endpoint_group_id,
                                                                         project_id = project_id})
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
-    if next(association) then
+    if association then
         responses.send_HTTP_BAD_REQUEST("Such project endpoint group association already exists")
     end
 
@@ -343,7 +339,8 @@ local function get_ep_to_project_association(self, dao_factory)
     if not self.params.endpoint_group_id or not self.params.project_id then
         responses.send_HTTP_BAD_REQUEST("Bad obligatory params")
     end
-    local endpoint_group_id, project_id = self.params.endpoint_id, self.params.project_id
+    local endpoint_group_id = self.params.endpoint_group_id
+    local project_id = self.params.project_id
 
     local endpoint_group, err = dao_factory.endpoint_group:find({id = endpoint_group_id})
     kutils.assert_dao_error(err, "endpoint_group:find")
@@ -374,7 +371,8 @@ local function check_ep_to_project_association(self, dao_factory)
     if not self.params.endpoint_group_id or not self.params.project_id then
         responses.send_HTTP_BAD_REQUEST("Bad obligatory params")
     end
-    local endpoint_group_id, project_id = self.params.endpoint_id, self.params.project_id
+    local endpoint_group_id = self.params.endpoint_group_id
+    local project_id = self.params.project_id
 
     local endpoint_group, err = dao_factory.endpoint_group:find({id = endpoint_group_id})
     kutils.assert_dao_error(err, "endpoint_group:find")
@@ -401,7 +399,8 @@ local function delete_ep_to_project_association(self, dao_factory)
     if not self.params.endpoint_group_id or not self.params.project_id then
         responses.send_HTTP_BAD_REQUEST("Bad obligatory params")
     end
-    local endpoint_group_id, project_id = self.params.endpoint_id, self.params.project_id
+    local endpoint_group_id = self.params.endpoint_group_id
+    local project_id = self.params.project_id
 
     local endpoint_group, err = dao_factory.endpoint_group:find({id = endpoint_group_id})
     kutils.assert_dao_error(err, "endpoint_group:find")
@@ -475,26 +474,21 @@ local function list_endpoints_by_endpoint_group(self, dao_factory)
         endpoints = {}
     }
 
-    local associations, err = dao_factory.project_endpoint_group:find_all({endpoint_group_id = self.params.endpoint_group_id})
-    kutils.assert_dao_error(err, "project_endpoint_group:find_all")
+    local endpoint_group, err = dao_factory.endpoint_group:find({id = self.params.endpoint_group_id})
+    kutils.assert_dao_error(err, "endpoint_group:find")
 
-    local j = 1
-    for i = 1, #associations do
-        local endpoint_group, err = dao_factory.endpoint_group:find({id = associations[i].endpoint_group_id})
-        kutils.assert_dao_error(err, "endpoint_group:find")
+    if not endpoint_group then
+        responses.send_HTTP_BAD_REQUEST("No such endpoint group in the system")
+    end
 
-        if endpoint_group then
-            local endpoint, err = dao_factory.endpoint:find({id = endpoint_group.endpoint_id})
-            kutils.assert_dao_error(err, "endpoint:find")
+    local endpoints, err = dao_factory.endpoint:find_all(cjson.decode(endpoint_group.filters))
+    kutils.assert_dao_error(err, "endpoint:find_all")
 
-            if endpoint then
-                endpoint.links = {
-                    self = self:build_url(self.req.parsed_url.path)
-                }
-                resp.endpoints[j] = endpoint
-                j = j + 1
-            end
-        end
+    for i = 1, #endpoints do
+        endpoints[i].links = {
+            self = self:build_url(self.req.parsed_url.path)
+        }
+        resp.endpoints[i] = endpoints[i]
     end
 
    return 200, resp
