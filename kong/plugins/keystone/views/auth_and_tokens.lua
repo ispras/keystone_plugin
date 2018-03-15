@@ -69,7 +69,7 @@ local function check_user(user, dao_factory)
         },
         id = user.id,
         name = user.name,
-        password_expires_at = "null"
+        password_expires_at = cjson.null
     }
 
     return resp, loc_user.id, password, user.default_project_id
@@ -236,8 +236,8 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     local project, domain_name = check_scope(scope, dao_factory)
 
     self.params.user_id = user.id
-    self.params.project_id = scope.project and project.id or null
-    self.params.domain_id = not scope.project and project.id or null
+    self.params.project_id = scope.project and project.id or nil
+    self.params.domain_id = not scope.project and project.id or nil
 
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
@@ -256,8 +256,8 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
             expires_at = kutils.time_to_string(token.expires),
             project = {
                 domain = {
-                    id = project.domain_id or "null",
-                    name = domain_name or "null"
+                    id = project.domain_id or cjson.null,
+                    name = domain_name or cjson.null
                 },
                 id = project.id,
                 name = project.name
@@ -321,8 +321,8 @@ local function auth_token_scoped(self, dao_factory, user)
     local scope = self.params.auth.scope
     local project, domain_name = check_scope(scope, dao_factory)
     self.params.user_id = user.id
-    self.params.project_id = scope.project and project.id or null
-    self.params.domain_id = not scope.project and project.id or null
+    self.params.project_id = scope.project and project.id or nil
+    self.params.domain_id = not scope.project and project.id or nil
     local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
     if not next(temp.roles) then
         return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
@@ -481,8 +481,8 @@ local function get_service_catalog(self, dao_factory)
     local resp = {
         catalog = {},
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }
@@ -504,8 +504,8 @@ local function get_scopes(self, dao_factory, domain_scoped)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }
@@ -544,7 +544,7 @@ local function get_scopes(self, dao_factory, domain_scoped)
                     self = self:build_url('/v3/projects/'..project.id)
                 },
                 enabled = project.enabled,
-                domain_id = project.domain_id or "null",
+                domain_id = project.domain_id or cjson.null,
                 name = project.name
             }
         end

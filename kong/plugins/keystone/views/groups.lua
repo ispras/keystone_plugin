@@ -2,6 +2,7 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
+local cjson = require 'cjson'
 
 local function list_groups(self, dao_factory)
     local args = (self.params.name or self.params.domain_id) and {name = self.params.name, domain_id = self.params.domain_id} or nil
@@ -9,8 +10,8 @@ local function list_groups(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            previous = "null"
+            next = cjson.null,
+            previous = cjson.null
         },
         groups = {}
     }
@@ -121,8 +122,8 @@ local function list_group_users(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            previous = "null"
+            next = cjson.null,
+            previous = cjson.null
         },
         users = {}
     }
@@ -166,7 +167,7 @@ local function list_group_users(self, dao_factory)
             description = user.description,
             enabled = kutils.bool(user.enabled),
             id = user.id,
-            name = uname or "null",
+            name = uname or cjson.null,
             links = {
                 self = self:build_url("/v3/users/"..user.id)
             },

@@ -52,8 +52,8 @@ local function list_projects(self, dao_factory)
     if not self.params.domain then
         resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
             },
             projects = {}
@@ -84,8 +84,8 @@ local function list_projects(self, dao_factory)
     else
         resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
             },
             domains = {}

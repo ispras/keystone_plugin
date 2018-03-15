@@ -2,14 +2,15 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
+local cjson = require 'cjson'
 
 local Region = {}
 
 local function list_regions(self, dao_factory)
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         regions = {}

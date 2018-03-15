@@ -4,6 +4,7 @@ local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
 local assignment = roles.assignment
 local policies = require ("kong.plugins.keystone.policies")
+local cjson = require 'cjson'
 
 local function assign_inherited_role(self, dao_factory, type, enable)
     local code = assignment.check(self, dao_factory, type, false)
@@ -31,8 +32,8 @@ local function list_inherited_roles(self, dao_factory, type)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            previous = "null"
+            next = cjson.null,
+            previous = cjson.null
         },
         roles = {}
     }

@@ -1,6 +1,7 @@
 local utils = require "kong.tools.utils"
 local fernet_tokens = require ("kong.plugins.keystone.views.fernet_tokens")
 local uuid_tokens = require ("kong.plugins.keystone.views.uuid_tokens")
+local cjson = require 'cjson'
 
 local function bool (a)
     if type(a) == "string" then
@@ -35,7 +36,7 @@ local assert_dao_error = function(err, func)
     end
 end
 local time_to_string = function(timestamp)
-    return timestamp and os.date("%Y-%m-%dT%X.000000Z", timestamp) or "null"
+    return timestamp and os.date("%Y-%m-%dT%X.000000Z", timestamp) or cjson.null
 end
 local string_to_time = function(s)
     if not s then return end

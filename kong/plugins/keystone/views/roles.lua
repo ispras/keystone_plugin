@@ -13,8 +13,8 @@ local function list_roles(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            prev = "null"
+            next = cjson.null,
+            prev = cjson.null
         },
         roles = {}
     }
@@ -169,8 +169,8 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            previous = "null",
-            next = "null"
+            previous = cjson.null,
+            next = cjson.null
         },
         roles = {}
     }
@@ -658,8 +658,8 @@ local function list_role_assignments(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            previous = "null",
-            next = "null"
+            previous = cjson.null,
+            next = cjson.null
         },
         role_assignments = {}
     }
