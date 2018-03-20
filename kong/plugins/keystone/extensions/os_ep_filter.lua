@@ -11,8 +11,8 @@ local available_interface_types = {
 local function list_endpoint_groups(self, dao_factory)
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         endpoint_groups = {}
@@ -242,8 +242,8 @@ local function list_associations_by_project(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         endpoints = {}
@@ -276,8 +276,8 @@ local function list_associations_by_endpoint(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         projects = {}
@@ -433,8 +433,8 @@ local function list_projects_by_endpoint_group(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         projects = {}
@@ -467,8 +467,8 @@ local function list_endpoints_by_endpoint_group(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         endpoints = {}
@@ -501,8 +501,8 @@ local function list_endpoint_groups_by_project(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         endpoint_groups = {}

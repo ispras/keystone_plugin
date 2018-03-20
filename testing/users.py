@@ -1,7 +1,5 @@
 from keystone_plugin.testing.base import TestKeystoneBase
 import requests
-from pprint import pprint
-import uuid
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):

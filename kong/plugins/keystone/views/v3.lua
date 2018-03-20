@@ -1,31 +1,40 @@
 local responses = require "kong.tools.responses"
 local kutils = require ("kong.plugins.keystone.utils")
 local json = require('cjson')
-local SERVER_IP = '127.0.0.1'
+--local SERVER_IP = '127.0.0.1'
+local SERVER_IP = '10.10.10.61'
 local projects = require ('kong.plugins.keystone.views.projects')
 local roles = require ('kong.plugins.keystone.views.roles')
 local users = require ('kong.plugins.keystone.views.users').User
 local fkeys = require ("kong.plugins.keystone.views.fernet_keys")
 
-local function v3()
-    local body = {
-            version = {
-                status = 'stable',
-                updated = '2014-04-17T00:00:00Z',
-                id = 'v3',
-                ['media-types'] = {{
-                    base = 'application/json',
-                    type = 'application/vnd.openstack.identity-v2.0+json'
-                }},
-                links = {
-                    {href = "http://" .. SERVER_IP .. ':35357/v2.0/', rel = 'self'},
-                    {href = 'http://docs.openstack.org/', type = 'text/html', rel = 'describedby'}
-                }
-        }
+local version_v3 = {
+    status = 'stable',
+    updated = '2018-01-01T00:00:00Z',
+    id = 'v3.4',
+    ['media-types'] = {{
+        base = 'application/json',
+        type = 'application/vnd.openstack.identity-v3+json'
+    }},
+    links = {
+        {href = "http://" .. SERVER_IP .. ':8001/v3/', rel = 'self'},
+        {href = 'http://docs.openstack.org/', type = 'text/html', rel = 'describedby'}
     }
+}
 
-	return responses.send_HTTP_OK(body, kutils.headers())
-end
+local version_v2 = {
+    status = 'stable',
+    updated = '2014-04-17T00:00:00Z',
+    id = 'v2.0',
+    ['media-types'] = {{
+        base = 'application/json',
+        type = 'application/vnd.openstack.identity-v2.0+json'
+    }},
+    links = {
+        {href = "http://" .. SERVER_IP .. ':35357/v2.0/', rel = 'self'},
+        {href = 'http://docs.openstack.org/', type = 'text/html', rel = 'describedby'}
+    }
+}
 
 local function init(self, dao_factory)
     local resp = {
@@ -130,17 +139,19 @@ end
 
 return {
     ["/v3"] = {
-        GET = function(self, dao_factory)
-            v3()
+        GET = function()
+            responses.send_HTTP_OK({version = version_v3}, kutils.headers())
         end,
         POST = function(self, dao_factory)
             responses.send_HTTP_OK(init(self, dao_factory))
         end
     },
     ["/"] = {
-        GET = function(self, dao_factory)
-            local body = json.decode('{ "versions":{ "values":[ { "status":"stable", "updated":"2015-03-30T00:00:00Z", "media-types":[ { "base":"application/json", "type":"application/vnd.openstack.identity-v3+json" } ], "id":"v3.4", "links":[ { "href":"https://localhost:8001/v3/", "rel":"self" } ] } ] } }')
-            return responses.send_HTTP_OK(body, kutils.headers())
+        GET = function()
+            local body = {
+                versions = {values = {version_v3, version_v2}}
+            }
+            responses.send_HTTP_OK(body, kutils.headers())
         end
     }
 }
