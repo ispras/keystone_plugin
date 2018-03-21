@@ -71,7 +71,8 @@ local function init(self, dao_factory)
 
     self.params.project = {
         description = "Admin project",
-        domain_id = resp.default_domain_id,
+--        domain_id = resp.default_domain_id,
+        domain_id = resp.admin_domain_id,
         enabled = true,
         is_domain = false,
         name = "admin"
@@ -110,7 +111,8 @@ local function init(self, dao_factory)
 
     self.params.user = {
         default_project_id = resp.admin_project_id,
-        domain_id = resp.default_domain_id,
+--        domain_id = resp.default_domain_id,
+        domain_id = resp.admin_domain_id,
         enabled = true,
         name = name,
         password = password
@@ -128,7 +130,8 @@ local function init(self, dao_factory)
     roles.assignment.assign(self, dao_factory, "UserProject", false, true)
     self.params = {
         user_id = resp.admin_user_id,
-        domain_id = resp.default_domain_id,
+--        domain_id = resp.default_domain_id,
+        domain_id = resp.admin_domain_id,
         role_id = resp.admin_role_id
     }
     roles.assignment.assign(self, dao_factory, "UserDomain", false, true)
