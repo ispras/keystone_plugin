@@ -70,11 +70,12 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
+    local expires = os.time() + 24 * 60 * 60
     local info_obj = {
         user_id = user.id,
         project_id = not is_domain and scope_id or nil,
         domain_id = is_domain and scope_id or nil,
-        expires_at = 0,
+        expires_at = expires,
         methods = {},
         audit_ids = {}
     }
@@ -92,7 +93,7 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
 
     local token = {
         id = fernet_str,
-        expires = nil,
+        expires = expires,
         issued_at = fernet_obj.ts
     }
     return token

@@ -113,6 +113,7 @@ local function check_scope(scope, dao_factory)
             else
                 local temp, err = dao_factory.project:find ({id = scope.project.domain.id})
                 kutils.assert_dao_error(err, "project:find")
+                scope.project.domain.name = temp.name
             end
             domain_name = scope.project.domain.name
 

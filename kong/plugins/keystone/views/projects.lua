@@ -41,7 +41,7 @@ end
 local function list_projects(self, dao_factory)
     local domain_id = self.params.domain_id
     local enabled = kutils.bool(self.params.enabled)
-    local is_domain = kutils.bool(self.params.is_domain)
+    local is_domain = kutils.bool(self.params.is_domain) or false
     local name = self.params.name
     local parent_id = self.params.parent_id
 
@@ -113,6 +113,7 @@ local function list_projects(self, dao_factory)
 end
 
 local function check_project_name(dao_factory,name, is_domain, domain_id)
+    is_domain = is_domain or false
     if is_domain then
         local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
         kutils.assert_dao_error(err, "project:find_all")
