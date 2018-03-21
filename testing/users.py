@@ -77,7 +77,7 @@ class TestKeystoneUsers(TestKeystoneBase):
     def change_password(self):
         body = {
             'user' : {
-                'password' : 'myadminpassword',
+                'password' : 'secret',
                 'original_password' : 'myadminpassword'
             }
         }

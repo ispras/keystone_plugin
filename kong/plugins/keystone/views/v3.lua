@@ -39,7 +39,7 @@ local version_v2 = {
 local function init(self, dao_factory)
     local resp = {
         default_domain_id = '',
-        admin_domain_id = '',
+--        admin_domain_id = '',
         admin_project_id = '',
         default_role_id = '',
         admin_role_id = '',
@@ -47,36 +47,37 @@ local function init(self, dao_factory)
     }
 
     self.params.project = {
-        description = "Default domain",
+        description = "The default domain",
         enabled = true,
         is_domain = true,
-        name = "Default"
+        name = "Default",
+        id = 'default'
     }
     projects.create(self, dao_factory)
     local temp, err = dao_factory.project:find_all({name = "Default", is_domain = true})
     kutils.assert_dao_error(err, "project find all")
     resp.default_domain_id = temp[1].id
 
-    self.params.project = {
-        description = "Admin domain",
-        enabled = true,
-        is_domain = true,
-        name = "admin"
-    }
-    projects.create(self, dao_factory)
-    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = true})
-    kutils.assert_dao_error(err, "project find all")
-    resp.admin_domain_id = temp[1].id
+--    self.params.project = {
+--        description = "Admin domain",
+--        enabled = true,
+--        is_domain = true,
+--        name = "admin"
+--    }
+--    projects.create(self, dao_factory)
+--    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = true})
+--    kutils.assert_dao_error(err, "project find all")
+--    resp.admin_domain_id = temp[1].id
 
     self.params.project = {
         description = "Admin project",
-        domain_id = resp.admin_domain_id,
+        domain_id = resp.default_domain_id,
         enabled = true,
         is_domain = false,
         name = "admin"
     }
     projects.create(self, dao_factory)
-    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = false, domain_id = resp.admin_domain_id})
+    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = false, domain_id = resp.default_domain_id})
     kutils.assert_dao_error(err, "project find all")
     resp.admin_project_id = temp[1].id
 
@@ -109,13 +110,13 @@ local function init(self, dao_factory)
 
     self.params.user = {
         default_project_id = resp.admin_project_id,
-        domain_id = resp.admin_domain_id,
+        domain_id = resp.default_domain_id,
         enabled = true,
         name = name,
         password = password
     }
     users.create_local(self, dao_factory)
-    local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.admin_domain_id})
+    local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.default_domain_id})
     kutils.assert_dao_error(err, "local_user find all")
     resp.admin_user_id = temp[1].user_id
 
@@ -127,7 +128,7 @@ local function init(self, dao_factory)
     roles.assignment.assign(self, dao_factory, "UserProject", false, true)
     self.params = {
         user_id = resp.admin_user_id,
-        domain_id = resp.admin_domain_id,
+        domain_id = resp.default_domain_id,
         role_id = resp.admin_role_id
     }
     roles.assignment.assign(self, dao_factory, "UserDomain", false, true)
@@ -148,10 +149,7 @@ return {
     },
     ["/"] = {
         GET = function()
-            local body = {
-                versions = {values = {version_v3, version_v2}}
-            }
-            responses.send_HTTP_OK(body, kutils.headers())
+            responses.send_HTTP_OK({ versions = { values = { version_v3, version_v2 } } }, kutils.headers())
         end
     }
 }

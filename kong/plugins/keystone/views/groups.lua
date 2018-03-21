@@ -36,7 +36,7 @@ local function create_group(self, dao_factory)
     local group = {
         id = utils.uuid(),
         description = self.params.group.description,
-        domain_id = self.params.group.domain_id or kutils.default_domain(dao_factory),
+        domain_id = self.params.group.domain_id or 'default',
         name = self.params.group.name
     }
     local temp, err = dao_factory.group:find_all({name = group.name, domain_id = group.domain_id})

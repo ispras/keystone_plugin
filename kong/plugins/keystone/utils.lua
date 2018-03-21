@@ -181,7 +181,7 @@ end
 
 return {
     bool = bool,
-    default_domain = default_domain,
+--    default_domain = default_domain,
     default_role = default_role,
     assert_dao_error = assert_dao_error,
     time_to_string = time_to_string,

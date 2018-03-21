@@ -167,7 +167,7 @@ local function create_local_user(self, dao_factory)
     local loc_user = {
         id = utils.uuid(),
         user_id = user.id,
-        domain_id = user.domain_id or kutils.default_domain(dao_factory),
+        domain_id = user.domain_id or 'default',
         name = user.name
     }
     local passwd = {
@@ -248,7 +248,7 @@ local function create_nonlocal_user(self, dao_factory)
     local created_time = os.time()
     local nonloc_user = {
         user_id = user.id,
-        domain_id = user.domain_id or kutils.default_domain(dao_factory),
+        domain_id = user.domain_id or 'default',
         name = user.name
     }
     local user = {
@@ -638,7 +638,7 @@ local function change_user_password(self, dao_factory)
     local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
     kutils.assert_dao_error(err, "password:update")
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local routes = {

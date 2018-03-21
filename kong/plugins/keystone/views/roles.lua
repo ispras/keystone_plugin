@@ -43,7 +43,7 @@ local function create_role(self, dao_factory)
     end
 
     if not role.domain_id then
-        role.domain_id = kutils.default_domain(dao_factory)
+        role.domain_id = 'default'
     end
 
     local temp, err = dao_factory.role:find_all(role)

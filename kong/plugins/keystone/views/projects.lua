@@ -169,7 +169,7 @@ local function create_project(self, dao_factory)
     if domain_id then
         check_project_domain(dao_factory, domain_id)
     else
-        domain_id = kutils.default_domain(dao_factory)
+        domain_id = 'default'
     end
 
     local err = check_project_name(dao_factory, name, is_domain, domain_id)
@@ -185,7 +185,7 @@ local function create_project(self, dao_factory)
         check_project_parent(dao_factory, parent_id, domain_id)
     end
 
-    local id = utils.uuid()
+    local id = request.project.id or utils.uuid()
 
     local project_obj = {
         id = id,
