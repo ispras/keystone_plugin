@@ -78,7 +78,8 @@ local function init(self, dao_factory)
         name = "admin"
     }
     projects.create(self, dao_factory)
-    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = false, domain_id = resp.default_domain_id})
+--    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = false, domain_id = resp.default_domain_id})
+    local temp, err = dao_factory.project:find_all({name = "admin", is_domain = false, domain_id = resp.admin_domain_id})
     kutils.assert_dao_error(err, "project find all")
     resp.admin_project_id = temp[1].id
 
@@ -118,7 +119,8 @@ local function init(self, dao_factory)
         password = password
     }
     users.create_local(self, dao_factory)
-    local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.default_domain_id})
+--    local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.default_domain_id})
+    local temp, err = dao_factory.local_user:find_all({name = name, domain_id = resp.admin_domain_id})
     kutils.assert_dao_error(err, "local_user find all")
     resp.admin_user_id = temp[1].user_id
 
