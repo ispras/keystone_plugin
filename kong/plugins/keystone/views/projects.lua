@@ -75,7 +75,7 @@ local function list_projects(self, dao_factory)
             resp.projects[i].is_domain = projects[i].is_domain
             resp.projects[i].parent_id = projects[i].parent_id
             resp.projects[i].links = {
-                self = resp.links.self..'/'..resp.projects[i].id
+                self = resp.links.self..resp.projects[i].id
             }
             resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
             kutils.assert_dao_error(err, "project_tag:find_all")
@@ -104,7 +104,7 @@ local function list_projects(self, dao_factory)
             resp.domains[i].id = domains[i].id
             resp.domains[i].name = domains[i].name
             resp.domains[i].links = {
-                self = resp.links.self..'/'..resp.domains[i].id
+                self = resp.links.self..resp.domains[i].id
             }
         end
     end
