@@ -2,6 +2,7 @@ local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
+local cjson = require 'cjson'
 
 local function verify_policy_endpoint_association(self, dao_factory)
     local policy_id = self.params.policy_id
@@ -278,8 +279,8 @@ local function list_endpoints_for_policy(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
             },
             endpoints = {}

@@ -1,7 +1,5 @@
 from keystone_plugin.testing.base import TestKeystoneBase
 import requests
-from pprint import pprint
-import uuid
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
@@ -79,7 +77,7 @@ class TestKeystoneUsers(TestKeystoneBase):
     def change_password(self):
         body = {
             'user' : {
-                'password' : 'myadminpassword',
+                'password' : 'secret',
                 'original_password' : 'myadminpassword'
             }
         }

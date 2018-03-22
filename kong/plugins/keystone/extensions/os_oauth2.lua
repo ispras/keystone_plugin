@@ -24,8 +24,8 @@ local function list_consumers(self, dao_factory)
     return 200, {
         consumers = consumers,
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }
@@ -313,8 +313,8 @@ local function list_access_tokens(self, dao_factory)
     local resp = {
         access_tokens = tokens,
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }

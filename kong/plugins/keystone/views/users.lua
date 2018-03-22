@@ -29,9 +29,9 @@ local function user_fits(params, dao_factory, user_info)
         user_info.protocol_id = fed_user[1].protocol_id
         user_info.unique_id = fed_user[1].unique_id
     else
-        user_info.idp_id = "null"
-        user_info.protocol_id = "null"
-        user_info.unique_id = "null"
+        user_info.idp_id = cjson.null
+        user_info.protocol_id = cjson.null
+        user_info.unique_id = cjson.null
     end
 
     local temp1, err = dao_factory.local_user:find_all({user_id = id, name = name})
@@ -68,8 +68,8 @@ end
 local function list_users(self, dao_factory, helpers)
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         users = {}
@@ -90,7 +90,7 @@ local function list_users(self, dao_factory, helpers)
                 domain_id = user_info.domain_id,
                 enabled = user_info.enabled,
                 id = user_info.id,
-                name = user_info.name or "null",
+                name = user_info.name or cjson.null,
                 idp_id = user_info.idp_id,
                 protocol_id = user_info.protocol_id,
                 unique_id = user_info.unique_id,
@@ -167,7 +167,7 @@ local function create_local_user(self, dao_factory)
     local loc_user = {
         id = utils.uuid(),
         user_id = user.id,
-        domain_id = user.domain_id or kutils.default_domain(dao_factory),
+        domain_id = user.domain_id or 'default',
         name = user.name
     }
     local passwd = {
@@ -248,7 +248,7 @@ local function create_nonlocal_user(self, dao_factory)
     local created_time = os.time()
     local nonloc_user = {
         user_id = user.id,
-        domain_id = user.domain_id or kutils.default_domain(dao_factory),
+        domain_id = user.domain_id or 'default',
         name = user.name
     }
     local user = {
@@ -550,8 +550,8 @@ local function list_user_groups(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            previous = "null"
+            next = cjson.null,
+            previous = cjson.null
         },
         groups = {}
     }
@@ -579,8 +579,8 @@ local function list_user_projects(self, dao_factory)
     local resp = {
         links = {
             self = self:build_url(self.req.parsed_url.path),
-            next = "null",
-            previous = "null"
+            next = cjson.null,
+            previous = cjson.null
         },
         projects = {}
     }
@@ -594,15 +594,15 @@ local function list_user_projects(self, dao_factory)
             kutils.assert_dao_error(err, "dao_factory.project:find")
             local index = #resp.projects + 1
             resp.projects[index] = {
-                description = project.description or "null",
-                domain_id = project.domain_id or "null",
-                enabled = project.enabled or "null",
+                description = project.description or cjson.null,
+                domain_id = project.domain_id or cjson.null,
+                enabled = project.enabled or cjson.null,
                 id = project.id,
                 links = {
                     self = self:build_url('/v3/projects/'..project.id)
                 },
                 name = project.name,
-                parent_id = project.parent_id or "null"
+                parent_id = project.parent_id or cjson.null
             }
         end
     end
@@ -638,7 +638,7 @@ local function change_user_password(self, dao_factory)
     local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
     kutils.assert_dao_error(err, "password:update")
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local routes = {

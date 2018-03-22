@@ -10,17 +10,17 @@ class TestKeystoneEndpoints(TestKeystoneBase):
     def create(self):
         body = {
             "endpoint": {
-                "interface": "internal",
+                "interface": "admin",
                 "region_id": "RegionOne",
                 "url": "http://localhost:8001/v3/",
-                "service_id": "8b2e74b0-9a6e-47bf-aa24-1c4fb6c9af1c"
+                "service_id": "8c1a13ae-61a9-43d4-992d-b5544e593d06"
             }
         }
         self.res = requests.post(self.url, json = body, headers=self.headers)
         self.checkCode(201)
 
     def list(self):
-        self.res = requests.get(self.host)
+        self.res = requests.get(self.url, headers=self.headers)
         self.checkCode(200)
 
     def get_info(self):

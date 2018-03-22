@@ -93,8 +93,8 @@ local function list_identity_providers(self, dao_factory)
     return 200, {
         identity_providers = idps,
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }
@@ -218,8 +218,8 @@ local function list_protocol_and_attr_maps_of_identity_provider(self, dao_factor
     local resp = {
         protocols = protocols,
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }
@@ -335,8 +335,8 @@ local function list_mappings(self, dao_factory)
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         mappings = maps
@@ -476,8 +476,8 @@ local function list_service_providers(self, dao_factory)
     end
     local resp = {
         links = {
-            next = 'null',
-            previous = 'null',
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         service_providers = sps
@@ -926,7 +926,7 @@ local function list_projects_allowed_for_federated_user(self, dao_factory, is_do
                     self = self:build_url('/v3/projects/'..scope.id)
                 },
                 enabled = scope.enabled,
-                domain_id = scope.domain_id or "null",
+                domain_id = scope.domain_id or cjson.null,
                 name = scope.name
             }
         end
@@ -934,8 +934,8 @@ local function list_projects_allowed_for_federated_user(self, dao_factory, is_do
 
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         }
     }

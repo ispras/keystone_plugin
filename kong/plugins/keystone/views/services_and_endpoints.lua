@@ -14,8 +14,8 @@ local available_interface_types = {
 local function list_services(self, dao_factory, enabled)
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         services = {}
@@ -164,8 +164,8 @@ end
 local function list_endpoints(self, dao_factory, enabled)
     local resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
         },
         endpoints = {}

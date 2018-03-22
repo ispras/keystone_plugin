@@ -41,7 +41,7 @@ end
 local function list_projects(self, dao_factory)
     local domain_id = self.params.domain_id
     local enabled = kutils.bool(self.params.enabled)
-    local is_domain = kutils.bool(self.params.is_domain)
+    local is_domain = kutils.bool(self.params.is_domain) or false
     local name = self.params.name
     local parent_id = self.params.parent_id
 
@@ -52,8 +52,8 @@ local function list_projects(self, dao_factory)
     if not self.params.domain then
         resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
             },
             projects = {}
@@ -75,7 +75,7 @@ local function list_projects(self, dao_factory)
             resp.projects[i].is_domain = projects[i].is_domain
             resp.projects[i].parent_id = projects[i].parent_id
             resp.projects[i].links = {
-                self = resp.links.self..'/'..resp.projects[i].id
+                self = resp.links.self..resp.projects[i].id
             }
             resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
             kutils.assert_dao_error(err, "project_tag:find_all")
@@ -84,8 +84,8 @@ local function list_projects(self, dao_factory)
     else
         resp = {
         links = {
-            next = "null",
-            previous = "null",
+            next = cjson.null,
+            previous = cjson.null,
             self = self:build_url(self.req.parsed_url.path)
             },
             domains = {}
@@ -104,7 +104,7 @@ local function list_projects(self, dao_factory)
             resp.domains[i].id = domains[i].id
             resp.domains[i].name = domains[i].name
             resp.domains[i].links = {
-                self = resp.links.self..'/'..resp.domains[i].id
+                self = resp.links.self..resp.domains[i].id
             }
         end
     end
@@ -113,6 +113,7 @@ local function list_projects(self, dao_factory)
 end
 
 local function check_project_name(dao_factory,name, is_domain, domain_id)
+    is_domain = is_domain or false
     if is_domain then
         local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain})
         kutils.assert_dao_error(err, "project:find_all")
@@ -169,7 +170,7 @@ local function create_project(self, dao_factory)
     if domain_id then
         check_project_domain(dao_factory, domain_id)
     else
-        domain_id = kutils.default_domain(dao_factory)
+        domain_id = 'default'
     end
 
     local err = check_project_name(dao_factory, name, is_domain, domain_id)
@@ -185,7 +186,7 @@ local function create_project(self, dao_factory)
         check_project_parent(dao_factory, parent_id, domain_id)
     end
 
-    local id = utils.uuid()
+    local id = request.project.id or utils.uuid()
 
     local project_obj = {
         id = id,

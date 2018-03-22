@@ -184,7 +184,12 @@
     "identity:delete_ep_to_project_association": "rule:cloud_admin",
     "identity:list_projects_by_endpoint_group": "rule:cloud_admin",
     "identity:list_endpoints_by_endpoint_group": "rule:cloud_admin",
-    "identity:list_endpoint_groups_by_project": "rule:cloud_admin"
+    "identity:list_endpoint_groups_by_project": "rule:cloud_admin",
+
+    "identity:list_revocation_events" : "",
+
+    "identity:show_ca_cert" : "",
+    "identity:show_signing_cert" : ""
 
 
 }
