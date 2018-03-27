@@ -59,6 +59,9 @@ local function user_fits(params, dao_factory, user_info)
     else
         local temp, err = dao_factory.nonlocal_user:find_all({user_id = id, name = name})
         kutils.assert_dao_error(err, "nonlocal_user:find_all")
+        if name and (not temp[1] or temp[1] and temp[1] ~= name) then
+            return false
+        end
         user_info.name = temp[1] and temp[1].name
     end
 
@@ -79,7 +82,7 @@ local function list_users(self, dao_factory, helpers)
     local users_info, err = dao_factory.user:find_all(next(args) and args or nil)
     kutils.assert_dao_error(err, "user:find_all")
     if not next(users_info) then
-        return responses.send_HTTP_OK(resp)
+        responses.send_HTTP_OK(resp)
     end
 
     local num = 0
@@ -90,7 +93,7 @@ local function list_users(self, dao_factory, helpers)
                 domain_id = user_info.domain_id,
                 enabled = user_info.enabled,
                 id = user_info.id,
-                name = user_info.name or cjson.null,
+                name = user_info.name,
                 idp_id = user_info.idp_id,
                 protocol_id = user_info.protocol_id,
                 unique_id = user_info.unique_id,
@@ -103,7 +106,7 @@ local function list_users(self, dao_factory, helpers)
         end
     end
 
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function check_user_domain(dao_factory, domain_id, uname)
@@ -189,7 +192,7 @@ local function create_local_user(self, dao_factory)
 
     local err = check_user_domain(dao_factory, loc_user.domain_id, loc_user.name)
     if err then
-        return 400, err
+        return 409, err
     end
 
     if user.default_project_id then
@@ -215,7 +218,7 @@ local function create_local_user(self, dao_factory)
     local resp = {
         user = {
             links = {
-                self = self:build_url('/v3/users')..'/'..user.id
+                self = self:build_url('/v3/users/'..user.id)
             },
             default_project_id = user.default_project_id,
             domain_id = user.domain_id,
@@ -263,7 +266,7 @@ local function create_nonlocal_user(self, dao_factory)
     end
     local err = check_user_domain(dao_factory, nonloc_user.domain_id, nonloc_user.name)
     if err then
-        responses.send_HTTP_BAD_REQUEST(err)
+        responses.send_HTTP_CONFLICT(err)
     end
 
     if user.default_project_id then
@@ -283,7 +286,7 @@ local function create_nonlocal_user(self, dao_factory)
     local resp = {
         user = {
             links = {
-                self = self:build_url('/v3/users')..'/'..user.id
+                self = self:build_url('/v3/users/'..user.id)
             },
             default_project_id = user.default_project_id,
             domain_id = user.domain_id,
@@ -300,7 +303,7 @@ local function get_user_info(self, dao_factory)
     local user, err = dao_factory.user:find({id = user_id})
     kutils.assert_dao_error(err, "user find")
     if not user then
-        responses.send_HTTP_NOT_FOUND({message = "No user with id "..user_id})
+        responses.send_HTTP_BAD_REQUEST({message = "No user with id "..user_id})
     end
 
     local resp = {
@@ -348,7 +351,7 @@ local function update_user(self, dao_factory)
     if uupdate.name then
         local err = check_user_domain(dao_factory, user.domain_id, uupdate.name)
         if err then
-            responses.send_HTTP_BAD_REQUEST(err)
+            responses.send_HTTP_CONFLICT(err)
         end
     end
 

@@ -18,7 +18,7 @@ local function check_project_tag(self, dao_factory)
     local temp, err = dao_factory.project_tag:find({project_id = self.params.project_id, name = self.params.tag})
     kutils.assert_dao_error(err, "project_tag:find")
     if not temp then
-        responses.send_HTTP_NOT_FOUND()
+        responses.send_HTTP_BAD_REQUEST()
     end
     responses.send_HTTP_NO_CONTENT()
 end

@@ -16,7 +16,7 @@ local function register_identity_provider(self, dao_factory)
     local temp, err = dao_factory.identity_provider:find({id = self.params.id})
     kutils.assert_dao_error(err, "identity provider find")
     if temp then
-        responses.send_HTTP_BAD_REQUEST("Identity Provider with requested id already exists")
+        responses.send_HTTP_CONFLICT("Identity Provider with requested id already exists")
     end
     local idp = {
         id = self.params.id,
@@ -42,7 +42,7 @@ local function register_identity_provider(self, dao_factory)
         local temp, err = dao_factory.identity_provider:find_all({domain_id = request.domain_id})
         kutils.assert_dao_error(err, "identity provider find all")
         if next(temp) then
-            responses.send_HTTP_BAD_REQUEST("The specified domain_id already maps an existing identity provider")
+            responses.send_HTTP_CONFLICT("The specified domain_id already maps an existing identity provider")
         end
         idp.domain_id = request.domain_id
     end
@@ -80,8 +80,8 @@ local function list_identity_providers(self, dao_factory)
     kutils.assert_dao_error(err, "identity provider find all")
     for i = 1, #idps do
         idps[i].links = {
-            self = self:build_url(self.req.parsed_url.path..idps[i].id),
-            protocols = self:build_url(self.req.parsed_url.path..idps[i].id..'/protocols')
+            self = self:build_url(self.req.parsed_url.path..'/'..idps[i].id),
+            protocols = self:build_url(self.req.parsed_url.path..'/'..idps[i].id..'/protocols')
         }
         local remote_ids, err = dao_factory.idp_remote_ids:find_all({idp_id = idps[i].id})
         kutils.assert_dao_error(err, "idp remote ids find all")
@@ -263,7 +263,7 @@ local function add_protocol_and_attr_maps_to_identity_provider(self, dao_factory
     local temp, err = dao_factory.federation_protocol:find({id = protocol.id, idp_id = protocol.idp_id})
     kutils.assert_dao_error(err, "federation protocol find")
     if temp then
-        responses.send_HTTP_BAD_REQUEST("Federation Protocol with requested id already exists")
+        responses.send_HTTP_CONFLICT("Federation Protocol with requested id already exists")
     end
     local _, err = dao_factory.federation_protocol:insert(protocol)
     protocol.links = {
@@ -413,7 +413,7 @@ local function create_mapping(self, dao_factory)
     local temp, err = dao_factory.mapping:find({id = map.id})
     kutils.assert_dao_error(err, "mapping find")
     if temp then
-        responses.send_HTTP_BAD_REQUEST("Mapping with requested id already exists")
+        responses.send_HTTP_CONFLICT("Mapping with requested id already exists")
     end
     local _, err = dao_factory.mapping:insert(map)
     kutils.assert_dao_error(err, "mapping insert")
@@ -515,7 +515,7 @@ local function register_service_provider(self, dao_factory)
     local temp, err = dao_factory.service_provider:find({id = sp.id})
     kutils.assert_dao_error(err, "service provider find")
     if temp then
-        responses.send_HTTP_BAD_REQUEST("Service Provider with requested name exists")
+        responses.send_HTTP_CONFLICT("Service Provider with requested name exists")
     end
     local _, err = dao_factory.service_provider:insert(sp)
     kutils.assert_dao_error(err, "service provider insert")
