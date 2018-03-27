@@ -92,12 +92,11 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.checkCode(200)
 
     def get_token(self):
-        # self.token_scoped()
-        headers = {
-            "X-Auth-Token" : 'cf481a8b-645d-4fc3-aecc-5d088abd4341',
-            "X-Subject-Token": 'f12effea-fce6-4e56-95c9-f97326e9b210'
-        }
-        self.res = requests.get(self.url + 'tokens', headers = headers)
+        # subject token
+        self.headers ['X-Subject-Token']= 'gAAAAABauna0Ieci81ZDc7eBTsEkXN7aofHlTWNXejFr_JzjHVJ-snC3SHPteGFIpCsuGfSdpx6BrMQH_PEHHSP3CY4QGv2P4nxyKCuUm7BJQgJcxLzlSu_U345Bv25B1OY1N85E51Or'
+        # auth token
+        self.headers ['X-Auth-Token']= 'gAAAAABauna0CaXqr93kxg8sm3moPrfi2MZVSC_2juzlIMdr6CsTyY24WpOTUyVkD2STm5p3Y6vk9LD80ue_4bG6EsLgxg2klYTuroNRfEY1I77Pt9aDD7SKk6tGqhUxHYT1OJ8hJ8HL'
+        self.res = requests.get(self.url + 'tokens', headers = self.headers, params = {'nocatalog':''})
         self.checkCode(200)
 
     def get_scopes(self):

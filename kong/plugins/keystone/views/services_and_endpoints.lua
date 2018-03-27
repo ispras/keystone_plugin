@@ -85,18 +85,18 @@ end
 local function get_service_info(self, dao_factory)
     local service_id = self.params.service_id
     if not service_id then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
+        responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
     end
 
     local service, err = dao_factory.service:find({id = service_id})
     kutils.assert_dao_error(err, "service find")
     if not service then
-        service, err = dao_factory.service:find_all({name=service_id})
+        service, err = dao_factory.service:find_all({ name = service_id })
         kutils.assert_dao_error(err, "service find_all")
         service = service[1]
     end
     if not service then
-        service, err = dao_factory.service:find_all({type=service_id})
+        service, err = dao_factory.service:find_all({ type = service_id })
         kutils.assert_dao_error(err, "service find_all")
         service = service[1]
     end

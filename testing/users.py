@@ -51,6 +51,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         self.checkCode(204)
 
     def get_info(self):
+        self.user_id = 'placement'
         self.res = requests.get(self.url + self.user_id, headers = self.headers)
         self.checkCode(200)
 

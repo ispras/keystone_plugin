@@ -9,6 +9,7 @@ local Project = {}
 
 local subtree = {}
 local subtrtee_as_ids = {}
+local namespace_id
 
 local function get_subtree_as_list(self, dao_factory, project) --not tested
     local child_projects, err = dao_factory.project:find_all({parent_id=project.id})
@@ -444,8 +445,7 @@ local routes = {
     },
     ["/v3/projects/:project_id"] = {
         GET = function(self, dao_factory)
-            local namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
-            self.namespace_id = namespace_id
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)

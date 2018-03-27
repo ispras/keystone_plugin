@@ -400,7 +400,7 @@ local routes = {
             responses.send(get_access_token(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_access_token", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_access_token", dao_factory, self.params)
             responses.send(revoke_access_token(self, dao_factory))
         end
     }

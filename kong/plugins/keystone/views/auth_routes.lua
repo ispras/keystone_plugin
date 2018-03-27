@@ -35,11 +35,11 @@ local routes = {
             end
         end,
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_and_show_token", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_token", dao_factory, self.params)
             auth.get_token_info(self, dao_factory)
         end,
         HEAD = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_token_head", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_token_head", dao_factory, self.params)
             auth.check_token(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
