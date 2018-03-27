@@ -55,7 +55,7 @@ local function create_consumer(self, dao_factory)
         local temp, err = dao_factory.consumer:find({id = consumer.id})
         kutils.assert_dao_error(err, "consumer find")
         if temp then
-            responses.send_HTTP_BAD_REQEUST("Consumer already exists")
+            responses.send_HTTP_CONFLICT("Consumer already exists")
         end
     else
         consumer.id = utils.uuid()
@@ -325,7 +325,7 @@ local function get_access_token (self, dao_factory)
     local access_token, err = dao_factory.access_token:find({id = self.params.access_token_id})
     kutils.assert_dao_error(err, "access token find")
     if not access_token or access_token.authorizing_user_id ~= self.params.user_id then
-        responses.send_HTTP_NOT_FOUND()
+        responses.send_HTTP_BAD_REQUEST()
     end
     access_token.links = {
         self = self:build_url(self.req.parsed_url.path)
@@ -336,7 +336,7 @@ local function revoke_access_token(self, dao_factory)
     local access_token, err = dao_factory.access_token:find({id = self.params.access_token_id})
     kutils.assert_dao_error(err, "access token find")
     if not access_token or access_token.authorizing_user_id ~= self.params.user_id then
-        responses.send_HTTP_NOT_FOUND()
+        responses.send_HTTP_BAD_REQUEST()
     end
     local _, err = dao_factory.access_token:delete({id = self.params.access_token_id})
     kutils.assert_dao_error(err, "access token delete")

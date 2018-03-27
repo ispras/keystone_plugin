@@ -58,7 +58,7 @@ class TestKeystoneRoles(TestKeystoneBase):
         # self.res = requests.delete(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
         # self.checkCode(204)
         # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
-        # self.checkCode(404)
+        # self.checkCode(400)
 
     def list_implied(self):
         self.res = requests.get(self.url + self.role_id + '/implies/')

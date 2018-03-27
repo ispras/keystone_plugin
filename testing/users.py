@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
@@ -13,10 +13,10 @@ class TestKeystoneUsers(TestKeystoneBase):
 
     def list(self):
         query = {
-            # 'domain_id' : 'domain_id',
+            'domain_id' : 'default',
             # 'enabled': 'true',
             # 'idp_id': 'idp_id',
-            # 'name': 'name',
+            'name': 'demo',
             # 'password_expires_at': 'lte:2017-12-08T13:00:00Z',
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'

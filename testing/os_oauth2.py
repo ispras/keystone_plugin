@@ -58,4 +58,4 @@ class TestKeystoneOSOAuth2(TestKeystoneBase):
         self.res = requests.delete(self.host + '/v3/users/'+ self.user_id + '/OS-OAUTH2/access_tokens/' + self.access_token_id, headers = self.headers)
         self.checkCode(204)
         self.res = requests.get(self.host + '/v3/users/'+ self.user_id + '/OS-OAUTH2/access_tokens/' + self.access_token_id, headers = self.headers)
-        self.checkCode(404)
+        self.checkCode(400)

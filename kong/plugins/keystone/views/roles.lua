@@ -26,7 +26,7 @@ local function list_roles(self, dao_factory)
         resp.roles[i] = {
             id = roles[i].id,
             links = {
-                self = self:build_url(self.req.parsed_url.path..roles[i].id)
+                self = self:build_url(self.req.parsed_url.path..'/'..roles[i].id)
             },
             name = roles[i].name,
             domain_id = roles[i].domain_id
@@ -37,35 +37,31 @@ local function list_roles(self, dao_factory)
 end
 
 local function create_role(self, dao_factory)
-    local role = self.params.role
-    if not role or not role.name then
-        return responses.send_HTTP_BAD_REQUEST("Specify role object with name field")
+    if not self.params.role or not self.params.role.name then
+        responses.send_HTTP_BAD_REQUEST("Specify role object with name field")
     end
-
-    if not role.domain_id then
-        role.domain_id = 'default'
-    end
+    local role = {
+        name = self.params.role.name,
+        domain_id = self.params.role.domain_id or 'default'
+    }
 
     local temp, err = dao_factory.role:find_all(role)
     kutils.assert_dao_error(err, "role find_all")
     if next(temp) then
-        return 400, "Role with specified name already exists in domain"
+--        role.id = temp[1].id
+        return 409, "Role with specified name already exists in domain"
+    else
+
+        role.id = utils.uuid()
+        local role, err = dao_factory.role:insert(role)
+        kutils.assert_dao_error(err, "role insert")
     end
-
-    role = {
-        id = utils.uuid(),
-        domain_id = role.domain_id,
-        name = role.name
-    }
-
-    local role, err = dao_factory.role:insert(role)
-    kutils.assert_dao_error(err, "role insert")
 
     local resp = {
         role = role
     }
-    resp.links = {
-        self = self:build_url(self.req.parsed_url.path..role.id)
+    resp.role.links = {
+        self = self:build_url(self.req.parsed_url.path..'/'..role.id)
     }
 
     return 201, resp
@@ -83,7 +79,7 @@ local function get_role_info(self, dao_factory)
         role = role
     }
     resp.role.links = {
-        self = self:build_url(self.req.parsed_url.path..role.id)
+        self = self:build_url(self.req.parsed_url.path..'/'..role.id)
     }
 
     return resp
@@ -101,7 +97,7 @@ local function update_role(self, dao_factory) -- clean cache
         local temp, err = dao_factory.role:find_all({name = self.params.role.name, domain_id = role.domain_id})
         kutils.assert_dao_error(err, "role find_all")
         if next(temp) then
-            return responses.send_HTTP_BAD_REQUEST("Role with specified name is already exists in domain")
+            responses.send_HTTP_CONFLICT("Role with specified name is already exists in domain")
         end
 
         local _, err = dao_factory.role:update({name = self.params.role.name}, {id = role.id})
@@ -114,7 +110,7 @@ local function update_role(self, dao_factory) -- clean cache
         role = role
     }
     resp.role.links = {
-        self = self:build_url(self.req.parsed_url.path..role.id)
+        self = self:build_url(self.req.parsed_url.path..'/'..role.id)
     }
 
     return responses.send_HTTP_OK(resp)
@@ -384,7 +380,7 @@ local function check_assignment(self, dao_factory, type, inherited)
         if kutils.has_id(roles, role_id) then
             return 204
         else
-            return 404
+            return 400
         end
     end
 
@@ -404,7 +400,7 @@ local function check_assignment(self, dao_factory, type, inherited)
         end
     end
 
-    return 404
+    return 400
 end
 
 local function unassign_role(self, dao_factory, type, inherited)
@@ -552,7 +548,7 @@ local function check_implied_role(self, dao_factory)
     local temp, err = dao_factory.implied_role:find({prior_role_id = prior_role_id, implied_role_id = implied_role_id})
     kutils.assert_dao_error(err, "implied_role find")
     if not temp then
-        return responses.send_HTTP_NOT_FOUND()
+        responses.send_HTTP_BAD_REQUEST()
     end
 
     return
@@ -563,19 +559,19 @@ local function delete_implied_role(self, dao_factory)
     local role, err = dao_factory.role:find({id = prior_role_id})
     kutils.assert_dao_error(err, "role find")
     if not role then
-        return responses.send_HTTP_BAD_REQUEST("Prior role not found")
+        responses.send_HTTP_BAD_REQUEST("Prior role not found")
     end
 
     local role, err = dao_factory.role:find({id = implied_role_id})
     kutils.assert_dao_error(err, "role find")
     if not role then
-        return responses.send_HTTP_BAD_REQUEST("Implied role not found")
+        responses.send_HTTP_BAD_REQUEST("Implied role not found")
     end
 
     local _, err = dao_factory.implied_role:delete({prior_role_id = prior_role_id, implied_role_id = implied_role_id})
     kutils.assert_dao_error(err, "implied_role find")
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local function fill_assignment(dao_factory, role_assignments, type, actor_id, target_id, role_id, include_names, inherited)

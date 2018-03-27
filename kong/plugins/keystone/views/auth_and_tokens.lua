@@ -13,6 +13,8 @@ local policies = require ("kong.plugins.keystone.policies")
 
 local _M = {}
 
+local namespace_id
+
 local function check_user(user, dao_factory)
     local loc_user, domain
     local password = user.password
@@ -180,7 +182,7 @@ end
 
 local function check_token_user(token, dao_factory)
     if not token.user_id then
-        responses.send_HTTP_NOT_FOUND("Error: user id is required")
+        responses.send_HTTP_BAD_REQUEST("Error: user id is required")
     end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
@@ -576,7 +578,7 @@ end
 local routes =  {
     ["/v3/auth/catalog"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
             get_service_catalog(self, dao_factory)
         end
     },

@@ -26,7 +26,7 @@ local function list_regions(self, dao_factory)
     kutils.assert_dao_error(err, "region:find_all")
 
     if not next(regions) then
-        return responses.send_HTTP_OK(resp)
+        responses.send_HTTP_OK(resp)
     end
 
     for i = 1, #regions do
@@ -38,7 +38,7 @@ local function list_regions(self, dao_factory)
         }
         resp.regions[i].parent_region_id = regions[i].parent_region_id
     end
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function create_region(self, dao_factory)
@@ -54,14 +54,14 @@ local function create_region(self, dao_factory)
     local res, err = dao_factory.region:find({id = region_obj.id})
     kutils.assert_dao_error(err, "region find")
     if res then
-        return responses.send_HTTP_BAD_REQUEST("Error: region with this id exists")
+        responses.send_HTTP_CONFLICT("Error: region with this id exists")
     end
 
     if request.region.parent_region_id then
         local parent_region, err = dao_factory.region:find({id=request.region.parent_region_id})
         kutils.assert_dao_error(err, "region find")
         if not parent_region then
-            return responses.send_HTTP_NOT_FOUND("Error: parent region doesn't exist")
+            responses.send_HTTP_BAD_REQUEST("Error: parent region doesn't exist")
         end
         region_obj.parent_region_id = request.region.parent_region_id
     end
@@ -69,7 +69,7 @@ local function create_region(self, dao_factory)
     local region, err = dao_factory.region:insert(region_obj)
     kutils.assert_dao_error(err, "region insert")
     if not region then
-            return responses.send_HTTP_CONFLICT({error = err, object = region_obj})
+            responses.send_HTTP_CONFLICT({error = err, object = region_obj})
     end
 
     region.links = {
@@ -77,13 +77,13 @@ local function create_region(self, dao_factory)
             }
 
     local response = {region = region}
-    return responses.send_HTTP_CREATED(response)
+    responses.send_HTTP_CREATED(response)
 end
 
 local function get_region_info(self, dao_factory)
     local region_id = self.params.region_id
     if not region_id then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad region id")
+        responses.send_HTTP_BAD_REQUEST("Error: bad region id")
     end
 
     local region, err = dao_factory.region:find({id=region_id})
@@ -96,7 +96,7 @@ local function get_region_info(self, dao_factory)
                 self = self:build_url(self.req.parsed_url.path)
     }
     local response = {region = region}
-    return responses.send_HTTP_OK(response)
+    responses.send_HTTP_OK(response)
 end
 
 local function update_region(self, dao_factory)

@@ -44,7 +44,7 @@ local function create_endpoint_group(self, dao_factory)
     local tmp, err = dao_factory.endpoint_group:find_all({name = endpoint_group.name})
     kutils.assert_dao_error(err, "endpoint_group:find_all")
     if next(tmp) then
-        responses.send_HTTP_BAD_REQUEST("Endpoint group object with this name already exists")
+        responses.send_HTTP_CONFLICT("Endpoint group object with this name already exists")
     end
 
     if endpoint_group.filters.interface and not available_interface_types[endpoint_group.filters.interface] then
@@ -193,7 +193,7 @@ local function create_association(self, dao_factory)
     local association, err = dao_factory.project_endpoint:find({endpoint_id = endpoint_id, project_id = project_id})
     kutils.assert_dao_error(err, "project_endpoint:find")
     if association then
-        responses.send_HTTP_BAD_REQUEST("Such project endpoint association already exists")
+        responses.send_HTTP_CONFLICT("Such project endpoint association already exists")
     end
 
     local _, err = dao_factory.project_endpoint:insert({endpoint_id = endpoint_id, project_id = project_id})
@@ -326,7 +326,7 @@ local function create_ep_to_project_association(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
     if association then
-        responses.send_HTTP_BAD_REQUEST("Such project endpoint group association already exists")
+        responses.send_HTTP_CONFLICT("Such project endpoint group association already exists")
     end
 
     local _, err = dao_factory.project_endpoint_group:insert({endpoint_group_id = endpoint_group_id, project_id = project_id})

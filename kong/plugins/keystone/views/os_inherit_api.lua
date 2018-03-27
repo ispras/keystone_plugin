@@ -86,7 +86,7 @@ local function check_assignment(self, dao_factory, type)
         end
     end
 
-    responses.send_HTTP_NOT_FOUND()
+    responses.send_HTTP_BAD_REQUEST()
 end
 
 local routes = {

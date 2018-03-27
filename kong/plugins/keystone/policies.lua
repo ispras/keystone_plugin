@@ -1,6 +1,7 @@
 local responses = require "kong.tools.responses"
 local cjson = require ("cjson")
 --local kutils = require ("kong.plugins.keystone.utils")
+local namespace_id
 
 local parse_json = function(file_name)
     local file, err = io.open(file_name, "r")
@@ -113,6 +114,11 @@ local function handle_match(rule, user_id, scope_id, target, obj)
         if err then
             return false
         end
+        if not temp then
+            temp, err = target[ob]:find_all({name = target_id, domain_id = namespace_id})
+            if err then return false end
+            -- TODO namespace
+        end
         api_call_attr = temp[at]
     else
         -- case: object.attributes
@@ -137,7 +143,25 @@ local function handle_match(rule, user_id, scope_id, target, obj)
     return false
 end
 
+local function define_namespace(dao_factory, scope_id)
+    if not scope_id then
+        return
+    end
+
+    local kutils = require ("kong.plugins.keystone.utils")
+    local project, err = dao_factory.project:find({id = scope_id})
+    kutils.assert_dao_error(err, "project find")
+    namespace_id = project and (project.is_domain and project.id or project.domain_id) or nil
+    return
+end
+
 local function check_policy_rule(token, rule, target, obj)
+    -- token = self.req.headers['X-Auth-Token']
+    -- rule = 'identity:...'
+    -- target = dao_factory
+    -- obj = self.params
+    -- return: namespace_id
+
     --TODO is_admin_project
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
@@ -145,14 +169,16 @@ local function check_policy_rule(token, rule, target, obj)
     local kutils = require ("kong.plugins.keystone.utils")
     local Tokens = kutils.provider()
     local token = Tokens.get_info(token, target) --NOTE: there are unscoped tokens
+    define_namespace(target, token.scope_id)
     if token.is_admin then
-        return
+        return namespace_id
     end
+
 
     local role = get_role(rule)
 
     if role == '' then
-        return
+        return namespace_id
     elseif role == '!' then
         responses.send_HTTP_FORBIDDEN()
     end
@@ -163,7 +189,7 @@ local function check_policy_rule(token, rule, target, obj)
         for _, rule in ipairs(rules) do
 
             if rule == '' then
-                return
+                return namespace_id
             elseif rule == '!' then
                 responses.send_HTTP_FORBIDDEN()
             end
@@ -176,7 +202,7 @@ local function check_policy_rule(token, rule, target, obj)
             end
         end
         if check then
-            return
+            return namespace_id
         end
     end
 

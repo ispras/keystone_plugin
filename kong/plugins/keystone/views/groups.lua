@@ -42,7 +42,7 @@ local function create_group(self, dao_factory)
     local temp, err = dao_factory.group:find_all({name = group.name, domain_id = group.domain_id})
     kutils.assert_dao_error(err, "group:find_all")
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Name is already used in domain")
+        return responses.send_HTTP_CONFLICT("Name is already used in domain")
     end
     local _, err = dao_factory.group:insert(group)
     kutils.assert_dao_error(err, "group:insert")
@@ -90,7 +90,7 @@ local function update_group(self, dao_factory)
     }
     local temp, err = dao_factory.group:find_all({name = ugroup.name or group.name, domain_id = ugroup.domain_id or group.domain_id})
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Name is already used in domain")
+        return responses.send_HTTP_CONFLICT("Name is already used in domain")
     end
 
     local resp = {
