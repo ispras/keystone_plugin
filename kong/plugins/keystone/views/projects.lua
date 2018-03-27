@@ -4,7 +4,7 @@ local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
-
+local check_token_user = require ("kong.plugins.keystone.views.auth_and_tokens").check_token
 local Project = {}
 
 local subtree = {}
@@ -242,7 +242,7 @@ local function get_project_info(self, dao_factory)
             end
         end
 
-        local domain = False
+        local domain = false
         for i = 1, #project do
             if project[i].is_domain then
                 domain = true
@@ -264,7 +264,18 @@ local function get_project_info(self, dao_factory)
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
             end
-            project = project[1]
+
+            local if_project_was = false
+            for i = 1, #project do
+                if project.domain_id == self.namespace_id then
+                    project = project[i]
+                    if_project_was = true
+                    break
+                end
+            end
+            if not if_project_was then
+                return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+            end
         end
     end
 
@@ -433,7 +444,8 @@ local routes = {
     },
     ["/v3/projects/:project_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
+            local namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
+            self.namespace_id = namespace_id
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)

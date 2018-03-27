@@ -88,6 +88,9 @@ local function get_region_info(self, dao_factory)
 
     local region, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not region then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
+    end
 
     region.links = {
                 self = self:build_url(self.req.parsed_url.path)
@@ -104,6 +107,9 @@ local function update_region(self, dao_factory)
 
     local region, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not region then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
+    end
 
     local request = self.params
     if not request.region then
@@ -131,8 +137,11 @@ local function delete_region(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad region id")
     end
 
-    local _, err = dao_factory.region:find({id=region_id})
+    local region, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not region then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such region in the system")
+    end
 
     local child, err = dao_factory.region:find_all({parent_region_id = region_id})
     kutils.assert_dao_error(err, "region find_all")
