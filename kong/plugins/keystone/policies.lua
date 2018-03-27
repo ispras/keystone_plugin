@@ -85,6 +85,10 @@ local function to_table(role)
     return roles
 end
 
+local function check_name_case(attr, val)
+    return
+end
+
 local function handle_match(rule, user_id, scope_id, target, obj)
     local token_attr, api_call_attr = rule:match("(.*):%%%((.*)%)s")
     if not token_attr or not api_call_attr then
@@ -115,9 +119,7 @@ local function handle_match(rule, user_id, scope_id, target, obj)
             return false
         end
         if not temp then
-            temp, err = target[ob]:find_all({name = target_id, domain_id = namespace_id})
-            if err then return false end
-            -- TODO namespace
+            temp = target[ob]:find_all({name = target_id, domain_id = namespace_id})
         end
         api_call_attr = temp[at]
     else
@@ -128,6 +130,7 @@ local function handle_match(rule, user_id, scope_id, target, obj)
             format = format.."%.(.*)"
         end
         local temp = { api_call_attr:match(format) }
+        local temp_aca = api_call_attr
         api_call_attr = obj
         for _, v in ipairs(temp) do
             if not api_call_attr then
@@ -135,7 +138,10 @@ local function handle_match(rule, user_id, scope_id, target, obj)
             end
             api_call_attr = api_call_attr[v]
         end
-
+        if num == 0 then
+            local t = check_name_case(temp_aca, api_call_attr)
+            api_call_attr = t or api_call_attr
+        end
     end
     if api_call_attr == token_attr then
         return true

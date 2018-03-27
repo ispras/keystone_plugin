@@ -93,11 +93,17 @@ local function get_service_info(self, dao_factory)
     if not service then
         service, err = dao_factory.service:find_all({name=service_id})
         kutils.assert_dao_error(err, "service find_all")
-        if not next(service) then
-            return responses.send_HTTP_BAD_REQUEST("Error in get info: no such service in the system")
-        end
         service = service[1]
     end
+    if not service then
+        service, err = dao_factory.service:find_all({type=service_id})
+        kutils.assert_dao_error(err, "service find_all")
+        service = service[1]
+    end
+    if not service then
+        responses.send_HTTP_BAD_REQUEST("Error in get info: no such service in the system")
+    end
+
 
     service.links = {
                 self = self:build_url(self.req.parsed_url.path)
