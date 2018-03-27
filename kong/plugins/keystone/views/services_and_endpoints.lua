@@ -88,6 +88,7 @@ local function get_service_info(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
     end
 
+    local if_type = false
     local service, err = dao_factory.service:find({id = service_id})
     kutils.assert_dao_error(err, "service find")
     if not service then
@@ -98,16 +99,38 @@ local function get_service_info(self, dao_factory)
     if not service then
         service, err = dao_factory.service:find_all({type=service_id})
         kutils.assert_dao_error(err, "service find_all")
-        service = service[1]
+        if #service == 1 then
+            service = service[1]
+        else
+            local resp = {
+                links = {
+                    next = cjson.null,
+                    previous = cjson.null,
+                    self = self:build_url(self.req.parsed_url.path)
+                },
+                services = {}
+            }
+
+            for i = 1, #service do
+                resp.services[i] = service[i]
+                resp.services[i].links = {
+                self = self:build_url(self.req.parsed_url.path)
+                }
+            end
+            service = resp
+            if_type = true
+        end
     end
     if not service then
         responses.send_HTTP_BAD_REQUEST("Error in get info: no such service in the system")
     end
 
-
-    service.links = {
-                self = self:build_url(self.req.parsed_url.path)
-            }
+    if not if_type then
+        service.links = {
+                    self = self:build_url(self.req.parsed_url.path)
+        }
+    end
+    
     return {service = service}
 end
 
