@@ -236,7 +236,7 @@ local function get_project_info(self, dao_factory)
         kutils.assert_dao_error(err, "project find_all")
 
         if not next(project) then
-            project, err = dao_factory.project:find_all({name=project_id, is_domain = true})
+            project, err = dao_factory.project:find_all({name=project_id, is_domain = true, domain_id = namespace_id})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
@@ -260,7 +260,7 @@ local function get_project_info(self, dao_factory)
         kutils.assert_dao_error(err, "project find")
 
         if not project then
-            project, err = dao_factory.project:find_all({name=project_id})
+            project, err = dao_factory.project:find_all({name=project_id, domain_id = namespace_id})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
@@ -449,11 +449,11 @@ local routes = {
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
             Project.update_project(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
             Project.delete_project(self, dao_factory)
         end
     }
