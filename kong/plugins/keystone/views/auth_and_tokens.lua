@@ -399,7 +399,7 @@ function _M.get_token_info(self, dao_factory)
 
     local cache = Tokens.get_info(token.id, dao_factory)
 
-    local project
+    local project, is_domain
     if cache.scope_id then
         local temp, err = dao_factory.project:find({id = cache.scope_id})
         kutils.assert_dao_error(err, "project:find")
@@ -410,6 +410,7 @@ function _M.get_token_info(self, dao_factory)
                 id = temp.domain_id
             }
         }
+        is_domain = temp.is_domain
         if temp.domain_id then
             local temp, err = dao_factory.project:find({id = temp.domain_id})
             kutils.assert_dao_error(err, "project:find")
@@ -417,13 +418,13 @@ function _M.get_token_info(self, dao_factory)
         end
     end
 
-
     local resp = {
         token = {
             methods = {"token"},
             roles = cache.roles,
-            expires_at = kutils.time_to_string(token.expires),
+            expires_at = kutils.time_to_string(cache.expires),
             project = project,
+            is_domain = is_domain,
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO

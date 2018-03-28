@@ -132,7 +132,8 @@ function Token.get_info(token_id)
         scope_id = scope_id,
         issued_at = fernet_obj.ts,
         roles = cache.roles,
-        is_admin = cache.is_admin
+        is_admin = cache.is_admin,
+        expires = info_obj.expires_at
     }
     return token
 end
