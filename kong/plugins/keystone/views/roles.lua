@@ -846,22 +846,22 @@ local routes = {
     },
     ["/v3/projects/:project_id/users/:user_id/roles"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_grants", dao_factory, self.params)
             responses.send_HTTP_OK(list_role_assignments_for_actor_on_target(self, dao_factory, "UserProject", false))
         end
     },
     ["/v3/projects/:project_id/users/:user_id/roles/:role_id"] = {
         PUT = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:assign_role", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:create_grant", dao_factory, self.params)
             assign_role(self, dao_factory, "UserProject", false)
             responses.send_HTTP_NO_CONTENT()
         end,
         HEAD = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:check_assignment", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:check_grant", dao_factory, self.params)
             responses.send(check_assignment(self, dao_factory, "UserProject", false))
         end,
         DELETE = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_role_assignments_for_actor_on_target", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_grant", dao_factory, self.params)
             unassign_role(self, dao_factory, "UserProject", false)
         end
     },
