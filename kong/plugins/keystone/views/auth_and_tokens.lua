@@ -160,7 +160,7 @@ local function check_scope(scope, dao_factory)
     return project, domain_name
 end
 
-local function get_catalog(self,dao_factory)
+local function get_catalog(self,dao_factory, opts)
     local temp = service.list(self,dao_factory, true)
     local catalog = temp.services
     for i = 1, #catalog do
@@ -174,6 +174,7 @@ local function get_catalog(self,dao_factory)
             catalog[i].endpoints[j].enabled = nil
             catalog[i].endpoints[j].service_id = nil
             catalog[i].endpoints[j].links = nil
+            catalog[i].endpoints[j].url = catalog[i].endpoints[j].url:gsub('%$%(project_id%)s', opts.project_id)
         end
     end
 
@@ -213,9 +214,7 @@ local function check_token_user(token, dao_factory)
     return resp, user.default_project_id
 end
 
-local function auth_password_unscoped(self, dao_factory, user, loc_user_id, upasswd)
-    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
-
+local function auth_password_unscoped(self, dao_factory, user, loc_user_id)
     local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user)
 
@@ -233,8 +232,6 @@ local function auth_password_unscoped(self, dao_factory, user, loc_user_id, upas
 end
 
 local function auth_password_scoped(self, dao_factory, user, loc_user_id, upasswd)
-    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
-
     local scope = self.params.auth.scope
     local project, domain_name = check_scope(scope, dao_factory)
 
@@ -242,13 +239,11 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     self.params.project_id = scope.project and project.id or nil
     self.params.domain_id = not scope.project and project.id or nil
 
-    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
-    if not next(temp.roles) then
-        return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
+    local roles = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain").roles
+    if not roles[1] then
+        responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
     end
-    local roles = temp.roles
 
-    local red, err = redis.connect()
     local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
 
@@ -273,7 +268,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
         }
     }
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self, dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -295,10 +290,11 @@ function _M.auth_password(self, dao_factory)
         }
     end
 
+    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
     if not self.params.auth.scope or self.params.auth.scope == "unscoped" then
-        auth_password_unscoped(self, dao_factory, user, loc_user_id, upasswd)
+        auth_password_unscoped(self, dao_factory, user, loc_user_id)
     else
-        auth_password_scoped(self, dao_factory, user, loc_user_id, upasswd)
+        auth_password_scoped(self, dao_factory, user, loc_user_id)
     end
 end
 
@@ -356,7 +352,7 @@ local function auth_token_scoped(self, dao_factory, user)
         }
     }
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self, dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -433,7 +429,7 @@ function _M.get_token_info(self, dao_factory)
     }
 
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self,dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -491,7 +487,7 @@ local function get_service_catalog(self, dao_factory)
         }
     }
 
-    local catalog = get_catalog(self,dao_factory)
+    local catalog = get_catalog(self, dao_factory, {project_id = token.id})
     resp.catalog = catalog
 
     responses.send_HTTP_OK(resp)

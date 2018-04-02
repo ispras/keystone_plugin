@@ -19,6 +19,7 @@ local function get_role_by_id_or_name(dao_factory, id_or_name)
 end
 
 local function list_roles(self, dao_factory)
+--    require ('mobdebug').start('127.0.0.1')
     local name = self.params.name
     local domain_id = self.params.domain_id
 
@@ -141,6 +142,7 @@ local function delete_role(self, dao_factory) -- clean cache
 end
 
 local function list_role_assignments_for_actor_on_target(self, dao_factory, type, inherited)
+    inherited = inherited or false
     local actor_id, target_id
     if type:match("User") then
         actor_id = self.params.user_id
@@ -153,7 +155,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         target_id = self.params.project_id
     end
     if not type or not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") or not actor_id or not target_id then
-        return responses.send_HTTP_BAD_REQUEST("Incorrect type")
+        responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
     local project, err = dao_factory.project:find({id = target_id})
     kutils.assert_dao_error(err, "project find")
@@ -229,8 +231,10 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         end
     end
 
-    for i = 1, #resp.roles do
-        resp.roles[i].links = self:build_url('/v3/roles/'..resp.roles[i].id)
+    for i, k in pairs(resp.roles) do
+        resp.roles[i].links = {
+            self = self:build_url('/v3/roles/'..resp.roles[i].id)
+        }
     end
 
     return resp

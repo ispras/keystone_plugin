@@ -726,7 +726,7 @@ local routes = {
             list_user_projects(self, dao_factory)
         end
     },
-    ["/v3/users/:user_id/projects"] = {
+    ["/v3/users/:user_id/domains"] = {
         GET = function(self, dao_factory)
             namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_domains_for_user", dao_factory, self.params)
             list_user_domains(self, dao_factory)

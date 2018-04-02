@@ -12,6 +12,7 @@ class TestKeystoneBase(unittest.TestCase):
         self.user_id = ''
         self.group_id = ''
         self.role_id = ''
+        self.headers = {}
 
     def checkCode(self, code):
         if self.res.status_code != code:
@@ -54,9 +55,7 @@ class TestKeystoneBase(unittest.TestCase):
         # pprint(self.res.json())
         self.checkCode(201)
         self.auth_token = self.res.headers['X-Subject-Token']
-        self.headers = {
-            'X-Auth-Token': self.auth_token
-        }
+        self.headers ['X-Auth-Token'] = self.auth_token
 
     def base_init(self):
         self.res = requests.post(self.host + '/v3', json = {})
