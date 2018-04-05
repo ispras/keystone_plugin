@@ -13,6 +13,8 @@ local policies = require ("kong.plugins.keystone.policies")
 
 local _M = {}
 
+local namespace_id
+
 local function check_user(user, dao_factory)
     local loc_user, domain
     local password = user.password
@@ -158,7 +160,7 @@ local function check_scope(scope, dao_factory)
     return project, domain_name
 end
 
-local function get_catalog(self,dao_factory)
+local function get_catalog(self,dao_factory, opts)
     local temp = service.list(self,dao_factory, true)
     local catalog = temp.services
     for i = 1, #catalog do
@@ -172,6 +174,7 @@ local function get_catalog(self,dao_factory)
             catalog[i].endpoints[j].enabled = nil
             catalog[i].endpoints[j].service_id = nil
             catalog[i].endpoints[j].links = nil
+            catalog[i].endpoints[j].url = catalog[i].endpoints[j].url:gsub('%$%(project_id%)s', opts.project_id)
         end
     end
 
@@ -180,7 +183,7 @@ end
 
 local function check_token_user(token, dao_factory)
     if not token.user_id then
-        responses.send_HTTP_NOT_FOUND("Error: user id is required")
+        responses.send_HTTP_BAD_REQUEST("Error: user id is required")
     end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
@@ -211,9 +214,7 @@ local function check_token_user(token, dao_factory)
     return resp, user.default_project_id
 end
 
-local function auth_password_unscoped(self, dao_factory, user, loc_user_id, upasswd)
-    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
-
+local function auth_password_unscoped(self, dao_factory, user, loc_user_id)
     local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user)
 
@@ -231,8 +232,6 @@ local function auth_password_unscoped(self, dao_factory, user, loc_user_id, upas
 end
 
 local function auth_password_scoped(self, dao_factory, user, loc_user_id, upasswd)
-    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
-
     local scope = self.params.auth.scope
     local project, domain_name = check_scope(scope, dao_factory)
 
@@ -240,13 +239,11 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
     self.params.project_id = scope.project and project.id or nil
     self.params.domain_id = not scope.project and project.id or nil
 
-    local temp = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain")
-    if not next(temp.roles) then
-        return responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
+    local roles = assignment.list(self, dao_factory, scope.project and "UserProject" or "UserDomain").roles
+    if not roles[1] then
+        responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
     end
-    local roles = temp.roles
 
-    local red, err = redis.connect()
     local Tokens = kutils.provider()
     local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
 
@@ -271,7 +268,7 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
         }
     }
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self, dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -293,10 +290,11 @@ function _M.auth_password(self, dao_factory)
         }
     end
 
+    user.password_expires_at = check_password(upasswd, loc_user_id, dao_factory)
     if not self.params.auth.scope or self.params.auth.scope == "unscoped" then
-        auth_password_unscoped(self, dao_factory, user, loc_user_id, upasswd)
+        auth_password_unscoped(self, dao_factory, user, loc_user_id)
     else
-        auth_password_scoped(self, dao_factory, user, loc_user_id, upasswd)
+        auth_password_scoped(self, dao_factory, user, loc_user_id)
     end
 end
 
@@ -354,7 +352,7 @@ local function auth_token_scoped(self, dao_factory, user)
         }
     }
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self, dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -397,7 +395,7 @@ function _M.get_token_info(self, dao_factory)
 
     local cache = Tokens.get_info(token.id, dao_factory)
 
-    local project
+    local project, is_domain
     if cache.scope_id then
         local temp, err = dao_factory.project:find({id = cache.scope_id})
         kutils.assert_dao_error(err, "project:find")
@@ -408,6 +406,7 @@ function _M.get_token_info(self, dao_factory)
                 id = temp.domain_id
             }
         }
+        is_domain = temp.is_domain
         if temp.domain_id then
             local temp, err = dao_factory.project:find({id = temp.domain_id})
             kutils.assert_dao_error(err, "project:find")
@@ -415,13 +414,13 @@ function _M.get_token_info(self, dao_factory)
         end
     end
 
-
     local resp = {
         token = {
             methods = {"token"},
             roles = cache.roles,
-            expires_at = kutils.time_to_string(token.expires),
+            expires_at = kutils.time_to_string(cache.expires),
             project = project,
+            is_domain = is_domain,
             extras = token.extra,
             user = user,
             audit_ids = {utils.uuid()}, -- TODO
@@ -430,7 +429,7 @@ function _M.get_token_info(self, dao_factory)
     }
 
     if not (self.params.nocatalog) then
-        local catalog = get_catalog(self,dao_factory)
+        local catalog = get_catalog(self, dao_factory, {project_id = project.id})
         resp.token.catalog = catalog or {}
     end
 
@@ -488,7 +487,7 @@ local function get_service_catalog(self, dao_factory)
         }
     }
 
-    local catalog = get_catalog(self,dao_factory)
+    local catalog = get_catalog(self, dao_factory, {project_id = token.id})
     resp.catalog = catalog
 
     responses.send_HTTP_OK(resp)
@@ -576,7 +575,7 @@ end
 local routes =  {
     ["/v3/auth/catalog"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
             get_service_catalog(self, dao_factory)
         end
     },

@@ -9,7 +9,6 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.url = self.host + '/v3/auth/'
         self.token = ''
         self.user_id = 'ac74734b-c604-4ba4-ba53-b45f88655fee'
-        # self.password_unscoped()
 
     def password_scoped(self):
         body = {
@@ -18,25 +17,27 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
                     'methods' : [ 'password' ],
                     'password' : {
                         'user' : {
-                            'name' : 'trustee',
+                            'name' : 'cinder',
                             'domain' : {
-                                'name' : 'admin'
+                                'name' : 'Default'
                             },
-                            # 'id' : self.user_id,
-                            'password' : 'myadminpass'
+                            'password' : 'myadminpassword'
                         }
                     }
                 },
                 "scope" : {
                     "project": {
-                        'id': 'faee67cd-59e8-4e32-85ab-1c128b627587'
+                        'domain' : {
+                            'name' : 'Default'
+                        },
+                        'name' : 'service'
                     }
                 }
             }
         }
-        self.res = requests.post(self.url + 'tokens', json = body)
+        self.res = requests.post(self.url + 'tokens', json = body, params={'nocatalog':''})
         self.checkCode(201)
-        self.auth = self.res.headers['X-Subject-Token']
+        # self.auth = self.res.headers['X-Subject-Token']
 
     def trust_scoped(self):
         body = {
@@ -60,7 +61,6 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.auth = self.res.headers['X-Subject-Token']
 
     def token_scoped(self):
-        self.password_unscoped()
         # self.auth = 'gAAAAABalrIoWlY330c46LrdKOtcv_2Upai7C8CqlorqvxHAXQunpDjC-ETKPDS63eM0WKxDoozGr3MI0JbsCvM-0uxK_0p-fg=='
         body = {
             "auth": {
@@ -89,27 +89,20 @@ class TestKeystoneAuthAndTokens(TestKeystoneBase):
         self.token = self.res.headers['X-Subject-Token']
 
     def get_catalog(self):
-        self.token_scoped()
-        headers = {
-            "X-Auth-Token" : self.token
-        }
-        self.res = requests.get(self.url + 'catalog', headers=headers)
+        self.admin_auth()
+        self.res = requests.get(self.url + 'catalog', headers = self.headers)
         self.checkCode(200)
 
     def get_token(self):
-        self.password_unscoped()
-        # self.token_scoped()
-        headers = {
-            "X-Auth-Token" : 'cf481a8b-645d-4fc3-aecc-5d088abd4341',
-            "X-Subject-Token": 'f12effea-fce6-4e56-95c9-f97326e9b210'
-        }
-        self.res = requests.get(self.url + 'tokens', headers = headers)
+        self.admin_auth()
+        # subject token
+        self.headers ['X-Subject-Token']= 'gAAAAABawgq1Q-ivIcihF71YJZyEn-0KljJBHIpP2bEJyrVSEUQeSSSv6wXViZHw2ouZ8fa4hP6sS8v-NHUN2WRRrGHJk0TRbf-N_LX4TPrAgOQ3620T7k4='
+        # auth token
+        # self.headers ['X-Auth-Token']= 'gAAAAABauna0CaXqr93kxg8sm3moPrfi2MZVSC_2juzlIMdr6CsTyY24WpOTUyVkD2STm5p3Y6vk9LD80ue_4bG6EsLgxg2klYTuroNRfEY1I77Pt9aDD7SKk6tGqhUxHYT1OJ8hJ8HL'
+        self.res = requests.get(self.url + 'tokens', headers = self.headers, params = {'nocatalog':''})
         self.checkCode(200)
 
     def get_scopes(self):
-        self.password_unscoped()
-        headers = {
-            "X-Auth-Token" : self.auth
-        }
-        self.res = requests.get(self.url + 'domains', headers = headers)
+        self.admin_auth()
+        self.res = requests.get(self.url + 'domains', headers = self.headers)
         self.checkCode(200)

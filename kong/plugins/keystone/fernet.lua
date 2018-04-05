@@ -6,6 +6,8 @@ local kutils = require ("kong.plugins.keystone.utils")
 local msgpack = require "MessagePack"
 local methods_represent = {oauth1 = 1, password = 2, token = 3}
 
+local uuid_default = '00000000-0000-0000-0000-000000000000'
+
 local function touuid(str)
     str = str:gsub('.', function (c)
         return string.format('%02x', string.byte(c))
@@ -13,13 +15,19 @@ local function touuid(str)
     local uuids = {}
     for i = 1, #str, 32 do
         uuids[#uuids + 1] = str(i, i+7)..'-'..str(i+8, i+11)..'-'..str(i+12, i+15)..'-'..str(i+16, i+19)..'-'..str(i+20, i+31)
+        if uuids[#uuids] == uuid_default then
+            uuids[#uuids] = 'default'
+        end
     end
     return uuids
 end
 
 local function from_uuid_to_bytes(uuid)
+    if uuid == 'default' then
+        uuid = '00000000-0000-0000-0000-000000000000'
+    end
     local format = '(..)(..)(..)(..)-(..)(..)-(..)(..)-(..)(..)-(..)(..)(..)(..)(..)(..)'
-    local temp = {uuid:match(format) }
+    local temp = { uuid:match(format) }
     local str = ''
     for _, v in ipairs(temp) do
         str = str..string.char(tonumber(v, 16))

@@ -388,17 +388,17 @@ local routes = {
     },
     ['/v3/OS-TRUST/trusts/:trust_id/roles/'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_delegated_roles", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_roles_for_trust", dao_factory, self.params)
             responses.send(list_delegated_roles(self, dao_factory))
         end,
     },
     ['/v3/OS-TRUST/trusts/:trust_id/roles/:role_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_delegated_role", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role_for_trust", dao_factory, self.params)
             responses.send(get_delegated_role(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_role_delegated", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role_for_trust", dao_factory, self.params)
             responses.send(check_role_delegated(self, dao_factory))
         end
     },

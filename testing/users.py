@@ -1,11 +1,11 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 
 class TestKeystoneUsers(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneUsers, self).setUp()
         self.url = self.host + '/v3/users/'
-        self.user_id = '8f5b0cfa-8655-4055-a2e0-71070149c85e'
+        self.user_id = '78a226cb-5061-401c-a9a4-1ddeb739647f'
         self.domain_id = '902f3886-0f59-40f6-baff-768aa8767159'
         self.project_id = 'd99a744b-3a9d-4fc1-85bf-0c6035414ec2'
         self.admin_auth()
@@ -13,10 +13,10 @@ class TestKeystoneUsers(TestKeystoneBase):
 
     def list(self):
         query = {
-            # 'domain_id' : 'domain_id',
+            'domain_id' : 'default',
             # 'enabled': 'true',
             # 'idp_id': 'idp_id',
-            # 'name': 'name',
+            # 'name': 'demo',
             # 'password_expires_at': 'lte:2017-12-08T13:00:00Z',
             # 'protocol_id': 'protocol_id',
             # 'unique_id': 'unique_id'
@@ -51,6 +51,7 @@ class TestKeystoneUsers(TestKeystoneBase):
         self.checkCode(204)
 
     def get_info(self):
+        # self.user_id = 'placement'
         self.res = requests.get(self.url + self.user_id, headers = self.headers)
         self.checkCode(200)
 

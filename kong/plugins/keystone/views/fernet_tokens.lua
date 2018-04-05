@@ -77,11 +77,9 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
         domain_id = is_domain and scope_id or nil,
         expires_at = expires,
         methods = {},
-        audit_ids = {}
+        audit_ids = {},
+        trust_id = trust_id
     }
-    if trust_id then
-        info_obj.trust_id = trust_id
-    end
     local payload = kfernet.create_payload(info_obj) -- byte view
     local secret = fkeys.get_primary()
     local fernet_obj = create_fernet_obj(secret, payload)
@@ -132,7 +130,8 @@ function Token.get_info(token_id)
         scope_id = scope_id,
         issued_at = fernet_obj.ts,
         roles = cache.roles,
-        is_admin = cache.is_admin
+        is_admin = cache.is_admin,
+        expires = info_obj.expires_at
     }
     return token
 end

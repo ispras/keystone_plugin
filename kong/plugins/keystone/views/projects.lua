@@ -4,11 +4,12 @@ local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
-
+local check_token_user = require ("kong.plugins.keystone.views.auth_and_tokens").check_token
 local Project = {}
 
 local subtree = {}
 local subtrtee_as_ids = {}
+local namespace_id
 
 local function get_subtree_as_list(self, dao_factory, project) --not tested
     local child_projects, err = dao_factory.project:find_all({parent_id=project.id})
@@ -75,7 +76,7 @@ local function list_projects(self, dao_factory)
             resp.projects[i].is_domain = projects[i].is_domain
             resp.projects[i].parent_id = projects[i].parent_id
             resp.projects[i].links = {
-                self = resp.links.self..resp.projects[i].id
+                self = resp.links.self..'/'..resp.projects[i].id
             }
             resp.projects[i].tags, err = dao_factory.project_tag:find_all({project_id = resp.projects[i].id})
             kutils.assert_dao_error(err, "project_tag:find_all")
@@ -104,7 +105,7 @@ local function list_projects(self, dao_factory)
             resp.domains[i].id = domains[i].id
             resp.domains[i].name = domains[i].name
             resp.domains[i].links = {
-                self = resp.links.self..resp.domains[i].id
+                self = resp.links.self..'/'..resp.domains[i].id
             }
         end
     end
@@ -119,14 +120,14 @@ local function check_project_name(dao_factory,name, is_domain, domain_id)
         kutils.assert_dao_error(err, "project:find_all")
 
         if next(res) then
-            return "Error: project with this name exists"
+            return res[1]
         end
     else
         local res, err = dao_factory.project:find_all({name = name, is_domain = is_domain, domain_id = domain_id})
         kutils.assert_dao_error(err, "project:find_all")
 
         if next(res) then
-            return "Error: project with this name exists"
+            return res[1]
         end
     end
 end
@@ -135,7 +136,7 @@ local function check_project_domain(dao_factory, domain_id)
     local res, err = dao_factory.project:find({id = domain_id})
     kutils.assert_dao_error(err, "project:find")
     if not res or not res.is_domain then
-        return responses.send_HTTP_BAD_REQUEST("Error: domain with this ID does not exist")
+        return responses.send_HTTP_CONFLICT("Error: domain with this ID does not exist")
     end
 end
 
@@ -143,7 +144,7 @@ local function check_project_parent(dao_factory, parent_id, domain_id)
     local res, err = dao_factory.project:find({id = parent_id})
     kutils.assert_dao_error(err, "project:find")
     if not res or res.domain_id ~= domain_id then
-        return responses.send_HTTP_BAD_REQUEST("Error: parent project with this ID does not exist")
+        return responses.send_HTTP_CONFLICT("Error: parent project with this ID does not exist")
     end
 end
 
@@ -173,12 +174,12 @@ local function create_project(self, dao_factory)
         domain_id = 'default'
     end
 
-    local err = check_project_name(dao_factory, name, is_domain, domain_id)
-    if err then
-        return 400, err
+    local project_obj = check_project_name(dao_factory, name, is_domain, domain_id)
+    if project_obj then
+        return 409, "Error: project with this name already exists"
     end
 
-    local description = request.project.description or ''
+    local description = request.project.description or cjson.null
 
     local enabled = kutils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
@@ -235,14 +236,14 @@ local function get_project_info(self, dao_factory)
         kutils.assert_dao_error(err, "project find_all")
 
         if not next(project) then
-            project, err = dao_factory.project:find_all({name=project_id, is_domain = true})
+            project, err = dao_factory.project:find_all({name=project_id, is_domain = true, domain_id = namespace_id})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
             end
         end
 
-        local domain = False
+        local domain = false
         for i = 1, #project do
             if project[i].is_domain then
                 domain = true
@@ -259,12 +260,23 @@ local function get_project_info(self, dao_factory)
         kutils.assert_dao_error(err, "project find")
 
         if not project then
-            project, err = dao_factory.project:find_all({name=project_id})
+            project, err = dao_factory.project:find_all({name=project_id, domain_id = namespace_id})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
             end
-            project = project[1]
+
+            local if_project_was = false
+            for i = 1, #project do
+                if project.domain_id == self.namespace_id then
+                    project = project[i]
+                    if_project_was = true
+                    break
+                end
+            end
+            if not if_project_was then
+                return responses.send_HTTP_BAD_REQUEST("No such project in the system")
+            end
         end
     end
 
@@ -356,13 +368,13 @@ end
 local function update_project(self, dao_factory)
     local project_id = self.params.project_id
     if not project_id then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad project id")
+        responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
 
     local project, err = dao_factory.project:find({id=project_id})
     kutils.assert_dao_error(err, "project find")
     if not project then
-        return responses.send_HTTP_NOT_FOUND("Error: bad project id")
+        responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
 
 --    ngx.req.read_body()
@@ -374,9 +386,9 @@ local function update_project(self, dao_factory)
     end
 
     if request.project.name then
-        local err = check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
-        if err then
-            responses.send_HTTP_BAD_REQUEST(err)
+        local exists = check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
+        if exists then
+            responses.send_HTTP_CONFLICT("Error: project with this name already exists")
         end
     end
 
@@ -433,15 +445,15 @@ local routes = {
     },
     ["/v3/projects/:project_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
             Project.update_project(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
             Project.delete_project(self, dao_factory)
         end
     }

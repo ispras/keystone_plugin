@@ -29,7 +29,7 @@ end
 local routes = {
     ['/v3/OS-REVOKE/events'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_revocation_events", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_revoke_events", dao_factory, self.params)
             responses.send(list_revocation_events(self, dao_factory))
         end
     }

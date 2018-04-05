@@ -4,6 +4,31 @@ local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
 local cjson = require 'cjson'
 
+local namespace_id
+
+local function get_group_by_id_or_name(dao_factory, id_or_name)
+    local group, err = dao_factory.group:find({id = id_or_name})
+    kutils.assert_dao_error(err, "group find")
+    if group then return group end
+    local temp, err = dao_factory.group:find_all ({name = id_or_name, domain_id = namespace_id})
+    kutils.assert_dao_error(err, "group find all")
+    if temp[1] then return temp[1] end
+    responses.send_HTTP_BAD_REQUEST("No group with id "..id_or_name)
+end
+
+local function get_user_by_id_or_name (dao_factory, id_or_name)
+    local user, err = dao_factory.user:find({id = id_or_name})
+    kutils.assert_dao_error(err, "user find")
+    if user then return user.id end
+    local temp, err = dao_factory.local_user:find_all ({name = id_or_name, domain_id = namespace_id})
+    kutils.assert_dao_error(err, "local user find all")
+    if temp[1] then return temp[1].user_id end
+    local temp, err = dao_factory.nonlocal_user:find({ name = id_or_name, domain_id = namespace_id })
+    kutils.assert_dao_error(err, "nonlocal user find")
+    if temp then return temp.user_id end
+    responses.send_HTTP_BAD_REQUEST("No user with id "..id_or_name)
+end
+
 local function list_groups(self, dao_factory)
     local args = (self.params.name or self.params.domain_id) and {name = self.params.name, domain_id = self.params.domain_id} or nil
 
@@ -22,7 +47,7 @@ local function list_groups(self, dao_factory)
     resp.groups = groups
     for i = 1, #groups do
         resp.groups[i].links = {
-            self = self:build_url(self.req.parsed_url.path..groups[i].id)
+            self = self:build_url(self.req.parsed_url.path..'/'..groups[i].id)
         }
     end
 
@@ -42,7 +67,7 @@ local function create_group(self, dao_factory)
     local temp, err = dao_factory.group:find_all({name = group.name, domain_id = group.domain_id})
     kutils.assert_dao_error(err, "group:find_all")
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Name is already used in domain")
+        return responses.send_HTTP_CONFLICT("Name is already used in domain")
     end
     local _, err = dao_factory.group:insert(group)
     kutils.assert_dao_error(err, "group:insert")
@@ -50,26 +75,22 @@ local function create_group(self, dao_factory)
         group = group
     }
     resp.group.links = {
-        self = self:build_url(self.req.parsed_url.path..group.id)
+        self = self:build_url(self.req.parsed_url.path..'/'..group.id)
     }
     return responses.send_HTTP_CREATED(resp)
 end
 
 local function get_group_info(self, dao_factory)
-    local group, err = dao_factory.group:find({id = self.params.group_id})
-    kutils.assert_dao_error(err, "group:find")
-    if not group then
-        responses.send_HTTP_BAD_REQUEST("Group ID is not found")
-    end
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
 
     local resp = {
         group = group
     }
     resp.group.links = {
-        self = self:build_url(self.req.parsed_url.path..group.id)
+        self = self:build_url(self.req.parsed_url.path)
     }
 
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function update_group(self, dao_factory)
@@ -77,11 +98,7 @@ local function update_group(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("No group object found in request")
     end
 
-    local group, err = dao_factory.group:find({id = self.params.group_id})
-    kutils.assert_dao_error(err, "group:find")
-    if not group then
-        responses.send_HTTP_BAD_REQUEST("Group ID is not found")
-    end
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
 
     local ugroup = {
         description = self.params.group.description,
@@ -90,7 +107,7 @@ local function update_group(self, dao_factory)
     }
     local temp, err = dao_factory.group:find_all({name = ugroup.name or group.name, domain_id = ugroup.domain_id or group.domain_id})
     if next(temp) then
-        return responses.send_HTTP_BAD_REQUEST("Name is already used in domain")
+        return responses.send_HTTP_CONFLICT("Name is already used in domain")
     end
 
     local resp = {
@@ -99,24 +116,23 @@ local function update_group(self, dao_factory)
     resp.group, err = dao_factory.group:update(ugroup, {id = group.id})
     kutils.assert_dao_error(err, "group:update")
     resp.group.links = {
-        self = self:build_url(self.req.parsed_url.path..group.id)
+        self = self:build_url(self.req.parsed_url.path)
     }
 
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function delete_group(self, dao_factory)
-    local group, err = dao_factory.group:delete({id = self.params.group_id})
-    kutils.assert_dao_error(err, "group:find")
-    if not group then
-        responses.send_HTTP_BAD_REQUEST("Group ID is not found")
-    end
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
+    local group, err = dao_factory.group:delete({id = group.id})
+    kutils.assert_dao_error(err, "group delete")
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local function list_group_users(self, dao_factory)
-    local user_group, err = dao_factory.user_group_membership:find_all({group_id = self.params.group_id})
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
+    local user_group, err = dao_factory.user_group_membership:find_all({group_id = group.id})
     kutils.assert_dao_error(err, "user_group_membership:find_all")
 
     local resp = {
@@ -175,34 +191,40 @@ local function list_group_users(self, dao_factory)
         } or nil
     end
 
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function add_user_to_group(self, dao_factory)
-    local _, err = dao_factory.user_group_membership:insert({user_id = self.params.user_id, group_id = self.params.group_id})
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
+    local user_id = get_user_by_id_or_name(dao_factory, self.params.user_id)
+    local _, err = dao_factory.user_group_membership:insert({user_id = user_id, group_id = group.id})
     kutils.assert_dao_error(err, "user_group_membership:insert")
 
     return 200
 end
 
 local function check_user_in_group(self, dao_factory)
-    local temp, err = dao_factory.user_group_membership:find({user_id = self.params.user_id, group_id = self.params.group_id})
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
+    local user_id = get_user_by_id_or_name(dao_factory, self.params.user_id)
+    local temp, err = dao_factory.user_group_membership:find({user_id = user_id, group_id = group.id})
     kutils.assert_dao_error(err, "user_group_membership:find")
     if not temp then
-        return responses.send_HTTP_BAD_REQUEST()
+        responses.send_HTTP_BAD_REQUEST()
     end
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local function remove_user_from_group(self, dao_factory)
-    local temp, err = dao_factory.user_group_membership:delete({user_id = self.params.user_id, group_id = self.params.group_id})
+    local group = get_group_by_id_or_name(dao_factory, self.params.group_id)
+    local user_id = get_user_by_id_or_name(dao_factory, self.params.user_id)
+    local temp, err = dao_factory.user_group_membership:delete({user_id = user_id, group_id = group.id})
     kutils.assert_dao_error(err, "user_group_membership:delete")
     if not temp then
-        return responses.send_HTTP_BAD_REQUEST()
+        responses.send_HTTP_BAD_REQUEST()
     end
 
-    return responses.send_HTTP_NO_CONTENT()
+    responses.send_HTTP_NO_CONTENT()
 end
 
 local routes = {
@@ -218,35 +240,35 @@ local routes = {
     },
     ['/v3/groups/:group_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_group", dao_factory, self.params)
             get_group_info(self, dao_factory)
         end,
         PATCH = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_group", dao_factory, self.params)
             update_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_group", dao_factory, self.params)
             delete_group(self, dao_factory)
         end,
     },
     ['/v3/groups/:group_id/users'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_group_users", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_users_in_group", dao_factory, self.params)
             list_group_users(self, dao_factory)
         end
     },
     ['/v3/groups/:group_id/users/:user_id'] = {
         PUT = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:add_user_to_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:add_user_to_group", dao_factory, self.params)
             responses.send(add_user_to_group(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_user_in_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:check_user_in_group", dao_factory, self.params)
             check_user_in_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:remove_user_from_group", dao_factory, self.params)
+            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:remove_user_from_group", dao_factory, self.params)
             remove_user_from_group(self, dao_factory)
         end
     }
