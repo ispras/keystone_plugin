@@ -1,6 +1,7 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
-local sha512 = require("kong.plugins.keystone.sha512")
+--local sha512 = require("kong.plugins.keystone.sha512")
+local bcrypt = require( "bcrypt" )
 local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
 local policies = require ("kong.plugins.keystone.policies")
@@ -178,7 +179,7 @@ local function create_local_user(self, dao_factory)
     local passwd = {
         id = utils.uuid(),
         local_user_id = loc_user.id,
-        password = sha512.crypt(user.password),
+        password = bcrypt.digest(user.password, 12),
         created_at = created_time
     }
     local user = {
@@ -397,7 +398,7 @@ local function update_user(self, dao_factory)
     local passwd
     if uupdate.password then
         passwd = {
-            password= sha512.crypt(uupdate.password)
+            password= bcrypt.digest(uupdate.password, 12)
         }
     end
 
@@ -665,12 +666,12 @@ local function change_user_password(self, dao_factory)
     local temp, err = dao_factory.password:find_all({local_user_id = loc_user.id})
     kutils.assert_dao_error(err, "password find_all")
     local passwd = temp[1]
-    if sha512.verify(uupdate.original_password, passwd.password) ~= true then
+    if bcrypt.verify(uupdate.original_password, passwd.password) ~= true then
         return responses.send_HTTP_BAD_REQUEST({message = "Incorrect original_password"})
     end
 
     passwd.created_at = os.time()
-    passwd.password = sha512.crypt(uupdate.password)
+    passwd.password = bcrypt.digest(uupdate.password, 12)
     local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
     kutils.assert_dao_error(err, "password:update")
 
