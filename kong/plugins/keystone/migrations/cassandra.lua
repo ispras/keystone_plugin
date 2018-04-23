@@ -3,7 +3,7 @@ return {
     name = "2017-10-26-132500_keystone_initial_scheme",
     up = [[
     
-      CONSISTENCY QUORUM;
+
       CREATE TABLE IF NOT EXISTS access_token(
         id varchar,
         access_secret varchar,
