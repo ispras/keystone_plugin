@@ -404,7 +404,6 @@ return {
         value text,
         PRIMARY KEY (domain_id, group_, option)
       )    ;
-    CONSISTENCY ONE;
 
     ]],
     down = [[
