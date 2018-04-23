@@ -11,7 +11,7 @@ return {
         consumer_id varchar,
         expires_at timestamp,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON access_token(authorizing_user_id);
       CREATE INDEX IF NOT EXISTS ON access_token(consumer_id);
@@ -43,7 +43,7 @@ return {
         token_url text,
         userinfo_url text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS credential(
         id varchar,
@@ -54,7 +54,7 @@ return {
         key_hash varchar,
         encrypted_blob text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS endpoint(
         id varchar,
@@ -66,10 +66,10 @@ return {
         enabled boolean,
         region_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
-      CREATE INDEX IF NOT EXISTS ON endpoint(service_id) WITH read_repair_chance = 0  ;
-      CREATE INDEX IF NOT EXISTS ON endpoint(region_id) WITH read_repair_chance = 0  ;
+      CREATE INDEX IF NOT EXISTS ON endpoint(service_id) AND read_repair_chance = 0  ;
+      CREATE INDEX IF NOT EXISTS ON endpoint(region_id) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS endpoint_group(
         id varchar,
@@ -77,7 +77,7 @@ return {
         description text,
         filters text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS federated_user(
         id varchar,
@@ -87,7 +87,7 @@ return {
         unique_id varchar,
         display_name varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON federated_user(user_id);
       CREATE INDEX IF NOT EXISTS ON federated_user(idp_id);
@@ -98,7 +98,7 @@ return {
         idp_id varchar,
         mapping_id varchar,
         PRIMARY KEY (id, idp_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON federation_protocol(idp_id);
 
@@ -119,7 +119,7 @@ return {
         local_id varchar,
         entity_type varchar,
         PRIMARY KEY (public_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON id_mapping(domain_id);
 
@@ -129,7 +129,7 @@ return {
         description text,
         domain_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON identity_provider(domain_id);
 
@@ -137,7 +137,7 @@ return {
         idp_id varchar,
         remote_id varchar,
         PRIMARY KEY (remote_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON idp_remote_ids(idp_id);
 
@@ -145,7 +145,7 @@ return {
         prior_role_id varchar,
         implied_role_id varchar,
         PRIMARY KEY (prior_role_id, implied_role_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS local_user(
         id varchar,
@@ -155,7 +155,7 @@ return {
         failed_auth_count int,
         failed_auth_at timestamp,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON local_user(user_id);
       CREATE INDEX IF NOT EXISTS ON local_user(domain_id);
@@ -165,21 +165,21 @@ return {
         id varchar,
         rules text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS migrate_version(
         repository_id varchar,
         repository_path text,
         version int,
         PRIMARY KEY (repository_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS nonlocal_user(
         domain_id varchar,
         name varchar,
         user_id varchar,
         PRIMARY KEY (domain_id, name)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON nonlocal_user(user_id);
 
@@ -192,7 +192,7 @@ return {
         password_hash varchar,
         created_at timestamp,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON password(local_user_id);
 
@@ -202,7 +202,7 @@ return {
         blob text,
         extra text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS policy_association(
         id varchar,
@@ -211,7 +211,7 @@ return {
         service_id varchar,
         region_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON policy_association(endpoint_id);
 
@@ -225,7 +225,7 @@ return {
         parent_id varchar,
         is_domain boolean,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON project(domain_id);
       CREATE INDEX IF NOT EXISTS ON project(parent_id);
@@ -234,19 +234,19 @@ return {
         endpoint_id varchar,
         project_id varchar,
         PRIMARY KEY (endpoint_id, project_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS project_endpoint_group(
         endpoint_group_id varchar,
         project_id varchar,
         PRIMARY KEY (endpoint_group_id, project_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS project_tag(
         project_id varchar,
         name varchar,
         PRIMARY KEY (project_id, name)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS region(
         id varchar,
@@ -254,7 +254,7 @@ return {
         parent_region_id varchar,
         extra text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS request_token(
         id varchar,
@@ -266,7 +266,7 @@ return {
         consumer_id varchar,
         expires_at varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON request_token(consumer_id);
 
@@ -285,7 +285,7 @@ return {
         audit_id varchar,
         audit_chain_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON revocation_event(project_id);
       CREATE INDEX IF NOT EXISTS ON revocation_event(user_id);
@@ -299,7 +299,7 @@ return {
         extra text,
         domain_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON role(name);
 
@@ -309,7 +309,7 @@ return {
         option varchar,
         value text,
         PRIMARY KEY (domain_id, group_, option)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS service(
         id varchar,
@@ -318,7 +318,7 @@ return {
         name varchar,
         description text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS service_provider(
         auth_url varchar,
@@ -328,7 +328,7 @@ return {
         sp_url varchar,
         relay_state_prefix varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS token_(
         id varchar,
@@ -338,7 +338,7 @@ return {
         trust_id varchar,
         user_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON token_(expires);
       CREATE INDEX IF NOT EXISTS ON token_(trust_id);
@@ -358,7 +358,7 @@ return {
         redelegation_count int,
         extra text,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON trust(trustor_user_id);
 
@@ -366,7 +366,7 @@ return {
         trust_id varchar,
         role_id varchar,
         PRIMARY KEY (trust_id, role_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS user_(
         id varchar,
@@ -377,7 +377,7 @@ return {
         last_active_at timestamp,
         domain_id varchar,
         PRIMARY KEY (id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE INDEX IF NOT EXISTS ON user_(default_project_id);
       CREATE INDEX IF NOT EXISTS ON user_(domain_id);
@@ -386,14 +386,14 @@ return {
         user_id varchar,
         group_id varchar,
         PRIMARY KEY (user_id, group_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS user_option(
         user_id varchar,
         option_id varchar,
         option_value text,
         PRIMARY KEY (user_id, option_id)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
       CREATE TABLE IF NOT EXISTS whitelisted_config(
         domain_id varchar,
@@ -401,7 +401,7 @@ return {
         option varchar,
         value text,
         PRIMARY KEY (domain_id, group_, option)
-      ) WITH read_repair_chance = 0  ;
+      ) AND read_repair_chance = 0  ;
 
     ]],
     down = [[
