@@ -179,7 +179,7 @@ local function create_local_user(self, dao_factory)
     local passwd = {
         id = utils.uuid(),
         local_user_id = loc_user.id,
-        password = bcrypt.digest(user.password, 12),
+        password = bcrypt.digest(user.password, 5),
         created_at = created_time
     }
     local user = {
@@ -398,7 +398,7 @@ local function update_user(self, dao_factory)
     local passwd
     if uupdate.password then
         passwd = {
-            password= bcrypt.digest(uupdate.password, 12)
+            password= bcrypt.digest(uupdate.password, 5)
         }
     end
 
