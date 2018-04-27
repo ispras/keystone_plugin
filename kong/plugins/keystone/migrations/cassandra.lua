@@ -25,8 +25,11 @@ return {
         PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
       );
 
+      CREATE INDEX IF NOT EXISTS ON assignment(type);
+      CREATE INDEX IF NOT EXISTS ON assignment(actor_id);
       CREATE INDEX IF NOT EXISTS ON assignment(target_id);
       CREATE INDEX IF NOT EXISTS ON assignment(role_id);
+      CREATE INDEX IF NOT EXISTS ON assignment(inherited);
 
       CREATE TABLE IF NOT EXISTS config_register(
         type varchar,
@@ -68,7 +71,10 @@ return {
         PRIMARY KEY (id)
       );
 
+      CREATE INDEX IF NOT EXISTS ON endpoint(legacy_endpoint_id);
+      CREATE INDEX IF NOT EXISTS ON endpoint(interface);
       CREATE INDEX IF NOT EXISTS ON endpoint(service_id);
+      CREATE INDEX IF NOT EXISTS ON endpoint(enabled);
       CREATE INDEX IF NOT EXISTS ON endpoint(region_id);
 
       CREATE TABLE IF NOT EXISTS endpoint_group(
@@ -101,6 +107,7 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON federation_protocol(idp_id);
+      CREATE INDEX IF NOT EXISTS ON federation_protocol(mapping_id);
 
       CREATE TABLE IF NOT EXISTS group_(
         id varchar,
@@ -112,6 +119,7 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON group_(domain_id);
+      CREATE INDEX IF NOT EXISTS ON group_(name);
 
       CREATE TABLE IF NOT EXISTS id_mapping(
         public_id varchar,
@@ -122,6 +130,8 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON id_mapping(domain_id);
+      CREATE INDEX IF NOT EXISTS ON id_mapping(local_id);
+      CREATE INDEX IF NOT EXISTS ON id_mapping(entity_type);
 
       CREATE TABLE IF NOT EXISTS identity_provider(
         id varchar,
@@ -132,6 +142,7 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON identity_provider(domain_id);
+      CREATE INDEX IF NOT EXISTS ON identity_provider(enabled);
 
       CREATE TABLE IF NOT EXISTS idp_remote_ids(
         idp_id varchar,
@@ -159,7 +170,7 @@ return {
 
       CREATE INDEX IF NOT EXISTS ON local_user(user_id);
       CREATE INDEX IF NOT EXISTS ON local_user(domain_id);
-
+      CREATE INDEX IF NOT EXISTS ON local_user(name);
 
       CREATE TABLE IF NOT EXISTS mapping(
         id varchar,
@@ -195,6 +206,8 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON password(local_user_id);
+      CREATE INDEX IF NOT EXISTS ON password(expires_at);
+      CREATE INDEX IF NOT EXISTS ON password(created_at);
 
       CREATE TABLE IF NOT EXISTS policy(
         id varchar,
@@ -229,6 +242,9 @@ return {
 
       CREATE INDEX IF NOT EXISTS ON project(domain_id);
       CREATE INDEX IF NOT EXISTS ON project(parent_id);
+      CREATE INDEX IF NOT EXISTS ON project(name);
+      CREATE INDEX IF NOT EXISTS ON project(enabled);
+      CREATE INDEX IF NOT EXISTS ON project(is_domain);
 
       CREATE TABLE IF NOT EXISTS project_endpoint(
         endpoint_id varchar,
@@ -255,6 +271,8 @@ return {
         extra text,
         PRIMARY KEY (id)
       );
+
+      CREATE INDEX IF NOT EXISTS ON region(parent_region_id);
 
       CREATE TABLE IF NOT EXISTS request_token(
         id varchar,
@@ -302,6 +320,7 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON role(name);
+      CREATE INDEX IF NOT EXISTS ON role(domain_id);
 
       CREATE TABLE IF NOT EXISTS sensitive_config(
         domain_id varchar,
@@ -319,6 +338,10 @@ return {
         description text,
         PRIMARY KEY (id)
       );
+
+      CREATE INDEX IF NOT EXISTS ON service(type);
+      CREATE INDEX IF NOT EXISTS ON service(enabled);
+      CREATE INDEX IF NOT EXISTS ON service(name);
 
       CREATE TABLE IF NOT EXISTS service_provider(
         auth_url varchar,
@@ -343,6 +366,7 @@ return {
       CREATE INDEX IF NOT EXISTS ON token_(expires);
       CREATE INDEX IF NOT EXISTS ON token_(trust_id);
       CREATE INDEX IF NOT EXISTS ON token_(user_id);
+      CREATE INDEX IF NOT EXISTS ON token_(valid);
 
       CREATE TABLE IF NOT EXISTS trust(
         id varchar,
@@ -381,6 +405,8 @@ return {
 
       CREATE INDEX IF NOT EXISTS ON user_(default_project_id);
       CREATE INDEX IF NOT EXISTS ON user_(domain_id);
+      CREATE INDEX IF NOT EXISTS ON user_(enabled);
+      CREATE INDEX IF NOT EXISTS ON user_(created_at);
 
       CREATE TABLE IF NOT EXISTS user_group_membership(
         user_id varchar,
@@ -444,10 +470,7 @@ return {
       DROP TABLE user_group_membership;
       DROP TABLE user_option;
       DROP TABLE whitelisted_config;
-      DROP TABLE cache;
     ]]
   }
 }
-
-
 
