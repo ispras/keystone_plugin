@@ -98,7 +98,7 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
 end
 
 function Token.get_info(token_id)
-    -- return token: { user_id, scope_id, roles, issued_at, is_admin }
+    -- return token: { user_id, scope_id, roles, issued_at, is_admin, expires }
     local keys = fkeys.get()
     local fernet_obj
     for i = #keys, 0, -1 do
