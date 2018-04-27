@@ -399,14 +399,17 @@ function _M.get_token_info(self, dao_factory)
     if cache.scope_id then
         local temp, err = dao_factory.project:find({id = cache.scope_id})
         kutils.assert_dao_error(err, "project:find")
+        is_domain = temp.is_domain
         project = {
             id = temp.id,
             name = temp.name,
             domain = (temp.domain_id) and {
                 id = temp.domain_id
+            },
+            links = {
+                self = self:build_url((is_domain and '/v3/domains/' or '/v3/projects/')..temp.id)
             }
         }
-        is_domain = temp.is_domain
         if temp.domain_id then
             local temp, err = dao_factory.project:find({id = temp.domain_id})
             kutils.assert_dao_error(err, "project:find")
@@ -420,6 +423,7 @@ function _M.get_token_info(self, dao_factory)
             roles = cache.roles,
             expires_at = kutils.time_to_string(cache.expires),
             project = project,
+            domain = is_domain and project or nil,
             is_domain = is_domain,
             extras = token.extra,
             user = user,

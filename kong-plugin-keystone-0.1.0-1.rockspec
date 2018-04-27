@@ -43,7 +43,8 @@ dependencies = {
   "struct >= 1.4-1",
   "lua-messagepack >= 0.5.1-1",
   "lua-resty-http >= 0.12-0",
-  "lua-resty-session >= 2.19-1"
+  "lua-resty-session >= 2.19-1",
+  "openssl >= scm-2" -- TODO: sudo luarocks install --server=http://luarocks.org/dev openssl
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
@@ -56,7 +57,6 @@ build = {
     ["kong.plugins.keystone.handler"] = "kong/plugins/keystone/handler.lua",
     ["kong.plugins.keystone.policies"] = "kong/plugins/keystone/policies.lua",
     ["kong.plugins.keystone.redis"] = "kong/plugins/keystone/redis.lua",
---    ["kong.plugins.keystone.saml"] = "kong/plugins/keystone/saml.lua",
     ["kong.plugins.keystone.schema"] = "kong/plugins/keystone/schema.lua",
     ["kong.plugins.keystone.sha512"] = "kong/plugins/keystone/sha512.lua",
     ["kong.plugins.keystone.utils"] = "kong/plugins/keystone/utils.lua",
