@@ -45,6 +45,7 @@ dependencies = {
   "lua-resty-http >= 0.12-0",
   "lua-resty-session >= 2.19-1",
   "openssl >= scm-2" -- TODO: sudo luarocks install --server=http://luarocks.org/dev openssl
+  "bcrypt >= 2.1-4"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.
