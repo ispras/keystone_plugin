@@ -179,7 +179,7 @@ local function create_local_user(self, dao_factory)
     local passwd = {
         id = utils.uuid(),
         local_user_id = loc_user.id,
-        password = bcrypt.digest(user.password, 7),
+        password = bcrypt.digest(user.password, 4),
         created_at = created_time
     }
     local user = {
@@ -398,7 +398,7 @@ local function update_user(self, dao_factory)
     local passwd
     if uupdate.password then
         passwd = {
-            password= bcrypt.digest(uupdate.password, 7)
+            password= bcrypt.digest(uupdate.password, 4)
         }
     end
 
@@ -671,7 +671,7 @@ local function change_user_password(self, dao_factory)
     end
 
     passwd.created_at = os.time()
-    passwd.password = bcrypt.digest(uupdate.password, 5)
+    passwd.password = bcrypt.digest(uupdate.password, 4)
     local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
     kutils.assert_dao_error(err, "password:update")
 
