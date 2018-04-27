@@ -44,7 +44,7 @@ dependencies = {
   "lua-messagepack >= 0.5.1-1",
   "lua-resty-http >= 0.12-0",
   "lua-resty-session >= 2.19-1",
-  "openssl >= scm-2" -- TODO: sudo luarocks install --server=http://luarocks.org/dev openssl
+  "openssl >= scm-2", -- TODO: sudo luarocks install --server=http://luarocks.org/dev openssl
   "bcrypt >= 2.1-4"
 }
 
