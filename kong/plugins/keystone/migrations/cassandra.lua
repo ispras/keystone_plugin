@@ -25,7 +25,6 @@ return {
         PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON assignment(type);
       CREATE INDEX IF NOT EXISTS ON assignment(actor_id);
       CREATE INDEX IF NOT EXISTS ON assignment(target_id);
       CREATE INDEX IF NOT EXISTS ON assignment(role_id);
