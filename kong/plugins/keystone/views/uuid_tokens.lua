@@ -68,11 +68,9 @@ local function generate_token(dao_factory, user, cached, scope_id, is_domain, tr
         id = utils.uuid(),
         valid = true,
         user_id = user.id,
-        expires = os.time() + 24*60*60
+        expires = os.time() + 24*60*60,
+        trust_id = trust_id
     }
-    if trust_id then
-        token.trust_id = trust_id
-    end
     local _, err = dao_factory.token:insert(token)
     kutils.assert_dao_error(err, "token:insert")
 
@@ -87,6 +85,7 @@ local function generate_token(dao_factory, user, cached, scope_id, is_domain, tr
     token.issued_at = os.time()
     temp = cjson.decode(temp)
     temp.issued_at = token.issued_at
+    temp.expires = token.expires
     local _, err = red:set(user.id..'&'..scope_id, cjson.encode(temp))
     kutils.assert_dao_error(err, "redis set")
     local _, err = red:set(token.id, user.id..'&'..scope_id)
@@ -114,6 +113,7 @@ local function get_token_info(token_id, dao_factory)
         local token = cjson.decode(temp)
         token.user_id, token.scope_id = key:match("(.*)&(.*)")
         token.issued_at = tonumber(token.issued_at)
+        token.expires = tonumber(token.expires)
         return token
     else
         local token, err = dao_factory.token:find({id = token_id})

@@ -1,4 +1,4 @@
-from keystone_plugin.testing.base import TestKeystoneBase
+from base import TestKeystoneBase
 import requests
 from pprint import pprint
 
@@ -9,13 +9,14 @@ class TestKeystoneGroups(TestKeystoneBase):
         self.url = self.host + '/v3/groups/'
         self.user_id = '3daf3fca-d165-4059-a71a-fd1617d9e9cb'
         self.group_id = ''
+        self.admin_auth()
 
     def list(self):
         query = {
             # 'name' : '',
             # 'domain_id' : ''
         }
-        self.res = requests.get(self.url, params=query)
+        self.res = requests.get(self.url, params=query, headers = self.headers)
         self.checkCode(200)
 
     def create(self):
@@ -31,7 +32,8 @@ class TestKeystoneGroups(TestKeystoneBase):
         self.group_id = self.res.json()['group']['id']
 
     def get_info(self):
-        self.res = requests.get(self.url + self.group_id)
+        self.group_id = 'admins'
+        self.res = requests.get(self.url + self.group_id, headers = self.headers)
         self.checkCode(200)
 
     def update(self):

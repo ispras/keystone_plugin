@@ -12,6 +12,7 @@ class TestKeystoneBase(unittest.TestCase):
         self.user_id = ''
         self.group_id = ''
         self.role_id = ''
+        self.headers = {}
 
     def checkCode(self, code):
         if self.res.status_code != code:
@@ -54,9 +55,7 @@ class TestKeystoneBase(unittest.TestCase):
         # pprint(self.res.json())
         self.checkCode(201)
         self.auth_token = self.res.headers['X-Subject-Token']
-        self.headers = {
-            'X-Auth-Token': self.auth_token
-        }
+        self.headers ['X-Auth-Token'] = self.auth_token
 
     def base_init(self):
         self.res = requests.post(self.host + '/v3', json = {})
@@ -65,15 +64,15 @@ class TestKeystoneBase(unittest.TestCase):
         ids = self.res.json()
         self.default_domain_id = ids['default_domain_id']
         self.admin_domain_id = ids['admin_domain_id']
-        self.admin_project_id = ids['admin_project_id']
+        self.admin_project_id_1 = ids['admin_project_id_1'] # from admin domain
+        self.admin_project_id_2 = ids['admin_project_id_2'] # from default domain
         self.default_role_id = ids['default_role_id']
         self.admin_role_id = ids['admin_role_id']
-        self.admin_user_id = ids['admin_user_id']
-
-
+        self.admin_user_id_1 = ids['admin_user_id_1'] # from admin domain
+        self.admin_user_id_2 = ids['admin_user_id_2'] # from project domain
 
     def init(self):
-        # self.base_init()
+        self.base_init()
         self.admin_auth()
 
         # keystone_ep = "http://localhost:8001/v3/"

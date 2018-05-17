@@ -5,11 +5,11 @@ class TestKeystoneRoles(TestKeystoneBase):
     def setUp(self):
         super(TestKeystoneRoles, self).setUp()
         self.url = self.host + '/v3/roles/'
-        self.domain_id = 'e469c1b6-115e-42f6-99d6-482b352339bc'
-        self.project_id = '31683f12-f291-406d-a709-a34ce4d9939f'
-        self.user_id = 'c1eb8b3c-bae1-43a9-b29d-33de343a4dc1'
+        self.domain_id = 'default'
+        self.project_id = '23ba7123-81ab-45d1-bc37-4bbfc70a1da1'
+        self.user_id = '92fcb6a7-baa1-41d8-8814-5e13f4e7fb1f'
         self.group_id = ''
-        self.role_id = '906dad95-08c8-4e38-95c6-31d3f126fc08'
+        self.role_id = '2df7b2c7-e3bd-4faf-baff-e1368a8cff0b'
         self.admin_auth()
 
     def list(self):
@@ -49,8 +49,12 @@ class TestKeystoneRoles(TestKeystoneBase):
         self.checkCode(204)
 
     def check_assign(self):
-        self.res = requests.put(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/' + self.role_id, json = {}, headers = self.headers) #json object is required
+        self.headers['Content-Type'] = 'application/json'
+        self.headers['X-Auth-Token'] = 'gAAAAABawijrQYMCx3o9A531P-4kq91EX6cnFVzJTMkShWFSn35uJIho6tNQyZSX6BLDzoRqEjmDBN745gZN3ldQ9FTHmaF9MVbn61-O2eWMDNj7nOqSU85_T6BrUGU8fuczlRTJ26oH'
+        self.res = requests.put(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/' + self.role_id, headers = self.headers)
         self.checkCode(204)
+        # self.res = requests.get(self.host + '/v3/projects/' + self.project_id + '/users/' + self.user_id + '/roles/', headers = self.headers) #json object is required
+        # self.checkCode(200)
         # self.res = requests.put(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id, json={})  # json object is required
         # self.checkCode(204)
         # self.res = requests.head(self.host + '/v3/domains/' + self.domain_id + '/users/' + self.user_id + '/roles/' + self.role_id)
@@ -66,9 +70,10 @@ class TestKeystoneRoles(TestKeystoneBase):
 
     def list_2(self):
         query = {
-
+            'project_id' : self.project_id,
+            'user_id' : self.user_id
         }
-        self.res = requests.get(self.host + "/v3/role_assigments", params = query)
+        self.res = requests.get(self.host + "/v3/role_assignments", params = query, headers = self.headers)
         self.checkCode(200)
 
     def list_inferences(self):

@@ -11,7 +11,19 @@ local available_interface_types = {
     public = true, internal = true, admin = true
 }
 
-local namespace_id
+local function get_service_by_id_or_name (dao_factory, id_or_name)
+    local service, err = dao_factory.service:find({id = id_or_name})
+    kutils.assert_dao_error(err, "service find")
+    if service then return service, false end
+    service, err = dao_factory.service:find_all({ name = id_or_name })
+    kutils.assert_dao_error(err, "service find_all")
+    if service[1] then return service[1], false end
+    service, err = dao_factory.service:find_all({ type = id_or_name })
+    kutils.assert_dao_error(err, "service find_all")
+    if service[1] and #service == 1 then return service[1], false
+    elseif service[1] then return service, true end
+    responses.send_HTTP_BAD_REQUEST("Error in get info: no such service in the system")
+end
 
 local function list_services(self, dao_factory, enabled)
     local resp = {
@@ -83,55 +95,31 @@ local function create_service(self, dao_factory)
 end
 
 local function get_service_info(self, dao_factory)
-    local service_id = self.params.service_id
-    if not service_id then
-        return responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
-    end
+    local service, if_type = get_service_by_id_or_name(dao_factory, self.params.service_id)
 
-    local if_type = false
-    local service, err = dao_factory.service:find({id = service_id})
-    kutils.assert_dao_error(err, "service find")
-    if not service then
-        service, err = dao_factory.service:find_all({name=service_id})
-        kutils.assert_dao_error(err, "service find_all")
-        service = service[1]
-    end
-    if not service then
-        service, err = dao_factory.service:find_all({type=service_id})
-        kutils.assert_dao_error(err, "service find_all")
-        if #service == 1 then
-            service = service[1]
-        else
-            local resp = {
-                links = {
-                    next = cjson.null,
-                    previous = cjson.null,
-                    self = self:build_url(self.req.parsed_url.path)
-                },
-                services = {}
-            }
-
-            for i = 1, #service do
-                resp.services[i] = service[i]
-                resp.services[i].links = {
+    if if_type then
+        local resp = {
+            links = {
+                next = cjson.null,
+                previous = cjson.null,
                 self = self:build_url(self.req.parsed_url.path)
-                }
-            end
-            service = resp
-            if_type = true
-        end
-    end
-    if not service then
-        responses.send_HTTP_BAD_REQUEST("Error in get info: no such service in the system")
-    end
+            },
+            services = {}
+        }
 
-    if not if_type then
+        for i = 1, #service do
+            resp.services[i] = service[i]
+            resp.services[i].links = {
+            self = self:build_url(self.req.parsed_url.path)
+            }
+        end
+        return resp
+    else
         service.links = {
                     self = self:build_url(self.req.parsed_url.path)
         }
+        return {service = service}
     end
-
-    return {service = service}
 end
 
 local function update_service(self, dao_factory)
@@ -430,7 +418,7 @@ ServiceAndEndpoint.delete_endpoint = delete_endpoint
 local routes = {
     ["/v3/services"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], 'identity:list_services', dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], 'identity:list_services', dao_factory, self.params)
             responses.send_HTTP_OK(ServiceAndEndpoint.list_services(self, dao_factory))
         end,
         POST = function(self, dao_factory)

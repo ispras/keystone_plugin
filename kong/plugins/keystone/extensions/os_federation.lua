@@ -990,7 +990,7 @@ local routes = {
             responses.send(get_identity_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:register_identity_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_identity_provider", dao_factory, self.params)
             responses.send(register_identity_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
@@ -1004,25 +1004,25 @@ local routes = {
     },
     ['/v3/OS-FEDERATION/identity_providers/:id/protocols'] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_protocol_and_attr_maps_of_identity_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_protocols", dao_factory, self.params)
             responses.send(list_protocol_and_attr_maps_of_identity_provider(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_protocol_and_attr_maps_for_identity_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_protocol", dao_factory, self.params)
             responses.send(get_protocol_and_attr_maps_for_identity_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:add_protocol_and_attr_maps_to_identity_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_protocol", dao_factory, self.params)
             responses.send(add_protocol_and_attr_maps_to_identity_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_attr_maps_for_identity_provider_and_protocol", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:update_protocol", dao_factory, self.params)
             responses.send(update_attr_maps_for_identity_provider_and_protocol(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_protocol_and_attr_maps_from_identity_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_protocol", dao_factory, self.params)
             responses.send(delete_protocol_and_attr_maps_from_identity_provider(self, dao_factory))
         end
     },
@@ -1068,7 +1068,7 @@ local routes = {
             responses.send(get_service_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:register_service_provider", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:create_service_provider", dao_factory, self.params)
             responses.send(register_service_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)

@@ -382,11 +382,11 @@ return {
     },
     ["/v3/policies/:policy_id/OS-ENDPOINT-POLICY/policy"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:show policy for endpoint", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_policy_for_endpoint", dao_factory, self.params)
             OsEndpointPolicy.show_policy(self, dao_factory)
         end,
         HEAD = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_policy_and_service_endpoint_association", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:get_policy_for_endpoint", dao_factory, self.params)
             OsEndpointPolicy.check_policy(self, dao_factory)
         end
     },

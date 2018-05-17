@@ -114,12 +114,25 @@ local function handle_match(rule, user_id, scope_id, target, obj)
         if not target_id then
             return false
         end
-        local temp, err = target[ob]:find({id = target_id})
-        if err then
-            return false
-        end
-        if not temp then
-            temp = target[ob]:find_all({name = target_id, domain_id = namespace_id})
+        local temp, err
+        if ob == 'domain' or ob == 'project' then
+            temp, err = target.project:find({id = target_id})
+            if err then
+                return false
+            end
+            if not temp then
+                temp = target.project:find_all({name = target_id, domain_id = namespace_id, is_domain = (ob == 'domain')})
+                temp = temp and temp[1] or nil
+            end
+        else
+            temp, err = target[ob]:find({id = target_id})
+            if err then
+                return false
+            end
+            if not temp then
+                temp = target[ob]:find_all({name = target_id, domain_id = namespace_id})
+                temp = temp and temp[1] or nil
+            end
         end
         api_call_attr = temp[at]
     else

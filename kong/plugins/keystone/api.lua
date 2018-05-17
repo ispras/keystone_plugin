@@ -24,14 +24,14 @@ add_routes(domains.routes)
 local groups = require ('kong.plugins.keystone.views.groups')
 add_routes(groups.routes)
 
-local os_inherit_api = require ('kong.plugins.keystone.views.os_inherit_api')
-add_routes(os_inherit_api)
+--local os_inherit_api = require ('kong.plugins.keystone.views.os_inherit_api')
+--add_routes(os_inherit_api)
 
-local os_pki_api = require ('kong.plugins.keystone.views.os_pki_api')
+--local os_pki_api = require ('kong.plugins.keystone.views.os_pki_api')
 --add_routes(os_pki_api)
 
-local project_tags = require ('kong.plugins.keystone.views.project_tags')
-add_routes(project_tags)
+--local project_tags = require ('kong.plugins.keystone.views.project_tags')
+--add_routes(project_tags)
 
 local projects = require ('kong.plugins.keystone.views.projects')
 add_routes(projects.routes)
@@ -61,8 +61,8 @@ add_routes(os_endpoint_policy)
 local policies = require ('kong.plugins.keystone.views.policies')
 add_routes(policies)
 
-local os_federation = require('kong.plugins.keystone.extensions.os_federation')
-add_routes(os_federation.routes)
+--local os_federation = require('kong.plugins.keystone.extensions.os_federation')
+--add_routes(os_federation.routes)
 
 local os_oauth2 = require('kong.plugins.keystone.extensions.os_oauth2')
 add_routes(os_oauth2.routes)

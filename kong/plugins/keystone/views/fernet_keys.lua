@@ -79,11 +79,11 @@ end
 local routes = {
     ["/v3/fernet_keys"] = {
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:fernet_keys", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "admin_required", dao_factory, self.params)
             responses.send_HTTP_CREATED(rotate_keys())
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:fernet_keys", dao_factory, self.params)
+            policies.check(self.req.headers['X-Auth-Token'], "admin_required", dao_factory, self.params)
             responses.send_HTTP_NO_CONTENT(revoke_keys())
         end
     }

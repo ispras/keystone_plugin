@@ -23,8 +23,8 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def get_info(self):
-        service_id = 'identity'
-        self.res = requests.get(self.host + service_id)
+        service_id = 'placement'
+        self.res = requests.get(self.url + service_id, headers = self.headers)
         self.checkCode(200)
 
     def update(self):
