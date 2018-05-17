@@ -130,7 +130,7 @@ local function get_service_info(self, dao_factory)
                     self = self:build_url(self.req.parsed_url.path)
         }
     end
-    
+
     return {service = service}
 end
 
