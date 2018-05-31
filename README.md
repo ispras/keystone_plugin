@@ -2,73 +2,47 @@
 
 This instruction will explain how to prepare the environment for developing Kong plugins and how to install, run and test the Keystone plugin. 
 
-## **Step 0: Vagrant+Virtualbox**
+## **Step 0: Cassandra**
  
-First, you need to install [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/). Download links can be found on their websites.
- 
-For Vagrant:
-
-![](https://vfc.cc/a94b8e6a5128d549352051a366ad3144) 
-
-For VirtualBox: 
- 
- ![](https://vfc.cc/7a7c2c2cd3bb3efaec7bbc7c4492933d) 
- 
-Choose **AMD64** version of Ubuntu.  
-
- 
-Create new directory, for example, named as vagrant:
+First, you need to install [Cassandra](http://cassandra.apache.org/). [Installation](http://cassandra.apache.org/download/) from Debian packages:
 
 ~~~sh
-$ mkdir ~/vagrant
-$ cd ~/vagrant
+$ echo "deb http://www.apache.org/dist/cassandra/debian 311x main" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list
+$ curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add -
+$ sudo apt-get update
+$ sudo apt-get install cassandra
 ~~~
-Unzip downloaded packages in this directory:
+
+If errors appear try:
 
 ~~~sh
- $ sudo dpkg -i vagrant_*.deb
- $ sudo dpkg -i virtualbox-*.deb
+$ sudo apt-get install libssl1.0.0
 ~~~
- 
-Also you have to install **linux-headers**:
+
+Start cassandra:
 
 ~~~sh
-$ sudo apt-get install linux-headers-$(uname -r)
-~~~
-  
-Now, if all goes well, you have Vagrant, VirtualBox and linux-headers installed in your system.
- 
-Also make sure, that visualization is allowed in your system and you have capabilities for creating virtual machines. This settings you can find in **BIOS**.
- 
-## **Step 1: Kong+Vagrant**
+$ sudo service cassandra start
+~~~~
+
+Now, if all goes well, you Cassandra database.
+
+## **Step 1: Kong**
 
 [Kong](https://getkong.org/) is an open-source API proxy based on [NGINX](http://nginx.org/), which aims to «secure, manage and extend APIs and Microservices» thanks to a plugins oriented architecture.
  
-Now you can install a [Vagrant image of Kong](https://github.com/Mashape/kong-vagrant). In this image is already installed and pre-configured environment for the Kong development: **Lua**, **luarocks**, **Cassandra** and etc. 
- 
-Clone this vagrant repository:
+Now you can install [Kong](https://konghq.com/install/) for [ubuntu](https://getkong.org/install/ubuntu/). Choose your version and download package.
 
 ~~~sh
-$ git clone https://github.com/Mashape/kong-vagrant
-$ cd kong-vagrant
+$ sudo apt-get update
+$ sudo apt-get install openssl libpcre3 procps perl
+$ sudo dpkg -i kong-community-edition-0.13.1.*.deb
 ~~~
-   
-Build the machine:
+
+If you don’t have any problems, you can start Kong with this command:
 
 ~~~sh
-$ sudo vagrant up
-~~~
-   
-SSH into the VM:
-
-~~~sh
-$ sudo vagrant ssh
-~~~
-   
-If you don’t have any problems with starting the VM, you can start Kong into the VM with this command:
-
-~~~sh
-$ kong start
+$ sudo kong start
 ~~~
  
 Kong is now started and is available on the default ports:
@@ -78,7 +52,7 @@ Kong is now started and is available on the default ports:
 * 8001 Admin API
 * 8444 SSL Admin API
  
-To verify Kong is running successfully, execute the following command from the host machine:
+To verify Kong is running successfully, execute the following command:
 
 ~~~sh
 $ curl http://localhost:8001
@@ -104,165 +78,24 @@ You should receive a **JSON** response:
 For stopping the Kong instance use following command:
 
 ~~~sh
-$ kong stop
+$ sudo kong stop
 ~~~ 
-    
-After this destroy the VM, you can do this by executing following commands from the host machine:
 
-~~~sh
-$ vagrant global-status
-~~~
-
-You should receive response like this:
-
-~~~sh
-id       name    provider   state   directory 
-------------------------------------------------------------------------------
-7c52087  default virtualbox running /home/lenaaxenova/virtualbox/kong-vagrant 
- 
-The above shows information about all known Vagrant environments
-on this machine. This data is cached and may not be completely
-up-to-date. To interact with any of the machines, you can go to
-that directory and run Vagrant, or you can use the ID directly
-with Vagrant commands from any directory. For example:
-"vagrant destroy 1a2b3c4d"
-~~~
- 
-Now execute destroy command with id of your VM as an argument:
-    
-~~~sh
-$ sudo vagrant destroy 7c52087
-~~~
-   
-Make sure that you are inside kong-vagrant directory and clone the Kong repository and repository with kong-plugin template:
- 
-~~~sh
-$ git clone https://github.com/Mashape/kong
-$ git clone https://github.com/Mashape/kong-plugin
-~~~
-    
-Build a box with a folder synced to your local Kong and plugin source:
- 
-~~~sh
-$ sudo vagrant up
-~~~
-     
-SSH into the Vagrant machine, and setup the development environment:
-~~~sh
-$ sudo vagrant ssh 
-$ cd /kong
-$ sudo make dev
-~~~
-
-Let’s run kong with loaded custom test plugin:
- 
-~~~sh
-$ export KONG_CUSTOM_PLUGINS=myPlugin
-$ cd /kong
-$ bin/kong start
-~~~
- 
-Verify that Kong has loaded the plugin successfully, execute the following command from the host machine:
- 
-~~~sh
-$ curl http://localhost:8001
-~~~
- 
-Add API and custom plugin from the host machine:
- 
-~~~sh 
-$ curl -i -X POST \
-     --url http://localhost:8001/apis/ \
-    --data 'name=mockbin' \
-      --data 'upstream_url=http://mockbin.org/request' \
-      --data 'uris=/'
- 
-$ curl -i -X POST \
-      --url http://localhost:8001/apis/mockbin/plugins/ \
-      --data 'name=myPlugin'
-~~~ 
- 
-Check whether it is working by making a request from the host:
-
-~~~sh 
-$ curl -i http://localhost:8000
-~~~
- 
-The response you get should be an echo (by Mockbin) of the request. But in the response headers the plugin has now inserted a header Bye-World.
-If you have some problems look at logs, you can find them into the VM in this directory:
- 
-~~~sh
- $ cd /usr/local/kong/logs
-~~~
- 
- Don't forget to destroy this VM before perfoming the next step!
- 
 ## **Step 2: Keystone plugin**
 
 The **keystone-plugin** executes some functions, which exist in [Keystone](https://docs.openstack.org/keystone/latest/), the [OpenStack](https://docs.openstack.org/) Identity Service. Keystone is an OpenStack service that provides API client authentication, service discovery, and distributed multi-tenant authorization by implementing [OpenStack’s Identity API](https://developer.openstack.org/api-ref/identity/v3/).
 
-Code of the project can be found [here](https://github.com/lenaaxenova/keystone_plugin). 
+Code of the project can be found [here](https://github.com/ispras/keystone_plugin).
 
 So, let's clone this project:
 
 ~~~sh
-$ cd ~ 
-$ git clone https://github.com/lenaaxenova/keystone_plugin
+$ cd KEY_DIR
+$ git clone https://github.com/ispras/keystone_plugin.git
+$ cd keystone_plugin
 ~~~
 
-Now we will integrate this plugin in the local kong project and run it on Vagrant VM. Copy directory with keystone plugin to this directories:
-
-~~~sh
-~/kong-vagrant/kong/kong/plugins
-~/kong-vagrant/kong-plugin/kong/plugins
-~~~
-
-You can execute following commands:
-
-~~~sh
-$ cp -a ~/keystone_plugin/kong/plugins/keystone . ~/kong-vagrant/kong/kong/plugins
-$ cp -a ~/keystone_plugin/kong/plugins/keystone . ~/kong-vagrant/kong-plugin/kong/plugins
-~~~
-
-Copy *sha512* and *uuid4* libraries to **~/kong-vagrant/kong-plugin** directory:
-
-~~~sh
-$ cp ~/keystone_plugin/sha512.lua ~/kong-vagrant/kong-plugin/sha512.lua
-$ cp ~/keystone_plugin/uuid4.lua ~/kong-vagrant/kong-plugin/uuid4.lua
-~~~
-
-Make sure that at this moment the structure of your files looks like this:
-
-~~~
-|kong-vagrant/
-|	├── kong/
-|	|    ├── kong/
-|	|         ├── plugins/
-|	│               ├── keystone/
-|	│                    ├── migrations/
-|	│                        └── cassandra.lua
-|	│                    ├── api.lua
-|	│                    ├── daos.lua
-|	│                    ├── handler.lua
-|	│                    ├── schema.lua
-|	│                    ├── sha512.lua
-|	│                    └── uuid4.lua
-|	└── ...
-|	├── kong-plugin/
-|	|    ├── kong/
-|	|         ├── plugins/
-|	│               ├── keystone/
-|	│                    ├── migrations/
-|	│                        └── cassandra.lua
-|	│                    ├── api.lua
-|	│                    ├── daos.lua
-|	│                    ├── handler.lua
-|	│                    ├── schema.lua
-|	│                    ├── sha512.lua
-|	│                    └── uuid4.lua
-|	└── ...
-└── ...
-~~~
+Now we will integrate this plugin in the local kong project.
 
 Also you should modify rockspecs files adding information about keystone-plugin and required lua-modules. You can do it by copying rockspecs files from keystone-plugin project to it:
 
