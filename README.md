@@ -432,6 +432,3 @@ Also you can test two DELETE-methods:
 * http://localhost:8001/v2.0/users/:user_id
 
 These queries will delete entities by their ID.
-
-
-## **Step 3: Testing**
