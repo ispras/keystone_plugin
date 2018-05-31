@@ -1,6 +1,9 @@
 F = {}
+local kutils = require ("kong.plugins.keystone.utils")
 local unistd = require "posix.unistd"
 local Chars = {}
+local rounds = kutils.config_from_dao().default_crypt_strength
+
 for Loop = 0, 255 do
    Chars[Loop+1] = string.char(Loop)
 end
@@ -58,22 +61,22 @@ end
 function crypt(password)
 
   -- calc checksum
-  salt = string.random(16, "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-  a = unistd.crypt(password, "$6$rounds=10000$".. salt .."$")
-  checksum = string.sub(a, -86)
-  b = "$6$rounds=10000$".. salt .."$" .. checksum
-  result = unistd.crypt(password, b )
+  local salt = string.random(16, "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+  local a = unistd.crypt(password, "$6$rounds=" .. rounds .. "$".. salt .."$")
+  local checksum = string.sub(a, -86)
+  local b = "$6$rounds=" .. rounds .. "$".. salt .."$" .. checksum
+  local result = unistd.crypt(password, b )
   return result
 end
 
 function verify(password, hashed)
-  checksum = string.sub(hashed, -86)
-  salt = string.sub(hashed, 17, -67)
+  local checksum = string.sub(hashed, -86)
+  local salt = string.sub(hashed, 17, -67)
   --rounds = string.sub(hashed, 3, -13)
   -- calc checksum
 
-  b = "$6$rounds=10000$".. salt .."$" .. checksum
-  result = unistd.crypt(password, b)
+  local b = "$6$rounds=" .. rounds .. "$".. salt .."$" .. checksum
+  local result = unistd.crypt(password, b)
   return result == hashed
 end
 

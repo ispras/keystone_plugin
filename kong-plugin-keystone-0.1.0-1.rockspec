@@ -44,7 +44,7 @@ dependencies = {
   "lua-messagepack >= 0.5.1-1",
   "lua-resty-http >= 0.12-0",
   "lua-resty-session >= 2.19-1",
-  "bcrypt >= 2.1-4"
+--  "bcrypt >= 2.1-4"
 }
 
 local pluginName = "keystone"  -- TODO: rename. This is the name to set in the Kong configuration `custom_plugins` setting.

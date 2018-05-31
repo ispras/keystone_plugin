@@ -1,4 +1,4 @@
-OsPkiApi = {}
+local OsPkiApi = {}
 
 function list_revoked_tokens(self, dao_factory)
     return ''

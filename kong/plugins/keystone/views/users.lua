@@ -1,6 +1,6 @@
 local responses = require "kong.tools.responses"
 local utils = require "kong.tools.utils"
---local sha512 = require("kong.plugins.keystone.sha512")
+local sha512 = require("kong.plugins.keystone.sha512")
 local bcrypt = require( "bcrypt" )
 local kutils = require ("kong.plugins.keystone.utils")
 local roles = require ("kong.plugins.keystone.views.roles")
@@ -179,6 +179,7 @@ local function create_local_user(self, dao_factory)
     local passwd = {
         id = utils.uuid(),
         local_user_id = loc_user.id,
+--        password = sha512.crypt(user.password),
         password = bcrypt.digest(user.password, 4),
         created_at = created_time
     }
