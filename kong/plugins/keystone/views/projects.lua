@@ -385,7 +385,7 @@ local function update_project(self, dao_factory)
          return responses.send_HTTP_BAD_REQUEST("Project is nil, check self.params")
     end
 
-    if request.project.name then
+    if request.project.name and request.project.name ~= project.name then
         local exists = check_project_name(dao_factory, request.project.name, project.is_domain, project.domain_id)
         if exists then
             responses.send_HTTP_CONFLICT("Error: project with this name already exists")
@@ -435,7 +435,8 @@ Project.delete_project = delete_project
 local routes = {
     ["/v3/projects"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects", dao_factory, self.params)
+--            responses.send_HTTP_OK(self.req.headers)
+            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects", dao_factory, self.params, self.req.parsed_url.scheme == 'http')
             Project.list_projects(self, dao_factory)
         end,
         POST = function(self, dao_factory)

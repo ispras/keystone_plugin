@@ -71,7 +71,7 @@ local function check_user(user, dao_factory)
             name = domain.name
         },
         id = user.id,
-        name = user.name,
+        name = loc_user.name,
         password_expires_at = cjson.null
     }
 
