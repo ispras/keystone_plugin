@@ -82,7 +82,8 @@ local function check_password(upasswd, loc_user_id, dao_factory)
     local passwd, err = dao_factory.password:find_all ({local_user_id = loc_user_id})
     kutils.assert_dao_error(err, "password:find_all")
     passwd = passwd[1]
-    if not bcrypt.verify(upasswd, passwd.password) then
+  if not bcrypt.verify(upasswd, passwd.password) then
+--    if not sha512.verify(upasswd, passwd.password) then
         responses.send_HTTP_BAD_REQUEST("Incorrect password")
     end
 

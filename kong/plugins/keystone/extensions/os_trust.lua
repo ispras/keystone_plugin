@@ -24,6 +24,10 @@ local function create_trust(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Bad obligatory params")
     end
 
+    if not kutils.config_from_dao()['trust_max_redelegation_count'] then
+        responses.send_HTTP_BAD_REQUEST("Trust is disabled")
+    end
+
     local tmp, err = dao_factory.user:find({id = self.params.trust.trustee_user_id})
     kutils.assert_dao_error(err, "user:find")
     if not tmp then
@@ -55,7 +59,7 @@ local function create_trust(self, dao_factory)
 
     local trust_obj = self.params.trust
     trust_obj.id = utils.uuid()
-    trust_obj.allow_redelegation = trust_obj.allow_redelegation or false
+    trust_obj.allow_redelegation = trust_obj.allow_redelegation and kutils.config_from_dao()['trust_allow_redelegation']
     if not trust_obj.allow_redelegation then
         trust_obj.redelegaion_count = 0
         trust_obj.remaining_uses = nil
@@ -65,7 +69,7 @@ local function create_trust(self, dao_factory)
         elseif old_redelegation_count == 0 then
             responses.send_HTTP_BAD_REQUEST("Redelegation of this trust is forbidden")
         else
-            local max_redelegation_count = kutils.config_from_dao()['max_redelegation_count']
+            local max_redelegation_count = kutils.config_from_dao()['trust_max_redelegation_count']
             trust_obj.redelegation_count = trust_obj.redelegation_count or max_redelegation_count
             if trust_obj.redelegation_count > max_redelegation_count then
                 trust_obj.redelegation_count = max_redelegation_count

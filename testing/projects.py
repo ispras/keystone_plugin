@@ -1,4 +1,4 @@
-from base import TestKeystoneBase
+from keystone_plugin.testing.base import TestKeystoneBase
 import requests
 
 
@@ -7,7 +7,7 @@ class TestKeystoneProjects(TestKeystoneBase):
         super(TestKeystoneProjects, self).setUp()
         self.url = self.host + '/v3/projects/'
         self.project_id = 'f9c9f2b6-c717-4fec-9dec-f09e7a7e62ad'
-        self.admin_auth()
+        # self.admin_auth()
 
     def create(self):
         body = {
