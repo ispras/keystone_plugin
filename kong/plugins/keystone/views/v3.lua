@@ -188,6 +188,7 @@ return {
     },
     ["/"] = {
         GET = function(self)
+--            responses.send_HTTP_OK(self.req.headers)
             version_v3.links[1].href = self:build_url(version_v3.links[1].href)
             responses.send_HTTP_OK({ versions = { values = { version_v3, version_v2 } } }, kutils.headers())
         end

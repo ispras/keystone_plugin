@@ -116,6 +116,23 @@ local function update_role(self, dao_factory) -- clean cache
         self = self:build_url(self.req.parsed_url.path..'/'..role.id)
     }
 
+    local red, err = redis.connect() -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local keys, err = red:keys(".*&.*")
+    kutils.assert_dao_error(err, "redis get keys")
+    for _, key in pairs(keys) do
+        local temp = red:get (key)
+        kutils.assert_dao_error(err, "redis get by key")
+        local t = cjson.decode(temp)
+        local num = kutils.has_id(t, role.id)
+        if num then
+            t[num].name = role.name
+        end
+        temp = cjson.encode(t)
+        _, err = red:set(key, temp)
+        kutils.assert_dao_error(err, "redis set by key")
+    end
+
     responses.send_HTTP_OK(resp)
 end
 
@@ -137,6 +154,26 @@ local function delete_role(self, dao_factory) -- clean cache
         for _, v in ipairs(temp) do
             dao_factory.assignment:delete(v)
         end
+    dao_factory.role:delete({id = role.id})
+
+    local red, err = redis.connect() -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local keys, err = red:keys(".*&.*")
+    kutils.assert_dao_error(err, "redis get keys")
+    for _, key in pairs(keys) do
+        local temp = red:get (key)
+        kutils.assert_dao_error(err, "redis get by key")
+        local t = cjson.decode(temp)
+        local num = kutils.has_id(t, role.id)
+        if num then
+            t[num] = t[#t]
+            t[#t] = nil
+        end
+        temp = cjson.encode(t)
+        _, err = red:set(key, temp)
+        kutils.assert_dao_error(err, "redis set by key")
+    end
+
 
     responses.send_HTTP_NO_CONTENT()
 end

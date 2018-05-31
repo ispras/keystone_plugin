@@ -187,7 +187,8 @@ local function create_local_user(self, dao_factory)
         enabled = user.enabled,
         default_project_id = user.default_project_id,
         created_at = created_time,
-        domain_id = loc_user.domain_id
+        domain_id = loc_user.domain_id,
+        extra = cjson.encode({email = user.email})
     }
     if not user.enabled then
         user.enabled = true
@@ -228,7 +229,8 @@ local function create_local_user(self, dao_factory)
             enabled = user.enabled,
             id = user.id,
             name = loc_user.name,
-            password_expires_at = kutils.time_to_string(passwd.expires_at)
+            password_expires_at = kutils.time_to_string(passwd.expires_at),
+            email = cjson.decode(user.extra).email
         }
     }
 
@@ -262,7 +264,8 @@ local function create_nonlocal_user(self, dao_factory)
         enabled = user.enabled,
         default_project_id = user.default_project_id,
         created_at = created_time,
-        domain_id = nonloc_user.domain_id
+        domain_id = nonloc_user.domain_id,
+        extra = cjson.encode({email = user.email})
     }
     if not user.enabled then
         user.enabled = true
@@ -295,7 +298,8 @@ local function create_nonlocal_user(self, dao_factory)
             domain_id = user.domain_id,
             enabled = user.enabled,
             id = user.id,
-            name = nonloc_user.name
+            name = nonloc_user.name,
+            email = cjson.decode(user.extra).email
         }
     }
     return 201, resp
@@ -304,12 +308,24 @@ end
 local function get_user_by_id_or_name (dao_factory, id_or_name)
     local user, err = dao_factory.user:find({id = id_or_name})
     kutils.assert_dao_error(err, "user find")
-    if user then return user end
+    if user then
+        local temp, err = dao_factory.local_user:find_all ({user_id = user.id})
+        kutils.assert_dao_error(err, "local user find all")
+        if temp[1] then
+            user.name = temp[1].name
+        else
+            local temp, err = dao_factory.nonlocal_user:find_all ({user_id = user.id})
+            kutils.assert_dao_error(err, "local user find all")
+            user.name = temp[1].name
+        end
+        return user
+    end
     local temp, err = dao_factory.local_user:find_all ({name = id_or_name, domain_id = namespace_id})
     kutils.assert_dao_error(err, "local user find all")
     if temp[1] then
         user, err = dao_factory.user:find({ id = temp[1].user_id })
         kutils.assert_dao_error(err, "user find")
+        user.name = id_or_name
         return user
     end
     local temp, err = dao_factory.nonlocal_user:find({ name = id_or_name, domain_id = namespace_id })
@@ -317,6 +333,7 @@ local function get_user_by_id_or_name (dao_factory, id_or_name)
     if temp then
         user, err = dao_factory.user:find({ id = temp.user_id })
         kutils.assert_dao_error(err, "user find")
+        user.name = id_or_name
         return user
     end
     if not user then
@@ -334,7 +351,8 @@ local function get_user_info(self, dao_factory)
             default_project_id = user.default_project_id,
             domain_id = user.domain_id,
             enabled = kutils.bool(user.enabled),
-            id = user.id
+            id = user.id,
+            email = user.extra and cjson.decode(user.extra).email
         }
     }
     local loc_user, err = dao_factory.local_user:find_all({user_id = user.id})
@@ -362,14 +380,14 @@ local function update_user(self, dao_factory)
     if not uupdate then
         return responses.send_HTTP_BAD_REQUEST({message = "No user object detected in request"})
     end
-    if uupdate.name then
+    if uupdate.name and uupdate.name ~= user.name then
         local err = check_user_domain(dao_factory, user.domain_id, uupdate.name)
         if err then
             responses.send_HTTP_CONFLICT(err)
         end
     end
 
-    local loc_user, nonloc_user, err
+    local loc_user, nonloc_user, err, passwd
     loc_user, err = dao_factory.local_user:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "local_user:find_all")
     loc_user = loc_user[1]
@@ -380,6 +398,8 @@ local function update_user(self, dao_factory)
             loc_user, err = dao_factory.local_user:update({name = uupdate.name}, {id = loc_user.id})
             kutils.assert_dao_error(err, "local_user:update")
         end
+        passwd, err = dao_factory.password:find_all ({local_user_id = loc_user.id})
+        kutils.assert_dao_error(err, "password:find_all")
     else
         nonloc_user, err = dao_factory.nonlocal_user:find_all({user_id = user.id})
         kutils.assert_dao_error(err, "nonlocal_user:find_all")
@@ -395,16 +415,20 @@ local function update_user(self, dao_factory)
         end
     end
 
-    local passwd
     if uupdate.password then
-        passwd = {
-            password= bcrypt.digest(uupdate.password, 4)
-        }
+        passwd.new_password = bcrypt.digest(uupdate.password, 4)
     end
 
+    if uupdate.email then
+        local extra = user.extra and cjson.decode(user.extra)
+        extra = extra or {}
+        extra.email = uupdate.email
+        uupdate.extra = cjson.encode(extra)
+    end
     uupdate = {
         default_project_id = uupdate.default_project_id,
-        enabled = kutils.bool(uupdate.enabled)
+        enabled = kutils.bool(uupdate.enabled),
+        extra = uupdate.extra
     }
 
     if next(uupdate) then
@@ -418,12 +442,10 @@ local function update_user(self, dao_factory)
         kutils.assert_dao_error(err, "user:update")
     end
 
-    if passwd and loc_user then
-        local temp, err = dao_factory.password:find_all ({local_user_id = loc_user.id})
-        kutils.assert_dao_error(err, "password:find_all")
-        passwd, err = dao_factory.password:update({password = passwd.password}, {id = temp[1].id})
+    if passwd.new_password and loc_user and passwd.new_password ~= passwd.password then
+        passwd, err = dao_factory.password:update({password = passwd.new_password}, {id = passwd.id})
         kutils.assert_dao_error(err, "password:update")
-    elseif passwd and nonloc_user then
+    elseif passwd.new_password and nonloc_user then
         local _, err = dao_factory.nonlocal_user:delete({name = nonloc_user.name, domain_id = nonloc_user.domain_id})
         kutils.assert_dao_error(err, "nonlocal_user:delete")
         local created_time = os.time()
@@ -459,11 +481,12 @@ local function update_user(self, dao_factory)
             enabled = user.enabled,
             id = user.id,
             name = loc_user and loc_user.name or nonloc_user.name,
-            password_expires_at = loc and kutils.time_to_string(passwd.expires_at)
+            password_expires_at = loc and kutils.time_to_string(passwd.expires_at),
+            email = user.extra and cjson.decode(user.extra).email
         }
     }
 
-    return responses.send_HTTP_OK(resp)
+    responses.send_HTTP_OK(resp)
 end
 
 local function delete_user(self, dao_factory)
@@ -608,7 +631,8 @@ local function list_user_projects(self, dao_factory)
                     self = self:build_url('/v3/projects/'..project.id)
                 },
                 name = project.name,
-                parent_id = project.parent_id or cjson.null
+                parent_id = project.parent_id or cjson.null,
+                is_domain = project.is_domain
             }
         end
     end
