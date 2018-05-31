@@ -20,7 +20,7 @@ end
 local function get_role(rule)
     --TODO http rule
 
-    local pols = parse_json("/etc/kong/policy_example.json")
+    local pols = parse_json("/etc/kong/policy_keystone.json")
     local rule = rule
     while true do
         rule = rule:match('^%((.*)%)$') or rule
