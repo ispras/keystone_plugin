@@ -90,65 +90,19 @@ Code of the project can be found [here](https://github.com/ispras/keystone_plugi
 So, let's clone this project:
 
 ~~~sh
-$ cd KEY_DIR
 $ git clone https://github.com/ispras/keystone_plugin.git
+~~~
+
+Now we will [integrate](https://getkong.org/docs/0.11.x/plugin-development/distribution/) this plugin in the local kong project. You need root rights.
+
+<name>, <password> need for admin credentials and would be stored in /etc/kong/admin_creds file
+
+~~~sh
 $ cd keystone_plugin
-~~~
-
-Now we will integrate this plugin in the local kong project.
-
-Also you should modify rockspecs files adding information about keystone-plugin and required lua-modules. You can do it by copying rockspecs files from keystone-plugin project to it:
-
-~~~sh
-$ cp ~/keystone_plugin/kong-plugin-keystone-0.1.0-1.rockspec ~/kong-vagrant/kong-plugin/kong-plugin-keystone-0.1.0-1.rockspec
-$ cp ~/keystone_plugin/kong-0.10.3-0.rockspec ~/kong-vagrant/kong/kong-0.10.3-0.rockspec
-~~~
-
-Copy to **~/kong-vagrant/kong-plugin** customized configuration file, which opts [Cassandra DB](https://cassandra.apache.org/) as data store and keystone-plugin as custom plugin:
-
-~~~sh
-$ cp ~/keystone_plugin/kong.conf ~/kong-vagrant/kong-plugin/kong.conf 
-~~~ 
-
-Now it's time to build the VM and ssh into it, but first make certain that all vagrant VM are destroyed:
-
-~~~sh 
-$ cd ~/kong-vagrant
-$ sudo vagrant up
-$ sudo vagrant ssh 
-~~~
-
-Copy your configuration file into **/etc/kong/kong.conf** (do it inside the VM):
-
-~~~sh
-$ sudo cp /kong-plugin/kong.conf /etc/kong/kong.conf
-~~~
-
-Let's start kong and specify our configuration file:
-
-~~~sh
-$ cd /kong
-$ sudo make dev
-$ export KONG_CUSTOM_PLUGINS=keystone
-$ bin/kong start -c /etc/kong/kong.conf
+$ . install.sh <name> <password>
 ~~~
 
 Make sure, that kong has started without any problems:
-
-~~~sh
-$ curl http://localhost:8001
-~~~
-
- If you have some problems and the code status of the response isn't 200 look at logs, you can find them in VM directory **/usr/local/kong/logs **and errors are described in file **error.log**:
-
- In case you don't have any problems let's add API and keystone as custom plugin from the host machine:
- 
-~~~sh
-$  curl -i -X POST   --url http://localhost:8001/apis/   --data 'name=mockbin'   --data 'upstream_url=http://mockbin.org/request'   --data 'uris=/'
-$  curl -i -X POST   --url http://localhost:8001/apis/mockbin/plugins/   --data 'name=keystone'
-~~~
-
-Then try to check the Admin host 8001 again:
 
 ~~~sh
 $ curl http://localhost:8001
@@ -168,6 +122,8 @@ Server: kong/0.10.3
 {..."plugins":{"enabled_in_cluster":["keystone"],"available_on_server":{"syslog":true,"ldap-auth":true,"rate-limiting":true,"correlation-id":true,"jwt":true,"request-termination":true,"galileo":true,"runscope":true,"request-transformer":true,"http-log":true,"loggly":true,"response-transformer":true,"basic-auth":true,"tcp-log":true,"hmac-auth":true,"oauth2":true,"acl":true,"bot-detection":true,"udp-log":true,"cors":true,"file-log":true,"ip-restriction":true,"datadog":true,"request-size-limiting":true,"keystone":true,"aws-lambda":true,"statsd":true,"response-ratelimiting":true,"key-auth":true}}}
 ~~~
 
+If you have some problems and the code status of the response isn't 200 look at logs, you can find them in VM directory **/usr/local/kong/logs **and errors are described in file **error.log**:
+
 Pay attention to the presence of the following lines:
 
 * **"custom_plugins":["keystone"]**
@@ -177,7 +133,7 @@ Pay attention to the presence of the following lines:
 If you have found those lines, keystone-plugin is running and is enabled. So you can try to check some functions provided by this plugin. First let's call the simplest GET-method, that shows us information about keystone version:
 
 ~~~sh
-$ curl -i http://localhost:8001/v2.0/
+$ curl -i http://localhost:8001/v3/
 ~~~
 
 The response must look like this:
@@ -195,6 +151,8 @@ x-openstack-request-id: 7E7BEFE2-D0A3-43B3-A584-1CEBC3B4C34B
 
 {"version":{"updated":"2014-04-17T00:00:00Z","id":"v2.0","status":"stable","media-types":[{"base":"application\/json","type":"application\/vnd.openstack.identity-v2.0+json"}],"links":[{"href":"http:\/\/127.0.0.1:35357\/v2.0\/","rel":"self"},{"href":"http:\/\/docs.openstack.org\/","rel":"describedby","type":"text\/html"}]}}
 ~~~
+
+## **Step 3: Testing**
 
 For manual testing of other methods you can use some rested extension for your browser. For example if you have Mozila browser the REST-extension you can find here:
 
