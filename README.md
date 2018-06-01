@@ -53,7 +53,7 @@ $ sudo apt-get install libssl-dev
 
 Now we will [integrate](https://getkong.org/docs/0.11.x/plugin-development/distribution/) this plugin in the local kong project. You need root rights.
 
-<name>, <password> need for admin credentials and would be stored in /etc/kong/admin_creds file
+<name>, <password> need for admin credentials and would be stored in **/etc/kong/admin_creds** file
 
 ~~~sh
 $ cd keystone_plugin
@@ -130,7 +130,7 @@ x-openstack-request-id: 7E7BEFE2-D0A3-43B3-A584-1CEBC3B4C34B
 {"version":{"links":[{"rel":"self","href":"http:\/\/localhost:8001\/v3\/"},{"rel":"describedby","href":"http:\/\/docs.openstack.org\/","type":"text\/html"}],"id":"v3.4","updated":"2018-01-01T00:00:00Z","status":"stable","media-types":[{"type":"application\/vnd.openstack.identity-v3+json","base":"application\/json"}]}}
 ~~~
 
-To init keystone with necessary information run the script init.sh:
+To init keystone with necessary information run the script **init.sh**:
 
 ~~~sh
 $ . init.sh <name> <password>
