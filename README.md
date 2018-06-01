@@ -32,48 +32,6 @@ $ sudo apt-get install openssl libpcre3 procps perl
 $ sudo dpkg -i kong-community-edition-0.13.1.*.deb
 ~~~
 
-If you don’t have any problems, you can start Kong with this command:
-
-~~~sh
-$ sudo kong start
-~~~
- 
-Kong is now started and is available on the default ports:
-
-* 8000 Proxy port
-* 8443 SSL Proxy port
-* 8001 Admin API
-* 8444 SSL Admin API
- 
-To verify Kong is running successfully, execute the following command:
-
-~~~sh
-$ curl http://localhost:8001
-~~~
-   
-You should receive a **JSON** response:
-
-~~~javascript
-{
-  "tagline": "Welcome to Kong",
-  "version": "x.x.x",
-  "hostname": "precise64",
-  "lua_version": "LuaJIT 2.1.0-alpha",
-  "plugins": {
-    "enabled_in_cluster": {},
-    "available_on_server": [
-      ...
-    ]
-  }
-}
-~~~
-
-For stopping the Kong instance use following command:
-
-~~~sh
-$ sudo kong stop
-~~~ 
-
 ## **Step 2: Keystone plugin**
 
 The **keystone-plugin** executes some functions, which exist in [Keystone](https://docs.openstack.org/keystone/latest/), the [OpenStack](https://docs.openstack.org/) Identity Service. Keystone is an OpenStack service that provides API client authentication, service discovery, and distributed multi-tenant authorization by implementing [OpenStack’s Identity API](https://developer.openstack.org/api-ref/identity/v3/).
@@ -103,7 +61,20 @@ $ sudo su
 $ . install.sh <name> <password>
 ~~~
 
-Make sure, that kong has started without any problems:
+If you don’t have any problems, you can start Kong with this command:
+
+~~~sh
+$ sudo kong start
+~~~
+
+Kong is now started and is available on the default ports:
+
+* 8000 Proxy port
+* 8443 SSL Proxy port
+* 8001 Admin API
+* 8444 SSL Admin API
+
+To verify Kong is running successfully, execute the following command:
 
 ~~~sh
 $ curl http://localhost:8001
@@ -121,6 +92,12 @@ Access-Control-Allow-Origin: *
 Server: kong/0.10.3
 
 {..."plugins":{"enabled_in_cluster":["keystone"],"available_on_server":{"syslog":true,"ldap-auth":true,"rate-limiting":true,"correlation-id":true,"jwt":true,"request-termination":true,"galileo":true,"runscope":true,"request-transformer":true,"http-log":true,"loggly":true,"response-transformer":true,"basic-auth":true,"tcp-log":true,"hmac-auth":true,"oauth2":true,"acl":true,"bot-detection":true,"udp-log":true,"cors":true,"file-log":true,"ip-restriction":true,"datadog":true,"request-size-limiting":true,"keystone":true,"aws-lambda":true,"statsd":true,"response-ratelimiting":true,"key-auth":true}}}
+~~~
+
+For stopping the Kong instance use following command:
+
+~~~sh
+$ sudo kong stop
 ~~~
 
 If you have some problems and the code status of the response isn't 200 look at logs, you can find them in VM directory **/usr/local/kong/logs **and errors are described in file **error.log**:
@@ -150,7 +127,13 @@ Server: kong/0.10.3
 Vary: X-Auth-Token
 x-openstack-request-id: 7E7BEFE2-D0A3-43B3-A584-1CEBC3B4C34B
 
-{"version":{"updated":"2014-04-17T00:00:00Z","id":"v2.0","status":"stable","media-types":[{"base":"application\/json","type":"application\/vnd.openstack.identity-v2.0+json"}],"links":[{"href":"http:\/\/127.0.0.1:35357\/v2.0\/","rel":"self"},{"href":"http:\/\/docs.openstack.org\/","rel":"describedby","type":"text\/html"}]}}
+{"version":{"links":[{"rel":"self","href":"http:\/\/localhost:8001\/v3\/"},{"rel":"describedby","href":"http:\/\/docs.openstack.org\/","type":"text\/html"}],"id":"v3.4","updated":"2018-01-01T00:00:00Z","status":"stable","media-types":[{"type":"application\/vnd.openstack.identity-v3+json","base":"application\/json"}]}}
+~~~
+
+To init keystone with necessary information run the script init.sh:
+
+~~~sh
+$ . init.sh <name> <password>
 ~~~
 
 ## **Step 3: Testing**

@@ -27,7 +27,8 @@ echo ">>> Configuration"
 #lua update_keystone_conf.lua
 curl -i -X POST   --url http://localhost:8001/apis/   --data 'name=mockbin'   --data 'upstream_url=http://mockbin.org/request'   --data 'uris=/'
 curl -i -X POST   --url http://localhost:8001/apis/mockbin/plugins/   --data 'name=keystone'
-curl -i -X POST   --url http://localhost:8001/v3/
+
+kong stop
 
 fi
 fi
