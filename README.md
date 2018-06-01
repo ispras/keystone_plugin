@@ -13,19 +13,13 @@ $ sudo apt-get update
 $ sudo apt-get install cassandra
 ~~~
 
-If errors appear try:
-
-~~~sh
-$ sudo apt-get install libssl1.0.0
-~~~
-
 Start cassandra:
 
 ~~~sh
 $ sudo service cassandra start
 ~~~~
 
-Now, if all goes well, you Cassandra database.
+Now, if all goes well, you have Cassandra database.
 
 ## **Step 1: Kong**
 
@@ -34,7 +28,6 @@ Now, if all goes well, you Cassandra database.
 Now you can install [Kong](https://konghq.com/install/) for [ubuntu](https://getkong.org/install/ubuntu/). Choose your version and download package.
 
 ~~~sh
-$ sudo apt-get update
 $ sudo apt-get install openssl libpcre3 procps perl
 $ sudo dpkg -i kong-community-edition-0.13.1.*.deb
 ~~~
@@ -93,12 +86,20 @@ So, let's clone this project:
 $ git clone https://github.com/ispras/keystone_plugin.git
 ~~~
 
+Install openssl libraries
+
+~~~sh
+$ sudo apt-get install libssl1.0.0
+$ sudo apt-get install libssl-dev
+~~~
+
 Now we will [integrate](https://getkong.org/docs/0.11.x/plugin-development/distribution/) this plugin in the local kong project. You need root rights.
 
 <name>, <password> need for admin credentials and would be stored in /etc/kong/admin_creds file
 
 ~~~sh
 $ cd keystone_plugin
+$ sudo su
 $ . install.sh <name> <password>
 ~~~
 
@@ -154,4 +155,4 @@ x-openstack-request-id: 7E7BEFE2-D0A3-43B3-A584-1CEBC3B4C34B
 
 ## **Step 3: Testing**
 
-For manual testing of other methods you can use python testsgit .
+For manual testing of other methods you can use python tests.
