@@ -171,7 +171,7 @@ local function list_trusts(self, dao_factory)
         kutils.assert_dao_error(err, "trust:find_all")
     end
 
-    for i = 1, #trusts do
+    for i = 1, kutils.list_limit(#trusts) do
         resp.trusts[i] = trusts[i]
         local trust_roles, err = dao_factory.trust_role:find_all({trust_id = trusts[i].id})
         kutils.assert_dao_error(err, "trust_role:find_all")
@@ -287,7 +287,7 @@ local function list_delegated_roles(self, dao_factory)
     local trust_roles, err = dao_factory.trust_role:find_all({trust_id = trust_id})
     kutils.assert_dao_error(err, "trust_role:find_all")
 
-    for i = 1, #trust_roles do
+    for i = 1, kutils.list_limit(#trust_roles) do
         local role, err = dao_factory.role:find({id = trust_roles[i].role_id})
         kutils.assert_dao_error(err, "role:find")
         roles[i] = role

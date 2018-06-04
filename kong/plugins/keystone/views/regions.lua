@@ -29,7 +29,7 @@ local function list_regions(self, dao_factory)
         responses.send_HTTP_OK(resp)
     end
 
-    for i = 1, #regions do
+    for i = 1, kutils.list_limit(#regions) do
         resp.regions[i] = {}
         resp.regions[i].description = regions[i].description
         resp.regions[i].id = regions[i].id

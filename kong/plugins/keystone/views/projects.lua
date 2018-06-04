@@ -70,7 +70,7 @@ local function list_projects(self, dao_factory)
             return responses.send_HTTP_OK(resp)
         end
 
-        for i = 1, #projects do
+        for i = 1, kutils.list_limit(#projects) do
             resp.projects[i] = {}
             resp.projects[i].description = projects[i].description
             resp.projects[i].domain_id = projects[i].domain_id or projects[i].id
@@ -102,7 +102,7 @@ local function list_projects(self, dao_factory)
             return responses.send_HTTP_OK(resp)
         end
 
-        for i = 1, #domains do
+        for i = 1, kutils.list_limit(#domains) do
             resp.domains[i] = {}
             resp.domains[i].description = domains[i].description
             resp.domains[i].enabled = domains[i].enabled

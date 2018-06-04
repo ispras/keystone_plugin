@@ -65,7 +65,7 @@ local function list_credentials(self, dao_factory)
             credentials = {}
     }
 
-    for i = 1, #credentials do
+    for i = 1, kutils.list_limit(#credentials) do
         resp.credentials[i] = {}
         resp.credentials[i].id = credentials[i].id
         resp.credentials[i].user_id = credentials[i].user_id

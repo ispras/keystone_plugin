@@ -179,6 +179,10 @@ table_tostring = function ( tbl )
   return "{" .. table.concat( result, "," ) .. "}"
 end
 
+local function list_limit(len)
+    local config = config_from_dao()
+    return config.default_list_limit == -1 and len or config.default_list_limit > len and len or config.default_list_limit
+end
 return {
     bool = bool,
 --    default_domain = default_domain,
@@ -192,5 +196,6 @@ return {
     config_from_dao = config_from_dao,
     provider = provider,
     federated_group = federated_group,
-    table_to_string = table_tostring
+    table_to_string = table_tostring,
+    list_limit = list_limit,
 }

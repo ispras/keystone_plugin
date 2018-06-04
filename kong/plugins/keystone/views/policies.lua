@@ -29,7 +29,7 @@ local function list_policies(self, dao_factory)
         return responses.send_HTTP_OK(resp)
     end
 
-    for i = 1, #policies do
+    for i = 1, kutils.list_limit(#policies) do
         resp.policies[i] = policies[i]
         resp.policies[i].links = {
                 self = self:build_url(self.req.parsed_url.path)

@@ -20,8 +20,8 @@ local block_names = {
 local blocks = {
     default = {
         crypt_strength = 10000,
-        public_endpoint = "None",
-        admin_endpoint = "None",
+        public_endpoint = "",
+        admin_endpoint = "",
         max_project_tree_depth = 5,
         max_param_size = 64,
         max_token_size = 255,
@@ -30,17 +30,17 @@ local blocks = {
         list_limit = -1,
     },
     auth = {
-        methods = '"external", "password", "token", "oauth2", "mapped"',
+        methods = 'external, password, token, oauth2, mapped',
         password = "",
 
     },
     cors = {
-        allowed_origin = "None",
+        allowed_origin = "",
         allow_credentials = "true",
-        expose_headers = '"X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token"',
-        allow_methods = '"GET", "PUT", "POST", "DELETE", "PATCH"',
-        allow_headers = [["X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token", "X-Project-Id,X-Project-Name",
-                        "X-Project-Domain-Id", "X-Project-Domain-Name,X-Domain-Id", "X-Domain-Name"]],
+        expose_headers = 'X-Auth-Token, X-Openstack-Request-Id, X-Subject-Token',
+        allow_methods = 'GET, PUT, POST, DELETE, PATCH',
+        allow_headers = [[X-Auth-Token, X-Openstack-Request-Id, X-Subject-Token, X-Project-Id, X-Project-Name,
+                        X-Project-Domain-Id, X-Project-Domain-Name, X-Domain-Id, X-Domain-Name]],
     },
     fernet_tokens = {
         max_active_keys = 3
@@ -98,7 +98,7 @@ local function parse_config(keystone_path)
                 if block_names[block_name] then --block with this name presents in cofiguration
                     cur_block = block_name
                 else
-                    print("Block with name " .. block_name .. " is not presented in Keystone configuration")
+                    print("Block with name " .. block_name .. " is not used in Keystone configuration.")
                     cur_block = nil
                 end
             elseif cur_block then
@@ -108,9 +108,12 @@ local function parse_config(keystone_path)
                     local param_name = string.sub(line, 1, name_pos - 1)
                     local param_value = string.sub(line, value_pos + 2)
                     if param_name and param_value and blocks[cur_block][param_name] then -- checks if parameter with this name presents in current block
+                        if param_value == "<None>" then
+                            param_value = type(blocks[cur_block][param_name]) == "number" and -1 or ""
+                        end
                         blocks[cur_block][param_name] = param_value
                     elseif param_name and param_value then
-                        print("Parameter with name " .. param_name .. " is not presented in block with name " .. cur_block)
+                        print("Parameter with name " .. param_name .. " is not used in block with name " .. cur_block .. ".")
                     end
                 end
             end
@@ -122,7 +125,6 @@ end
 local function generate_req_body(request_body)
     for block_k, block_v in pairs(blocks) do
        for k, v in pairs(block_v) do
-           print("!!!! " .. k .. " " .. v)
            request_body = request_body .. "&config." .. block_k .. "_" .. k .. "=" .. v
        end
     end
@@ -134,7 +136,7 @@ if not parse_config(path) then
     return
 end
 
-print(pl.dump(blocks))
+--print(pl.dump(blocks))
 
 local get_req_body = "name=keystone"
 local url = "http://localhost:8001/apis/mockbin/plugins"
@@ -151,7 +153,7 @@ http.request{
     }
 }
 
-print(pl.dump(get_response))
+--print(pl.dump(get_response))
 
 local keystone_id_pos = get_response[1]:find('"id"')
 if keystone_id_pos then
@@ -164,11 +166,6 @@ end
 
 local request_body = generate_req_body("name=keystone")
 
---local request_body = "name=keystone&config.token_provider=uuid" --&config.token_provider=fernet
-print()
-print()
-print(request_body)
-print()
 print()
 http.request{
     url = url,

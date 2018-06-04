@@ -30,14 +30,14 @@ return {
     fields = {
         --default block
         default_crypt_strength = { type = "number", func = check_default_crypt_strenght, default = 10000 },
-        default_public_endpoint = { type = "string", default = 'None' }, --not implemented
-        default_admin_endpoint = { type = "string", default = 'None' }, --not implemented
+        default_public_endpoint = { type = "string", default = '' }, --not implemented
+        default_admin_endpoint = { type = "string", default = '' }, --not implemented
         default_max_project_tree_depth = { type = "number", default = 5 }, --not implemented
         default_max_param_size = { type = "number", default = 64 }, --not implemented
         default_max_token_size = { type = "number", default = 255 }, --not implemented
         default_member_role_id = { type = "string", default = '9fe2ff9ee4384b1894a90878d3e92bab' }, --not implemented
         default_member_role_name = { type = "string", default = '_member_' }, --not implemented
-        default_list_limit = { type = "number", default = -1 }, --not implemented
+        default_list_limit = { type = "number", default = -1 }, 
 
         --auth block
         auth_methods = { type = "array", default = {"external", "password", "token", "oauth2", "mapped"}}, --not implemented
