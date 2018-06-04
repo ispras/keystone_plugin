@@ -40,6 +40,10 @@ local function get_subtree_as_ids(self, dao_factory, project) --not tested
 end
 
 local function list_projects(self, dao_factory)
+--    if true then
+--        local conf = kutils.config_from_dao()
+--        responses.send_HTTP_BAD_REQUEST(conf)
+--    end
     local domain_id = self.params.domain_id
     local enabled = kutils.bool(self.params.enabled)
     local is_domain = kutils.bool(self.params.is_domain) or false

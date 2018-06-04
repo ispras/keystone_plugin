@@ -9,15 +9,15 @@ local block_names = {
     default = true,
     auth = true,
     cors = true,
-    eventlet_server = true,
+    fernet_tokens = true,
+    identity = true,
+    matchmaker_redis = true,
+    oslo_policy = true,
+    resource = true,
+    token = true,
 }
 
 local blocks = {
-    trust = {
-        enabled = true,
-        allow_redelegation = true,
-        max_redelegation_count = 3
-    },
     default = {
         crypt_strength = 10000,
         public_endpoint = "None",
@@ -30,21 +30,54 @@ local blocks = {
         list_limit = -1,
     },
     auth = {
-        methods = {"external", "password", "token", "oauth2", "mapped"},
+        methods = '"external", "password", "token", "oauth2", "mapped"',
         password = "",
 
     },
     cors = {
-        allowed_origin = {},
-        allow_credentials = true,
-        expose_headers = {"X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token"},
-        allow_methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
-        allow_headers = {"X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token", "X-Project-Id,X-Project-Name",
-                            "X-Project-Domain-Id", "X-Project-Domain-Name,X-Domain-Id", "X-Domain-Name"},
+        allowed_origin = "None",
+        allow_credentials = "true",
+        expose_headers = '"X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token"',
+        allow_methods = '"GET", "PUT", "POST", "DELETE", "PATCH"',
+        allow_headers = [["X-Auth-Token", "X-Openstack-Request-Id", "X-Subject-Token", "X-Project-Id,X-Project-Name",
+                        "X-Project-Domain-Id", "X-Project-Domain-Name,X-Domain-Id", "X-Domain-Name"]],
     },
-    eventlet_server = {
-        public_port = 5000,
+    fernet_tokens = {
+        max_active_keys = 3
+    },
+    identity = {
+        default_domain_id = "default",
+        max_password_length = 4096,
+    },
+    matchmaker_redis = {
+        host = "127.0.0.1",
+        port = 6379,
+        password = "",
+        wait_timeout = 2000
+    },
 
+    oslo_policy = {
+        policy_file = "policy.json",
+        policy_default_rule = "default",
+        policy_dirs = "policy.d"
+    },
+    resource = {
+        admin_project_domain_name = "admin",
+        admin_project_name = "admin",
+        project_name_url_safe = "off",
+        domain_name_url_safe = "off"
+    },
+    token = {
+        expiration = 3600,
+        provider = "fernet",
+        revoke_by_id = "true",
+        allow_rescope_scoped_token = "true",
+
+    },
+    trust = {
+        enabled = "true",
+        allow_redelegation = "true",
+        max_redelegation_count = 3
     },
 
 }
@@ -89,7 +122,8 @@ end
 local function generate_req_body(request_body)
     for block_k, block_v in pairs(blocks) do
        for k, v in pairs(block_v) do
-          request_body = request_body .. "&config." .. block_k .. "_" .. k .. "=" .. v
+           print("!!!! " .. k .. " " .. v)
+           request_body = request_body .. "&config." .. block_k .. "_" .. k .. "=" .. v
        end
     end
     return request_body
@@ -129,6 +163,13 @@ if keystone_id_pos then
 end
 
 local request_body = generate_req_body("name=keystone")
+
+--local request_body = "name=keystone&config.token_provider=uuid" --&config.token_provider=fernet
+print()
+print()
+print(request_body)
+print()
+print()
 http.request{
     url = url,
     sink = ltn12.sink.file(io.stdout),

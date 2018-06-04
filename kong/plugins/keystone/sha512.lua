@@ -2,7 +2,6 @@ F = {}
 local kutils = require ("kong.plugins.keystone.utils")
 local unistd = require "posix.unistd"
 local Chars = {}
-local rounds = kutils.config_from_dao().default_crypt_strength
 
 for Loop = 0, 255 do
    Chars[Loop+1] = string.char(Loop)
@@ -61,6 +60,7 @@ end
 function crypt(password)
 
   -- calc checksum
+  local rounds = kutils.config_from_dao().default_crypt_strength
   local salt = string.random(16, "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
   local a = unistd.crypt(password, "$6$rounds=" .. rounds .. "$".. salt .."$")
   local checksum = string.sub(a, -86)

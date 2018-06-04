@@ -101,9 +101,9 @@ end
 
 local function provider()
     local config = config_from_dao()
-    if config.identity_provider == 'uuid' then
+    if config.token_provider == 'uuid' then
         return uuid_tokens
-    elseif config.identity_provider == 'fernet' then
+    elseif config.token_provider == 'fernet' then
         return fernet_tokens
     end
 end
