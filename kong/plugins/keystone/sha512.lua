@@ -58,7 +58,7 @@ function string.random(Length, CharSet)
    end
 end
 function crypt(password)
-
+  local rounds = kutils.config_from_dao().default_crypt_strength
   -- calc checksum
   local rounds = kutils.config_from_dao().default_crypt_strength
   local salt = string.random(16, "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
@@ -70,6 +70,7 @@ function crypt(password)
 end
 
 function verify(password, hashed)
+  local rounds = kutils.config_from_dao().default_crypt_strength
   local checksum = string.sub(hashed, -86)
   local salt = string.sub(hashed, 17, -67)
   --rounds = string.sub(hashed, 3, -13)

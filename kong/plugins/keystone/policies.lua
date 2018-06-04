@@ -20,7 +20,7 @@ end
 local function get_role(rule)
     --TODO http rule
 
-    local pols = parse_json("/etc/kong/policy_example.json")
+    local pols = parse_json("/etc/kong/policy_keystone.json")
     local rule = rule
     while true do
         rule = rule:match('^%((.*)%)$') or rule
@@ -174,7 +174,13 @@ local function define_namespace(dao_factory, scope_id)
     return
 end
 
-local function handle_token(token, rule, target, obj)
+local function check_policy_rule(token, rule, target, obj, http)
+    -- token = self.req.headers['X-Auth-Token']
+    -- rule = 'identity:...'
+    -- target = dao_factory
+    -- obj = self.params
+    -- return: namespace_id
+
     --TODO is_admin_project
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
@@ -220,24 +226,6 @@ local function handle_token(token, rule, target, obj)
     end
 
     responses.send_HTTP_FORBIDDEN()
-end
-
-local function handle_cert(token, rule, target, obj)
-    return 'default'
-end
-
-local function check_policy_rule(token, rule, target, obj, http)
-    -- token = self.req.headers['X-Auth-Token']
-    -- rule = 'identity:...'
-    -- target = dao_factory
-    -- obj = self.params
-    -- return: namespace_id
-
-    if http then
-        return handle_token(token, rule, target, obj)
-    else
-        return handle_cert(token, rule, target, obj)
-    end
 end
 
 return {
