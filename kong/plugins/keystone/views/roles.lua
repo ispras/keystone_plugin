@@ -65,7 +65,7 @@ local function create_role(self, dao_factory)
         return 409, "Role with specified name already exists in domain"
     else
 
-        role.id = utils.uuid()
+        role.id = self.params.role.id or utils.uuid()
         local role, err = dao_factory.role:insert(role)
         kutils.assert_dao_error(err, "role insert")
     end

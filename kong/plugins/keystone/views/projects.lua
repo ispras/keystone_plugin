@@ -150,6 +150,25 @@ local function check_project_parent(dao_factory, parent_id, domain_id)
     if not res or res.domain_id ~= domain_id then
         return responses.send_HTTP_CONFLICT("Error: parent project with this ID does not exist")
     end
+    return res
+end
+
+local function check_project_tree_depth(dao_factory, parent_project)
+    local max_project_tree_depth = kutils.config_from_dao().default_max_project_tree_depth
+    local cur_tree_depth = 1
+    local cur_parent_project = parent_project
+    while true do
+        if cur_parent_project.parent_id then
+            cur_parent_project = check_project_parent(dao_factory, cur_parent_project.parent_id, cur_parent_project.domain_id)
+            cur_tree_depth = cur_tree_depth + 1
+        else
+            break
+        end
+    end
+
+    if cur_tree_depth > max_project_tree_depth then
+        return responses.send_HTTP_CONFLICT("Error: project tree depth exceeded the limit")
+    end
 end
 
 local function create_project(self, dao_factory)
@@ -188,7 +207,8 @@ local function create_project(self, dao_factory)
     local enabled = kutils.bool(request.project.enabled) or true
     local parent_id = request.project.parent_id --must be supplemented
     if parent_id then
-        check_project_parent(dao_factory, parent_id, domain_id)
+        local parent_project = check_project_parent(dao_factory, parent_id, domain_id)
+        check_project_tree_depth(dao_factory, parent_project)
     end
 
     local id = request.project.id or utils.uuid()

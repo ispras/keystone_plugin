@@ -32,12 +32,12 @@ return {
         default_crypt_strength = { type = "number", func = check_default_crypt_strenght, default = 10000 },
         default_public_endpoint = { type = "string", default = '' }, --not implemented
         default_admin_endpoint = { type = "string", default = '' }, --not implemented
-        default_max_project_tree_depth = { type = "number", default = 5 }, --not implemented
+        default_max_project_tree_depth = { type = "number", default = 5 },
         default_max_param_size = { type = "number", default = 64 }, --not implemented
         default_max_token_size = { type = "number", default = 255 }, --not implemented
-        default_member_role_id = { type = "string", default = '9fe2ff9ee4384b1894a90878d3e92bab' }, --not implemented
-        default_member_role_name = { type = "string", default = '_member_' }, --not implemented
-        default_list_limit = { type = "number", default = -1 }, 
+        default_member_role_id = { type = "string", default = '9fe2ff9ee4384b1894a90878d3e92bab' },
+        default_member_role_name = { type = "string", default = 'member' },
+        default_list_limit = { type = "number", default = -1 },
 
         --auth block
         auth_methods = { type = "array", default = {"external", "password", "token", "oauth2", "mapped"}}, --not implemented
@@ -71,13 +71,13 @@ return {
         oslo_policy_policy_dirs = { type = "string", default = 'policy.d' }, --not implemented
 
         --resource block
-        resource_admin_project_domain_name = { type = "string", default = 'admin' }, --not implemented
-        resource_admin_project_name = { type = "string", default = 'admin' }, --not implemented
+        resource_admin_project_domain_name = { type = "string", default = 'admin' },
+        resource_admin_project_name = { type = "string", default = 'admin' },
         resource_project_name_url_safe = { type = "string", enum = {"off", "new", "strict"}, default = 'off' }, --not implemented
         resource_domain_name_url_safe = { type = "string", enum = {"off", "new", "strict"}, default = 'off' }, --not implemented
 
         --token block
-        token_expiration = { type = "number", default = 3600 }, --not implemented
+        token_expiration = { type = "number", default = 3600 },
         token_provider = {type = "string", enum = {"uuid", "fernet"}, default = "fernet"},
         token_revoke_by_id = {type = "boolean", default = true}, --not implemented
         token_allow_rescope_scoped_token = {type = "boolean", default = true}, --not implemented

@@ -321,6 +321,39 @@ FederatedScopedPayload.assemble = function (user_id, methods, project_id, domain
     return b_user_id, int_methods, b_scope_id, b_group_ids, b_idp_id, protocol_id, expires_at, b_audit_ids
 end
 
+
+
+local FederatedProjectScopedPayload = {}
+
+FederatedProjectScopedPayload.version = 5
+FederatedProjectScopedPayload.create_arguments_apply = function (kwargs)
+    FederatedScopedPayload.version = FederatedProjectScopedPayload.version
+    return kwargs.project_id and kwargs.federated_info
+end
+
+FederatedProjectScopedPayload.assemble = FederatedScopedPayload.assemble
+FederatedProjectScopedPayload.disassemble = FederatedScopedPayload.disassemble
+
+
+local FederatedDomainScopedPayload = {}
+
+FederatedDomainScopedPayload.version = 6
+FederatedDomainScopedPayload.create_arguments_apply = function (kwargs)
+    FederatedScopedPayload.version = FederatedDomainScopedPayload.version
+    return kwargs.domain_id and kwargs.federated_info
+end
+
+FederatedDomainScopedPayload.assemble = FederatedScopedPayload.assemble
+FederatedDomainScopedPayload.disassemble = FederatedScopedPayload.disassemble
+
+local OauthScopedPayload = {}
+
+OauthScopedPayload.version = 7
+
+OauthScopedPayload.create_arguments_apply = function (kwargs)
+    return kwargs.access_token_id
+end
+
 FederatedScopedPayload.disassemble = function (payload)
     local user_id = touuid(payload[1])[1]
     local methods = int_to_methods(payload[2])
@@ -347,36 +380,6 @@ FederatedScopedPayload.disassemble = function (payload)
     local trust_id = nil
     local access_token_id = nil
     return user_id, methods, project_id, domain_id, expires_at_str, audit_ids, trust_id, federated_info, access_token_id
-end
-
-local FederatedProjectScopedPayload = {}
-
-FederatedProjectScopedPayload.version = 5
-FederatedProjectScopedPayload.create_arguments_apply = function (kwargs)
-    FederatedScopedPayload.version = FederatedProjectScopedPayload.version
-    return kwargs.project_id and kwargs.federated_info
-end
-
-FederatedProjectScopedPayload.assemble = FederatedScopedPayload.assemble
-FederatedProjectScopedPayload.disassemble = FederatedScopedPayload.disassemble
-
-local FederatedDomainScopedPayload = {}
-
-FederatedDomainScopedPayload.version = 6
-FederatedDomainScopedPayload.create_arguments_apply = function (kwargs)
-    FederatedScopedPayload.version = FederatedDomainScopedPayload.version
-    return kwargs.domain_id and kwargs.federated_info
-end
-
-FederatedDomainScopedPayload.assemble = FederatedScopedPayload.assemble
-FederatedDomainScopedPayload.disassemble = FederatedScopedPayload.disassemble
-
-local OauthScopedPayload = {}
-
-OauthScopedPayload.version = 7
-
-OauthScopedPayload.create_arguments_apply = function (kwargs)
-    return kwargs.access_token_id
 end
 
 OauthScopedPayload.assemble = function (user_id, methods, project_id, domain_id, expires_at, --expires_at must be a number
