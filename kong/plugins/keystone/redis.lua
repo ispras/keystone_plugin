@@ -9,15 +9,15 @@ local function connect_to_redis(conf)
     if not conf then
         return nil, "failed to get configuration parameters: "..err
     end
-    red:set_timeout(conf.redis_timeout)
+    red:set_timeout(conf.matchmaker_redis_wait_timeout)
 
-    local ok, err = red:connect(conf.redis_host, conf.redis_port)
+    local ok, err = red:connect(conf.matchmaker_redis_host, conf.matchmaker_redis_port)
     if err then
         return nil, err
     end
 
-    if conf.redis_password and conf.redis_password ~= "" then
-        local ok, err = red:auth(conf.redis_password)
+    if conf.matchmaker_redis_password and conf.matchmaker_redis_password ~= "" then
+        local ok, err = red:auth(conf.matchmaker_redis_password)
         if err then
             return nil, err
         end

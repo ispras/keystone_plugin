@@ -89,9 +89,13 @@ local function list_users(self, dao_factory, helpers)
     end
 
     local num = 0
+    local list_limit = kutils.config_from_dao().default_list_limit
     for _, user_info in ipairs(users_info) do
         if user_fits(self.params, dao_factory, user_info) then
             num = num + 1
+            if num > list_limit then
+                break
+            end
             resp.users[num] = {
                 domain_id = user_info.domain_id,
                 enabled = user_info.enabled,
@@ -592,7 +596,7 @@ local function list_user_groups(self, dao_factory)
     }
     local groups, err = dao_factory.user_group_membership:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "user_group_membership:find_all")
-    for i = 1, #groups do
+    for i = 1, kutils.list_limit(#groups) do
         local group, err = dao_factory.group:find({id = groups[i].group_id})
         kutils.assert_dao_error(err, "group:find")
         resp.groups[i] = group
@@ -618,7 +622,7 @@ local function list_user_projects(self, dao_factory)
     local temp, err = dao_factory.assignment:find_all({type = "UserProject", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
 
-    for i = 1, #temp do
+    for i = 1, kutils.list_limit(#temp) do
         if not kutils.has_id(resp.projects, temp[i].target_id) then
             local project, err = dao_factory.project:find({id = temp[i].target_id})
             kutils.assert_dao_error(err, "dao_factory.project:find")
@@ -655,7 +659,7 @@ local function list_user_domains(self, dao_factory)
     local temp, err = dao_factory.assignment:find_all({type = "UserDomain", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
 
-    for i = 1, #temp do
+    for i = 1, kutils.list_limit(#temp) do
         if not kutils.has_id(resp.domains, temp[i].target_id) then
             local project, err = dao_factory.project:find({id = temp[i].target_id})
             kutils.assert_dao_error(err, "dao_factory.project:find")

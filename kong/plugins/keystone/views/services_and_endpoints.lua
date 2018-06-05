@@ -42,7 +42,7 @@ local function list_services(self, dao_factory, enabled)
 
     kutils.assert_dao_error(err, "service find_all")
 
-    for i = 1, #services do
+    for i = 1, kutils.list_limit(#services) do
         resp.services[i] = {}
         resp.services[i].description = services[i].description
         resp.services[i].id = services[i].id
@@ -107,7 +107,7 @@ local function get_service_info(self, dao_factory)
             services = {}
         }
 
-        for i = 1, #service do
+        for i = 1, kutils.list_limit(#service) do
             resp.services[i] = service[i]
             resp.services[i].links = {
             self = self:build_url(self.req.parsed_url.path)
@@ -170,7 +170,7 @@ local function delete_service(self, dao_factory)
 
     local endpoints, err = dao_factory.endpoint:find_all({service_id = service_id})
     kutils.assert_dao_error(err, "endpoint find_all")
-    for i = 1, #endpoints do
+    for i = 1, kutils.list_limit(#endpoints) do
         local _, err = dao_factory.endpoint:delete({id = endpoints[i].id})
         kutils.assert_dao_error(err, "endpoint delete")
     end
@@ -217,7 +217,7 @@ local function list_endpoints(self, dao_factory, enabled)
 
     kutils.assert_dao_error(err, "endpoint find_all")
 
-    for i = 1, #endpoints do
+    for i = 1, kutils.list_limit(#endpoints) do
         resp.endpoints[i] = {}
         resp.endpoints[i].region = endpoints[i].region_id
         resp.endpoints[i].region_id = endpoints[i].region_id

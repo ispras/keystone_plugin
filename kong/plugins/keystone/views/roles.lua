@@ -35,7 +35,7 @@ local function list_roles(self, dao_factory)
     local roles, err = dao_factory.role:find_all(args)
     kutils.assert_dao_error(err, "role find_all")
 
-    for i = 1, #roles do
+    for i = 1, kutils.list_limit(#roles) do
         resp.roles[i] = {
             id = roles[i].id,
             links = {
@@ -213,7 +213,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         kutils.assert_dao_error(err, "redis get")
         if temp ~= ngx.null then
             resp.roles = cjson.decode(temp).roles
-            for i = 1, #resp.roles do
+            for i = 1, resp.roles do
                 resp.roles[i].links = {
                     self = self:build_url('/v3/roles/'..resp.roles[i].id)
                 }
@@ -506,7 +506,7 @@ local function list_implied_roles(self, dao_factory)
     local implies, err = dao_factory.implied_role:find_all({prior_role_id = prior_role.id})
     kutils.assert_dao_error(err, "implied_role:find_all")
 
-    for i = 1, #implies do
+    for i = 1, kutils.list_limit(#implies) do
         local role, err = dao_factory.role:find({id = implies[i].implied_role_id})
         kutils.assert_dao_error(err, "role find")
 
@@ -706,7 +706,7 @@ local function list_role_assignments(self, dao_factory)
         end
     end
 
-    for i = 1, #resp.role_assignments do
+    for i = 1, kutils.list_limit(#resp.role_assignments) do
         resp.role_assignments[i].links.assignment = self:build_url(resp.role_assignments[i].links.assignment)
         if user_id and effective then
             resp.role_assignments[i].links.membership = self:build_url('/v3/groups/'..resp.role_assignments[i].group.id..'/users/'..user_id)
@@ -737,7 +737,7 @@ local function list_role_inference_rules(self, dao_factory)
 
     local role_inferences, err = dao_factory.implied_role:find_all()
     kutils.assert_dao_error(err, "implied_role:find_all")
-    for i = 1, #role_inferences do
+    for i = 1, kutils.list_limit(#role_inferences) do
         local index = #resp.role_inferences + 1
         local prior_role_id = role_inferences[i].prior_role_id
         resp.role_inferences[index] = {

@@ -39,7 +39,7 @@ end
 local function rotate_keys()
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
-    local max_active_keys = kutils.config_from_dao()['max_active_fernet_keys']
+    local max_active_keys = kutils.config_from_dao()['fernet_tokens_max_active_keys']
     local red, err = redis.connect()
     kutils.assert_dao_error(err, "redis connect")
     local temp, err = red:get("fernet_keys")

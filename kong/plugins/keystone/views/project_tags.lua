@@ -7,7 +7,7 @@ local function list_project_tags(self, dao_factory)
     local tags = {}
     local temp, err = dao_factory.project_tag:find_all({project_id = self.params.project_id})
     kutils.assert_dao_error(err, "project_tag:find_all")
-    for i = 1, #temp do
+    for i = 1, kutils.list_limit(#temp) do
         tags[i] = temp[i].name
     end
 

@@ -20,7 +20,7 @@ local function list_endpoint_groups(self, dao_factory)
 
     local endpoint_groups, err = dao_factory.endpoint_group:find_all()
     kutils.assert_dao_error(err, "endpoint_group:find_all")
-    for i = 1, #endpoint_groups do
+    for i = 1, kutils.list_limit(#endpoint_groups) do
         endpoint_groups[i].links = {
                 self = self:build_url(self.req.parsed_url.path)
         }
@@ -253,7 +253,7 @@ local function list_associations_by_project(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint:find_all")
 
     local j = 1
-    for i = 1, #associations do
+    for i = 1, kutils.list_limit(#associations) do
         local endpoint, err = dao_factory.endpoint:find({id = associations[i].endpoint_id})
         kutils.assert_dao_error(err, "endpoint:find")
 
@@ -287,7 +287,7 @@ local function list_associations_by_endpoint(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint:find_all")
 
     local j = 1
-    for i = 1, #associations do
+    for i = 1, kutils.list_limit(#associations) do
         local project, err = dao_factory.project:find({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
 
@@ -444,7 +444,7 @@ local function list_projects_by_endpoint_group(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
     local j = 1
-    for i = 1, #associations do
+    for i = 1,kutils.list_limit( #associations) do
         local project, err = dao_factory.project:find({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
 
@@ -484,7 +484,7 @@ local function list_endpoints_by_endpoint_group(self, dao_factory)
     local endpoints, err = dao_factory.endpoint:find_all(cjson.decode(endpoint_group.filters))
     kutils.assert_dao_error(err, "endpoint:find_all")
 
-    for i = 1, #endpoints do
+    for i = 1, kutils.list_limit(#endpoints) do
         endpoints[i].links = {
             self = self:build_url(self.req.parsed_url.path)
         }
@@ -512,7 +512,7 @@ local function list_endpoint_groups_by_project(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
     local j = 1
-    for i = 1, #associations do
+    for i = 1, kutils.list_limit(#associations) do
         local endpoint_group, err = dao_factory.endpoint_group:find({id = associations[i].endpoint_group_id})
         kutils.assert_dao_error(err, "endpoint_group:find")
 

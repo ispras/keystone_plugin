@@ -287,7 +287,7 @@ local function list_endpoints_for_policy(self, dao_factory)
     }
 
     local idx = 1
-    for i = 1, #policy_association do
+    for i = 1, kutils.list_limit(#policy_association) do
         if policy_association[i].endpoint_id then
             local endpoint, err = dao_factory.endpoint:find({id = policy_association[i].endpoint_id})
             kutils.assert_dao_error(err, "endpoint find")

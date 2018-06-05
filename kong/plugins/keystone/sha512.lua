@@ -60,6 +60,7 @@ end
 function crypt(password)
   local rounds = kutils.config_from_dao().default_crypt_strength
   -- calc checksum
+  local rounds = kutils.config_from_dao().default_crypt_strength
   local salt = string.random(16, "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
   local a = unistd.crypt(password, "$6$rounds=" .. rounds .. "$".. salt .."$")
   local checksum = string.sub(a, -86)

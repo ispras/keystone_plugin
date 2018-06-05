@@ -45,7 +45,7 @@ local function list_groups(self, dao_factory)
     local groups, err = dao_factory.group:find_all(args)
     kutils.assert_dao_error(err, "group:find_all")
     resp.groups = groups
-    for i = 1, #groups do
+    for i = 1, kutils.list_limit(#groups) do
         resp.groups[i].links = {
             self = self:build_url(self.req.parsed_url.path..'/'..groups[i].id)
         }
