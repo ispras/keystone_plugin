@@ -213,7 +213,7 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
         kutils.assert_dao_error(err, "redis get")
         if temp ~= ngx.null then
             resp.roles = cjson.decode(temp).roles
-            for i = 1, resp.roles do
+            for i = 1, #resp.roles do
                 resp.roles[i].links = {
                     self = self:build_url('/v3/roles/'..resp.roles[i].id)
                 }

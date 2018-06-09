@@ -5,7 +5,7 @@ import requests
 class TestKeystoneBase(unittest.TestCase):
     def setUp(self):
         super(TestKeystoneBase, self).setUp()
-        self.host = 'http://localhost:8001'
+        self.host = 'http://localhost:8000'
         # self.host = 'http://10.10.10.10:8001'
         self.domain_id = ''
         self.project_id = ''
