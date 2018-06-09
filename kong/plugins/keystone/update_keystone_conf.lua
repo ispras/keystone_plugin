@@ -26,7 +26,7 @@ local blocks = {
         max_param_size = 64,
         max_token_size = 255,
         member_role_id = "9fe2ff9ee4384b1894a90878d3e92bab",
-        member_role_name = "_member_",
+        member_role_name = "member",
         list_limit = -1,
     },
     auth = {

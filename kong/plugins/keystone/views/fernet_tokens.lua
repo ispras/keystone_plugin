@@ -70,7 +70,9 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
-    local expires = os.time() + 24 * 60 * 60
+    local kutils = require ("kong.plugins.keystone.utils")
+    local token_expiration = kutils.config_from_dao().token_expiration or 24*60*60
+    local expires = os.time() + token_expiration
     local info_obj = {
         user_id = user.id,
         project_id = not is_domain and scope_id or nil,

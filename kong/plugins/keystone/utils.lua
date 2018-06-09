@@ -16,7 +16,8 @@ local default_domain = function(dao_factory)
     return nil
 end
 local default_role = function(dao_factory)
-    local role, err = dao_factory.role:find_all({name = 'member'})
+    local default_role_name = kutils.config_from_dao().default_member_role_name or "member"
+    local role, err = dao_factory.role:find_all({name = default_role_name})
     if not err and next(role) then return role[1]['id'] end
     return nil
 end
@@ -89,8 +90,8 @@ local subtree = function (dao_factory, project_id, include_names)
         parent_id = subtree[a] and subtree[a].id
     end
     return subtree
-
 end
+
 local config_from_dao = function()
     local singletons = require "kong.singletons"
     local dao = singletons.dao

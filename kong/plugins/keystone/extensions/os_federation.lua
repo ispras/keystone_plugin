@@ -771,9 +771,10 @@ local function request_unscoped_token(self, dao_factory) -- TODO how? remote par
 
     for i, project in pairs(user.projects) do
         if not project.roles then
+             local default_role_name = kutils.config_from_dao().default_member_role_name or "member"
              user.projects[i].roles = {
                  {
-                     name = "member"
+                     name = default_role_name
                  }
              }
              project.roles = user.projects[i].roles
