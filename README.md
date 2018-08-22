@@ -111,7 +111,7 @@ Pay attention to the presence of the following lines:
 If you have found those lines, keystone-plugin is running and is enabled. So you can try to check some functions provided by this plugin. First let's call the simplest GET-method, that shows us information about keystone version:
 
 ~~~sh
-$ curl -i http://localhost:8001/v3/
+$ curl -i http://localhost:8000/v3/
 ~~~
 
 The response must look like this:
