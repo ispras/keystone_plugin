@@ -88,6 +88,9 @@ build = {
     ["kong.plugins.keystone.extensions.os_revoke"] = "kong/plugins/keystone/extensions/os_revoke.lua",
     ["kong.plugins.keystone.extensions.os_simple_cert"] = "kong/plugins/keystone/extensions/os_simple_cert.lua",
     ["kong.plugins.keystone.extensions.os_trust"] = "kong/plugins/keystone/extensions/os_trust.lua",
-    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua"
+    ["kong.plugins.keystone.views.v3"] = "kong/plugins/keystone/views/v3.lua",
+    ["resty.fernet"] = "resty/fernet.lua",
+    ["resty.aes"] = "resty/aes.lua",
+    ["resty.hmac"] = "resty/hmac.lua"
   }
 }
