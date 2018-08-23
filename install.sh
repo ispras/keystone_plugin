@@ -9,7 +9,7 @@ else
 luarocks make kong-plugin-keystone-0.1.0-1.rockspec
 if [ $? -eq 0 ]; then
 
-echo ">>> Save admin_creds in /etc/kong/admin_creps"
+echo ">>> Save admin_creds in /etc/kong/admin_creds"
 echo "$1
 $2" > /etc/kong/admin_creds
 echo ">>> Copy customized configuration file"
@@ -20,7 +20,7 @@ echo ">>> Fill database, need some time"
 kong migrations up -c /etc/kong/kong.conf
 if [ $? -eq 0 ]; then
 
-kong start -c /etc/kong/kong.conf
+kong restart -c /etc/kong/kong.conf
 if [ $? -eq 0 ]; then
 
 echo ">>> Configuration"

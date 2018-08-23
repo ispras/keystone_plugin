@@ -12,7 +12,8 @@ class TestKeystoneServices(TestKeystoneBase):
             "service": {
                 "type": "identity",
                 "name": "keystone",
-                "description": "test service"
+                "description": "identity service",
+                "enabled": True
             }
         }
         self.res = requests.post(self.url, json=body, headers=self.headers)
@@ -38,15 +39,15 @@ class TestKeystoneServices(TestKeystoneBase):
         self.checkCode(200)
 
     def delete(self):
-        service_id = '5c826a59-9619-491e-b700-296b77fd5cd1'
-        self.res = requests.delete(self.host + service_id)
+        service_id = 'b94cf729-961c-4868-ae84-5eed25b78a08'
+        self.res = requests.delete(self.url + service_id, headers = self.headers)
         self.checkCode(204)
 
     def delete_all(self):
-        self.res = requests.get(self.host + '/v3/services/', headers = self.headers)
+        self.res = requests.get(self.url, headers = self.headers)
         self.checkCode(200)
         services = self.res.json()['services']
         for k in services:
             if k['name'] != 'keystone':
-                self.res = requests.delete(self.host + '/v3/services/' + k['id'], headers = self.headers)
+                self.res = requests.delete(self.url + k['id'], headers = self.headers)
                 self.checkCode(204)
