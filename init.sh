@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 keystone_ep="http://localhost:8000/v3/"
-init_ep="http://localhost:8000/v3"
+init_ep="http://localhost:8001/v3"
 
 curl -i -X POST --url $init_ep
 token=$(curl -i  -H "Content-Type: application/json" -X POST --url $keystone_ep'auth/tokens' -d '{
