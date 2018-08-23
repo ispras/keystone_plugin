@@ -150,3 +150,7 @@ class TestKeystoneBase(unittest.TestCase):
         self.res = requests.delete(self.host + '/v3/users/' + user_id, headers = self.headers)
         self.checkCode(204)
 
+    def check(self):
+        self.res = requests.get(self.host + '/v3?a=b')
+        self.checkCode(200)
+
