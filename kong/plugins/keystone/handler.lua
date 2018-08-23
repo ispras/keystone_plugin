@@ -12,6 +12,7 @@ function KeystoneHandler:access()
     local dao = require "kong.singletons".dao
     ngx.req.read_body()
     local request = ngx.req.get_body_data()
+    local uri_args = ngx.req.get_uri_args()
     self = {
         params = request and cjson.decode(request) or {},
         req = {
@@ -29,7 +30,10 @@ function KeystoneHandler:access()
             return obj.req.parsed_url.protocol..'://'..url
         end
     }
-    local route = ngx.var.request_uri
+    for k, v in uri_args do
+        self.params[k] = v
+    end
+    local route = ngx.var.uri
     if route:match("(.*)%/$") then -- TODO LENE NE NRAVITSYA
         route = route:sub(1, #route - 1)
     end
