@@ -58,7 +58,7 @@ local function create_role(self, dao_factory)
         domain_id = self.params.role.domain_id or 'default'
     }
 
-    local temp, err = dao_factory.role:find_all(role)
+    local temp, err = dao_factory.role:find_all({name = role.name, domain_id = role.domain_id})
     kutils.assert_dao_error(err, "role find_all")
     if next(temp) then
 --        role.id = temp[1].id

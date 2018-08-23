@@ -1,9 +1,24 @@
 local BasePlugin = require "kong.plugins.base_plugin"
-
 local KeystoneHandler = BasePlugin:extend()
 
 function KeystoneHandler:new()
     KeystoneHandler.super.new(self, "keystone")
+end
+
+local function match_route(route)
+    local routes = require "kong.plugins.keystone.routes"
+    local args = {}
+    for k, v in routes do
+        if route:match(k) then
+            local keys = {v:match(k)}
+            local values = {route:match(k)}
+            for i = 1, #keys do
+                args[keys[i]:sub(2)] = values[i]
+            end
+            return v, args
+        end
+    end
+
 end
 
 function KeystoneHandler:access()
