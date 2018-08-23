@@ -3,24 +3,6 @@ local fernet_tokens = require ("kong.plugins.keystone.views.fernet_tokens")
 local uuid_tokens = require ("kong.plugins.keystone.views.uuid_tokens")
 local cjson = require 'cjson'
 
-local function bool (a)
-    if type(a) == "string" then
-        return a == "true"
-    else
-        return a
-    end
-end
-local default_domain = function(dao_factory)
-    local domain, err = dao_factory.project:find_all({name = 'Default', is_domain = true})
-    if not err and next(domain) then return domain[1]['id'] end
-    return nil
-end
-local default_role = function(dao_factory)
-    local default_role_name = kutils.config_from_dao().default_member_role_name or "member"
-    local role, err = dao_factory.role:find_all({name = default_role_name})
-    if not err and next(role) then return role[1]['id'] end
-    return nil
-end
 local assert_dao_error = function(err, func)
     if err then
         if type(err) == "string" then
@@ -36,6 +18,34 @@ local assert_dao_error = function(err, func)
         end
     end
 end
+
+local config_from_dao = function()
+    local singletons = require "kong.singletons"
+    local dao = singletons.dao
+    local temp, err = dao.plugins:find_all({name='keystone'})
+    assert_dao_error(err, "plugins find all")
+    return temp[1] and temp[1].config or error("Config keystone not found")
+end
+
+local function bool (a)
+    if type(a) == "string" then
+        return a == "true"
+    else
+        return a
+    end
+end
+local default_domain = function(dao_factory)
+    local domain, err = dao_factory.project:find_all({name = 'Default', is_domain = true})
+    if not err and next(domain) then return domain[1]['id'] end
+    return nil
+end
+local default_role = function(dao_factory)
+    local default_role_name = config_from_dao().default_member_role_name or "member"
+    local role, err = dao_factory.role:find_all({name = default_role_name})
+    if not err and next(role) then return role[1]['id'] end
+    return nil
+end
+
 local time_to_string = function(timestamp)
     return timestamp and os.date("%Y-%m-%dT%X.000000Z", timestamp) or cjson.null
 end
@@ -90,14 +100,6 @@ local subtree = function (dao_factory, project_id, include_names)
         parent_id = subtree[a] and subtree[a].id
     end
     return subtree
-end
-
-local config_from_dao = function()
-    local singletons = require "kong.singletons"
-    local dao = singletons.dao
-    local temp, err = dao.plugins:find_all({name='keystone'})
-    assert_dao_error(err, "plugins find all")
-    return temp[1] and temp[1].config or error("Config keystone not found")
 end
 
 local function provider()

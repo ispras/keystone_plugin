@@ -8,7 +8,7 @@ end
 
 function KeystoneHandler:access()
     local cjson = require "cjson"
-    local api = require "kong.plugins.keystone.api_k"
+    local api = require "kong.plugins.keystone.keystone_api"
     local dao = require "kong.singletons".dao
     ngx.req.read_body()
     local request = ngx.req.get_body_data()
@@ -33,8 +33,10 @@ function KeystoneHandler:access()
     if route:match("(.*)%/$") then -- TODO LENE NE NRAVITSYA
         route = route:sub(1, #route - 1)
     end
-    if api[route] then
+    if api[route] and api[route][ngx.req.get_method()] then
         api[route][ngx.req.get_method()](self, dao)
+    else
+        ngx.exit(404)
     end
 end
 
