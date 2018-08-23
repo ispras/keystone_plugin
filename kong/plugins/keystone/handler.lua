@@ -6,9 +6,12 @@ function KeystoneHandler:new()
 end
 
 local function match_route(route)
+    if route:match("(.*)%/$") then -- TODO LENE NE NRAVITSYA
+        route = route:sub(1, #route - 1)
+    end
     local routes = require "kong.plugins.keystone.routes"
     local args = {}
-    for k, v in routes do
+    for k, v in pairs(routes) do
         if route:match(k) then
             local keys = {v:match(k)}
             local values = {route:match(k)}
@@ -27,7 +30,7 @@ function KeystoneHandler:access()
     local dao = require "kong.singletons".dao
     ngx.req.read_body()
     local request = ngx.req.get_body_data()
-    local uri_args = ngx.req.get_uri_args()
+    local uri_args = ngx.req.get_uri_args() or {}
     self = {
         params = request and cjson.decode(request) or {},
         req = {
@@ -45,12 +48,12 @@ function KeystoneHandler:access()
             return obj.req.parsed_url.protocol..'://'..url
         end
     }
-    for k, v in uri_args do
+    for k, v in pairs(uri_args) do
         self.params[k] = v
     end
-    local route = ngx.var.uri
-    if route:match("(.*)%/$") then -- TODO LENE NE NRAVITSYA
-        route = route:sub(1, #route - 1)
+    local route, args = match_route(ngx.var.uri)
+    for k, v in pairs(args) do
+        self.params[k] = v
     end
     if api[route] and api[route][ngx.req.get_method()] then
         api[route][ngx.req.get_method()](self, dao)
