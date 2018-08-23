@@ -34,7 +34,7 @@ identity_service_id=$(curl -H "Content-Type: application/json" -H "X-Auth-Token:
         "description": "identity service",
         "enabled": true
     }
-}' | jq -r '.services.id')
+}' | jq -r '.service.id')
 curl -H "Content-Type: application/json" -H "X-Auth-Token: "$token -X POST --url $keystone_ep'endpoints' -d '{
     "endpoint": {
         "interface": "internal",
