@@ -66,7 +66,7 @@ return {
     ['^%/v3%/regions%/([%a|%d|%-|_|:]+)$']= '/v3/regions/:region_id',
     ['^%/v3%/role_assignments$']= '/v3/role_assignments',
     ['^%/v3%/role_inferences$']= '/v3/role_inferences',
-    ['^%/v3%/roles%/$']= '/v3/roles/',
+    ['^%/v3%/roles$']= '/v3/roles',
     ['^%/v3%/roles%/([%a|%d|%-|_|:]+)$']= '/v3/roles/:role_id',
     ['^%/v3%/roles%/([%a|%d|%-|_|:]+)%/implies$']= '/v3/roles/:prior_role_id/implies',
     ['^%/v3%/roles%/([%a|%d|%-|_|:]+)%/implies%/([%a|%d|%-|_|:]+)$']= '/v3/roles/:prior_role_id/implies/:implied_role_id',

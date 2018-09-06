@@ -798,7 +798,7 @@ local Inference_rule = {
     list_all = list_role_inference_rules
 }
 local routes = {
-    ["/v3/roles/"] = {
+    ["/v3/roles"] = {
         GET = function(self, dao_factory)
             policies.check(self.req.headers['X-Auth-Token'], "identity:list_roles", dao_factory, self.params)
             responses.send_HTTP_OK(list_roles(self, dao_factory))

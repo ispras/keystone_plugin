@@ -21,7 +21,7 @@ local function match_route(route)
             return v, args
         end
     end
-
+    return nil
 end
 
 function KeystoneHandler:access()
@@ -52,6 +52,11 @@ function KeystoneHandler:access()
         self.params[k] = v
     end
     local route, args = match_route(ngx.var.uri)
+
+    if not route then
+        ngx.exit(404)
+    end
+
     for k, v in pairs(args) do
         self.params[k] = v
     end
