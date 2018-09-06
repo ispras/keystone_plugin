@@ -20,11 +20,23 @@ local assert_dao_error = function(err, func)
 end
 
 local config_from_dao = function()
+    local red, err = redis.connect() -- TODO cache
+    assert_dao_error(err, "redis connect")
+    local config, err = red:get("configuration")
+    assert_dao_error(err, "redis get configuration")
+    if config then
+        local config = cjson.decode(config)
+        return config
+    end
+
     local singletons = require "kong.singletons"
     local dao = singletons.dao
     local temp, err = dao.plugins:find_all({name='keystone'})
     assert_dao_error(err, "plugins find all")
-    return temp[1] and temp[1].config or error("Config keystone not found")
+    local config = temp[1] and temp[1].config or error("Config keystone not found")
+    local _, err = red:set("configuration", cjson.encode(config))
+    assert_dao_error(err, "redis set configuration")
+    return config
 end
 
 local function bool (a)
