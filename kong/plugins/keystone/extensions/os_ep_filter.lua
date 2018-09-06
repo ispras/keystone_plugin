@@ -20,7 +20,7 @@ local function list_endpoint_groups(self, dao_factory)
 
     local endpoint_groups, err = dao_factory.endpoint_group:find_all()
     kutils.assert_dao_error(err, "endpoint_group:find_all")
-    for i = 1, kutils.list_limit(#endpoint_groups) do
+    for i = 1, kutils.list_limit(#endpoint_groups, self.config) do
         endpoint_groups[i].links = {
                 self = self:build_url(self.req.parsed_url.path)
         }
@@ -253,7 +253,7 @@ local function list_associations_by_project(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint:find_all")
 
     local j = 1
-    for i = 1, kutils.list_limit(#associations) do
+    for i = 1, kutils.list_limit(#associations, self.config) do
         local endpoint, err = dao_factory.endpoint:find({id = associations[i].endpoint_id})
         kutils.assert_dao_error(err, "endpoint:find")
 
@@ -287,7 +287,7 @@ local function list_associations_by_endpoint(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint:find_all")
 
     local j = 1
-    for i = 1, kutils.list_limit(#associations) do
+    for i = 1, kutils.list_limit(#associations, self.config) do
         local project, err = dao_factory.project:find({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
 
@@ -444,7 +444,7 @@ local function list_projects_by_endpoint_group(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
     local j = 1
-    for i = 1,kutils.list_limit( #associations) do
+    for i = 1,kutils.list_limit( #associations, self.config) do
         local project, err = dao_factory.project:find({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
 
@@ -484,7 +484,7 @@ local function list_endpoints_by_endpoint_group(self, dao_factory)
     local endpoints, err = dao_factory.endpoint:find_all(cjson.decode(endpoint_group.filters))
     kutils.assert_dao_error(err, "endpoint:find_all")
 
-    for i = 1, kutils.list_limit(#endpoints) do
+    for i = 1, kutils.list_limit(#endpoints, self.config) do
         endpoints[i].links = {
             self = self:build_url(self.req.parsed_url.path)
         }
@@ -512,7 +512,7 @@ local function list_endpoint_groups_by_project(self, dao_factory)
     kutils.assert_dao_error(err, "project_endpoint_group:find_all")
 
     local j = 1
-    for i = 1, kutils.list_limit(#associations) do
+    for i = 1, kutils.list_limit(#associations, self.config) do
         local endpoint_group, err = dao_factory.endpoint_group:find({id = associations[i].endpoint_group_id})
         kutils.assert_dao_error(err, "endpoint_group:find")
 
@@ -532,91 +532,91 @@ end
 local routes = {
     ['/v3/OS-EP-FILTER/endpoint_groups'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_endpoint_groups", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_endpoint_groups")
             responses.send(list_endpoint_groups(self, dao_factory))
         end,
         POST = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_endpoint_group")
             responses.send(create_endpoint_group(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/endpoint_groups/:endpoint_group_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_endpoint_group")
             responses.send(get_endpoint_group(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_endpoint_group")
             responses.send(check_endpoint_group(self, dao_factory))
         end,
         PATCH = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_endpoint_group")
             responses.send(update_endpoint_group(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_endpoint_group")
             responses.send(delete_endpoint_group(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/projects/:project_id/endpoints/:endpoint_id'] = {
         PUT = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:add_endpoint_to_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:add_endpoint_to_project")
             responses.send(create_association(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_endpoint_in_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_endpoint_in_project")
             responses.send(check_association(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:remove_endpoint_from_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:remove_endpoint_from_project")
             responses.send(delete_association(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/projects/:project_id/endpoints'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_endpoint_in_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_endpoint_in_project")
             responses.send(list_associations_by_project(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/endpoints/:endpoint_id/projects'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects_for_endpoint", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_projects_for_endpoint")
             responses.send(list_associations_by_endpoint(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/endpoint_groups/:endpoint_group_id/projects/:project_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_endpoint_group_in_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_endpoint_group_in_project")
             responses.send(get_ep_to_project_association(self, dao_factory))
         end,
         PUT = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:add_endpoint_group_to_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:add_endpoint_group_to_project")
             responses.send(create_ep_to_project_association(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_endpoint_group_in_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_endpoint_group_in_project")
             responses.send(check_ep_to_project_association(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:remove_endpoint_group_from_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:remove_endpoint_group_from_project")
             responses.send(delete_ep_to_project_association(self, dao_factory))
         end,
     },
     ['/v3/OS-EP-FILTER/endpoint_groups/:endpoint_group_id/projects'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects_associated_with_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_projects_associated_with_endpoint_group")
             responses.send(list_projects_by_endpoint_group(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/endpoint_groups/:endpoint_group_id/endpoints'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_endpoints_associated_with_endpoint_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_endpoints_associated_with_endpoint_group")
             responses.send(list_endpoints_by_endpoint_group(self, dao_factory))
         end
     },
     ['/v3/OS-EP-FILTER/projects/:project_id/endpoint_groups'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_endpoint_groups_for_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_endpoint_groups_for_project")
             responses.send(list_endpoint_groups_by_project(self, dao_factory))
         end
     }

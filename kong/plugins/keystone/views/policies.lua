@@ -29,7 +29,7 @@ local function list_policies(self, dao_factory)
         return responses.send_HTTP_OK(resp)
     end
 
-    for i = 1, kutils.list_limit(#policies) do
+    for i = 1, kutils.list_limit(#policies, self.config) do
         resp.policies[i] = policies[i]
         resp.policies[i].links = {
                 self = self:build_url(self.req.parsed_url.path)
@@ -138,25 +138,25 @@ Policy.delete_policy = delete_policy
 return {
     ["/v3/policies"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_policies", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_policies")
             Policy.list_policies(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_policy", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_policy")
             Policy.create_policy(self, dao_factory)
         end
     },
     ["/v3/policies/:policy_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_policy", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_policy")
             Policy.get_policy_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_policy", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_policy")
             Policy.update_policy(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_policy", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_policy")
             Policy.delete_policy(self, dao_factory)
         end
     }

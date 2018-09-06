@@ -771,7 +771,7 @@ local function request_unscoped_token(self, dao_factory) -- TODO how? remote par
 
     for i, project in pairs(user.projects) do
         if not project.roles then
-             local default_role_name = kutils.config_from_dao().default_member_role_name or "member"
+             local default_role_name = kutils.config_from_dao(self.config).default_member_role_name or "member"
              user.projects[i].roles = {
                  {
                      name = default_role_name
@@ -893,7 +893,7 @@ local function request_unscoped_token(self, dao_factory) -- TODO how? remote par
         }
     }
 
-    local Tokens = kutils.provider()
+    local Tokens = kutils.provider(self.config)
     local temp = Tokens.generate(dao_factory, user)
     local token_id = temp.id
 
@@ -981,115 +981,115 @@ local ServiceProvider = {
 local routes = {
     ['/v3/OS-FEDERATION/identity_providers'] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_identity_providers", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_identity_providers")
             responses.send(list_identity_providers(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/identity_providers/:id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_identity_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_identity_provider")
             responses.send(get_identity_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_identity_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_identity_provider")
             responses.send(register_identity_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_identity_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_identity_provider")
             responses.send(update_identity_provider(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_identity_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_identity_provider")
             responses.send(delete_identity_provider(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/identity_providers/:id/protocols'] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_protocols", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_protocols")
             responses.send(list_protocol_and_attr_maps_of_identity_provider(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_protocol", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_protocol")
             responses.send(get_protocol_and_attr_maps_for_identity_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_protocol", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_protocol")
             responses.send(add_protocol_and_attr_maps_to_identity_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_protocol", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_protocol")
             responses.send(update_attr_maps_for_identity_provider_and_protocol(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_protocol", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_protocol")
             responses.send(delete_protocol_and_attr_maps_from_identity_provider(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/identity_providers/:idp_id/protocols/:protocol_id/auth'] = {
         GET = function (self, dao_factory)
---            policies.check(self.req.headers['X-Auth-Token'], "identity:request_unscoped_token", dao_factory, self.params)
+--            policies.check(self, dao_factory, "identity:request_unscoped_token")
             responses.send(request_unscoped_token(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/mappings'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_mappings", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_mappings")
             responses.send(list_mappings(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/mappings/:id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_mapping", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_mapping")
             responses.send(get_mapping(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_mapping", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_mapping")
             responses.send(create_mapping(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_mapping", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_mapping")
             responses.send(update_mapping(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_mapping", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_mapping")
             responses.send(delete_mapping(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/service_providers'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_service_providers", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_service_providers")
             responses.send(list_service_providers(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/service_providers/:id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_service_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_service_provider")
             responses.send(get_service_provider(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_service_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_service_provider")
             responses.send(register_service_provider(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_service_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_service_provider")
             responses.send(update_service_provider(self, dao_factory))
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_service_provider", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_service_provider")
             responses.send(delete_service_provider(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/projects'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects_allowed_for_federated_user", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_projects_allowed_for_federated_user")
             responses.send(list_projects_allowed_for_federated_user(self, dao_factory))
         end
     },
     ['/v3/OS-FEDERATION/domains'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_domains_allowed_for_federated_user", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_domains_allowed_for_federated_user")
             responses.send(list_projects_allowed_for_federated_user(self, dao_factory, true))
         end
     }

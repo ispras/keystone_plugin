@@ -65,7 +65,7 @@ local function list_credentials(self, dao_factory)
             credentials = {}
     }
 
-    for i = 1, kutils.list_limit(#credentials) do
+    for i = 1, kutils.list_limit(#credentials, self.config) do
         resp.credentials[i] = {}
         resp.credentials[i].id = credentials[i].id
         resp.credentials[i].user_id = credentials[i].user_id
@@ -206,25 +206,25 @@ Credential.delete_credential = delete_credential
 local routes = {
     ["/v3/credentials"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_credentials", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_credentials")
             Credential.list_credentials(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_credential", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_credential")
             Credential.create_credential(self, dao_factory)
         end
     },
     ["/v3/credentials/:credential_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_credential", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_credential")
             Credential.get_credential_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_credential", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_credential")
             Credential.update_credential(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_credential", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_credential")
             Credential.delete_credential(self, dao_factory)
         end
     }

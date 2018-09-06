@@ -217,8 +217,8 @@ local function check_token_user(token, dao_factory)
 end
 
 local function auth_password_unscoped(self, dao_factory, user, loc_user_id)
-    local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.generate(self.config, dao_factory, user)
 
     local resp = {
         token = {
@@ -246,8 +246,8 @@ local function auth_password_scoped(self, dao_factory, user, loc_user_id, upassw
         responses.send_HTTP_UNAUTHORIZED("User has no assignments for project/domain") -- code 401
     end
 
-    local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.generate(self.config, dao_factory, user, true, project.id, not scope.project)
 
     local resp = {
         token = {
@@ -301,8 +301,8 @@ function _M.auth_password(self, dao_factory)
 end
 
 local function auth_token_unscoped(self, dao_factory, user)
-    local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.generate(self.config, dao_factory, user)
 
     local resp = {
         token = {
@@ -330,8 +330,8 @@ local function auth_token_scoped(self, dao_factory, user)
     end
     local roles = temp.roles
 
-    local Tokens = kutils.provider()
-    local token = Tokens.generate(dao_factory, user, true, project.id, not scope.project)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.generate(self.config, dao_factory, user, true, project.id, not scope.project)
 
     local resp = {
         token = {
@@ -386,16 +386,15 @@ function _M.get_token_info(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local Tokens = kutils.provider()
-    token = Tokens.check(token, dao_factory)
+    local Tokens = kutils.provider(self.config)
+    token = Tokens.check(self.config, token, dao_factory)
     token = {
         id = subj_token
     }
-    local Tokens = kutils.provider()
-    token = Tokens.check(token, dao_factory, self.params.allow_expired, true)
+    token = Tokens.check(self.config, token, dao_factory, self.params.allow_expired, true)
     local user = check_token_user(token, dao_factory)
 
-    local cache = Tokens.get_info(token.id, dao_factory)
+    local cache = Tokens.get_info(self.config, token.id, dao_factory)
 
     local project, is_domain
     if cache.scope_id then
@@ -449,13 +448,13 @@ function _M.check_token(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local Tokens = kutils.provider()
-    local token = Tokens.check(token, dao_factory)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.check(self.config, token, dao_factory)
     if auth_token ~= subj_token then
         token = {
             id = subj_token
         }
-        local token = Tokens.check(token, dao_factory, self.params.allow_expired, true)
+        local token = Tokens.check(self.config, token, dao_factory, self.params.allow_expired, true)
     end
 
     -- TODO Identity API?
@@ -470,7 +469,7 @@ function _M.revoke_token(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
     end
 
-    local Tokens = kutils.provider()
+    local Tokens = kutils.provider(self.config)
     Tokens.validate(dao_factory, subj_token, false)
 
     responses.send_HTTP_NO_CONTENT()
@@ -481,8 +480,8 @@ local function get_service_catalog(self, dao_factory)
     local token = {
         id = auth_token
     }
-    local Tokens = kutils.provider()
-    local token = Tokens.check(token, dao_factory)
+    local Tokens = kutils.provider(self.config)
+    local token = Tokens.check(self.config, token, dao_factory)
 
     local resp = {
         catalog = {},
@@ -504,8 +503,8 @@ local function get_scopes(self, dao_factory, domain_scoped)
     local token = {
         id = auth_token
     }
-    local Tokens = kutils.provider()
-    token = Tokens.check(token, dao_factory)
+    local Tokens = kutils.provider(self.config)
+    token = Tokens.check(self.config, token, dao_factory)
     local user = check_token_user(token, dao_factory)
 
     local resp = {
@@ -572,7 +571,7 @@ function _M.revoke_token(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST({message = "Specify header X-Subject-Token for token id"})
     end
 
-    local Tokens = kutils.provider()
+    local Tokens = kutils.provider(self.config)
     Tokens.validate(dao_factory, subj_token, false)
 
     responses.send_HTTP_NO_CONTENT()
@@ -581,19 +580,19 @@ end
 local routes =  {
     ["/v3/auth/catalog"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_catalog", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:get_auth_catalog")
             get_service_catalog(self, dao_factory)
         end
     },
     ["/v3/auth/projects"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_projects", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_auth_projects")
             get_scopes(self, dao_factory, false)
         end
     },
     ["/v3/auth/domains"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_auth_domains", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_auth_domains")
             get_scopes(self, dao_factory, true)
         end
     }

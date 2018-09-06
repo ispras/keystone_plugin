@@ -93,74 +93,74 @@ local routes = {
     ['/v3/OS-INHERIT/domains/:domain_id/users/:user_id/roles/inherited_to_projects'] = {
         GET = function (self, dao_factory)
 --            responses.send_HTTP_OK(assignment.list(self, dao_factory, "UserDomain", true))
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_inherited_roles", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_inherited_roles")
             list_inherited_roles(self, dao_factory, "UserDomain")
         end
     },
     ['/v3/OS-INHERIT/domains/:domain_id/groups/:group_id/roles/inherited_to_projects'] = {
         GET = function (self, dao_factory)
 --            responses.send_HTTP_OK(assignment.list(self, dao_factory, "GroupDomain", true))
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_inherited_roles", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_inherited_roles")
             list_inherited_roles(self, dao_factory, "GroupDomain")
         end
     },
     ['/v3/OS-INHERIT/domains/:domain_id/users/:user_id/roles/:role_id/inherited_to_projects'] = {
         PUT = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "UserDomain", true)
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_inherited_assignment", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_inherited_assignment")
             check_assignment(self, dao_factory, "UserDomain")
             responses.send_HTTP_NO_CONTENT()
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:unassign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:unassign_inherited_role")
             assign_inherited_role(self, dao_factory, "UserDomain", false)
         end
     },
     ['/v3/OS-INHERIT/domains/:domain_id/groups/:group_id/roles/:role_id/inherited_to_projects'] = {
         PUT = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "GroupDomain", true)
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_inherited_assignment", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_inherited_assignment")
             check_assignment(self, dao_factory, "GroupDomain")
             responses.send_HTTP_NO_CONTENT()
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "GroupDomain", false)
         end
     },
     ['/v3/OS-INHERIT/projects/:project_id/users/:user_id/roles/:role_id/inherited_to_projects'] = {
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "UserProject", true)
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_inherited_assignment", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_inherited_assignment")
             check_assignment(self, dao_factory, "UserProject")
             responses.send_HTTP_NO_CONTENT()
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "UserProject", false)
         end
     },
     ['/v3/OS-INHERIT/projects/:project_id/groups/:group_id/roles/:role_id/inherited_to_projects'] = {
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "GroupProject", true)
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_inherited_assignment", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_inherited_assignment")
             check_assignment(self, dao_factory, "GroupProject")
             responses.send_HTTP_NO_CONTENT()
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:assign_inherited_role", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:assign_inherited_role")
             assign_inherited_role(self, dao_factory, "GroupProject", false)
         end
     }

@@ -48,11 +48,11 @@ function Token.validate(dao_factory, token_id, validate)
     responses.send_HTTP_BAD_REQUEST("Fernet Tokens can't be validated or revoked")
 end
 
-function Token.check(token, dao_factory, allow_expired, validate)
+function Token.check(config, token, dao_factory, allow_expired, validate)
     -- token: { id }
     -- bool allow_expired:
     -- return token: { id, user_id }
-    local keys = fkeys.get()
+    local keys = fkeys.get(config)
     local fernet_obj
     for i = #keys, 0, -1 do
         fernet_obj = fernet:verify(keys[i], token.id, 0)
@@ -66,12 +66,12 @@ function Token.check(token, dao_factory, allow_expired, validate)
     token.federated = payload.federated_info and true or false
     return token
 end
-function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id)
+function Token.generate(config, dao_factory, user, cached, scope_id, is_domain, trust_id)
     -- user: { id }
     -- bool cached
     -- return token: { id, expires, issued_at }
     local kutils = require ("kong.plugins.keystone.utils")
-    local token_expiration = kutils.config_from_dao().token_expiration or 24*60*60
+    local token_expiration = config.token_expiration or 24*60*60
     local expires = os.time() + token_expiration
     local info_obj = {
         user_id = user.id,
@@ -83,7 +83,7 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
         trust_id = trust_id
     }
     local payload = kfernet.create_payload(info_obj) -- byte view
-    local secret = fkeys.get_primary()
+    local secret = fkeys.get_primary(config)
     local fernet_obj = create_fernet_obj(secret, payload)
     local fernet_str = join_fernet(fernet_obj)
     if not fernet:verify(secret, fernet_str, 0).verified then
@@ -99,9 +99,9 @@ function Token.generate(dao_factory, user, cached, scope_id, is_domain, trust_id
     return token
 end
 
-function Token.get_info(token_id)
+function Token.get_info(config, token_id)
     -- return token: { user_id, scope_id, roles, issued_at, is_admin, expires }
-    local keys = fkeys.get()
+    local keys = fkeys.get(config)
     local fernet_obj
     for i = #keys, 0, -1 do
         fernet_obj = fernet:verify(keys[i], token_id, 0)
@@ -116,7 +116,7 @@ function Token.get_info(token_id)
     local cache = {}
     if scope_id then
         local redis = require ("kong.plugins.keystone.redis")
-        local red, err = redis.connect() -- TODO cache
+        local red, err = redis.connect(config) -- TODO cache
         if err then error(err) end
         local temp, err = red:get(user_id..'&'..scope_id)
         if err then error(err) end

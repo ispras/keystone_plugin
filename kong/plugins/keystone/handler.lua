@@ -24,7 +24,7 @@ local function match_route(route)
     return nil
 end
 
-function KeystoneHandler:access()
+function KeystoneHandler:access(config)
     local cjson = require "cjson"
     local api = require "kong.plugins.keystone.keystone_api"
     local dao = require "kong.singletons".dao
@@ -60,6 +60,7 @@ function KeystoneHandler:access()
     for k, v in pairs(args) do
         self.params[k] = v
     end
+    self.config = config
     if api[route] and api[route][ngx.req.get_method()] then
         api[route][ngx.req.get_method()](self, dao)
     else

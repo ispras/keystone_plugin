@@ -285,7 +285,7 @@ local function request_unscoped_token_callback(self, dao_factory)
         user = temp.user
     end
 
-    local Tokens = kutils.provider()
+    local Tokens = kutils.provider(self.config)
     local token = Tokens.generate(dao_factory, user)
     local resp = {
         token = {
@@ -356,25 +356,25 @@ local Consumer = {
 local routes = {
     ['/v3/OS-OAUTH2/consumers'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_consumers", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_consumers")
             responses.send(list_consumers(self, dao_factory))
         end,
         POST = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_consumer", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_consumer")
             responses.send(create_consumer(self, dao_factory))
         end
     },
     ['/v3/OS-OAUTH2/consumers/:consumer_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_consumer", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_consumer")
             responses.send(get_consumer(self, dao_factory))
         end,
         PATCH = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_consumer", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_consumer")
             responses.send(update_consumer(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_consumer", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_consumer")
             responses.send(delete_consumer(self, dao_factory))
         end
     },
@@ -390,17 +390,17 @@ local routes = {
     },
     ['/v3/users/:user_id/OS-OAUTH2/access_tokens'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_access_tokens", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_access_tokens")
             responses.send(list_access_tokens(self, dao_factory))
         end
     },
     ['/v3/users/:user_id/OS-OAUTH2/access_tokens/:access_token_id'] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_access_token", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_access_token")
             responses.send(get_access_token(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_access_token", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_access_token")
             responses.send(revoke_access_token(self, dao_factory))
         end
     }

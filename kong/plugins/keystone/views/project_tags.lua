@@ -7,7 +7,7 @@ local function list_project_tags(self, dao_factory)
     local tags = {}
     local temp, err = dao_factory.project_tag:find_all({project_id = self.params.project_id})
     kutils.assert_dao_error(err, "project_tag:find_all")
-    for i = 1, kutils.list_limit(#temp) do
+    for i = 1, kutils.list_limit(#temp, self.config) do
         tags[i] = temp[i].name
     end
 
@@ -78,29 +78,29 @@ end
 local routes = {
     ['/v3/projects/:project_id/tags'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_project_tags", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_project_tags")
             responses.send_HTTP_OK(list_project_tags(self, dao_factory))
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:modify_project_tag", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:modify_project_tag")
             modify_project_tag(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:remove_all_project_tags", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:remove_all_project_tags")
             remove_all_project_tags(self, dao_factory)
         end
     },
     ['/v3/projects/:project_id/tags/:tag'] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:check_project_tag", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:check_project_tag")
             check_project_tag(self, dao_factory)
         end,
         PUT = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:add_project_tag", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:add_project_tag")
             add_project_tag(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project_tag", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_project_tag")
             delete_project_tag(self, dao_factory)
         end
     }

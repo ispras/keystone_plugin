@@ -89,7 +89,7 @@ local function list_users(self, dao_factory, helpers)
     end
 
     local num = 0
-    local list_limit = kutils.config_from_dao().default_list_limit
+    local list_limit = kutils.config_from_dao(self.config).default_list_limit
     for _, user_info in ipairs(users_info) do
         if user_fits(self.params, dao_factory, user_info) then
             num = num + 1
@@ -150,7 +150,7 @@ local function assign_default_role(dao_factory, user)
     self.params = {
         user_id = user.id,
         domain_id = user.domain_id,
-        role_id = kutils.default_role(dao_factory)
+        role_id = kutils.default_role(dao_factory, self.config)
     }
     assignment.assign(self, dao_factory, "UserDomain", false, true)
 
@@ -159,7 +159,7 @@ local function assign_default_role(dao_factory, user)
         self.params = {
             user_id = user.id,
             project_id = user.default_project_id,
-            role_id = kutils.default_role(dao_factory)
+            role_id = kutils.default_role(dao_factory, self.config)
         }
         assignment.assign(self, dao_factory, "UserProject", false, true)
     end
@@ -183,7 +183,7 @@ local function create_local_user(self, dao_factory)
     local passwd = {
         id = utils.uuid(),
         local_user_id = loc_user.id,
---        password = sha512.crypt(user.password),
+--        password = sha512.crypt(user.password, self.config),
         password = bcrypt.digest(user.password, 4),
         created_at = created_time
     }
@@ -596,7 +596,7 @@ local function list_user_groups(self, dao_factory)
     }
     local groups, err = dao_factory.user_group_membership:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "user_group_membership:find_all")
-    for i = 1, kutils.list_limit(#groups) do
+    for i = 1, kutils.list_limit(#groups, self.config) do
         local group, err = dao_factory.group:find({id = groups[i].group_id})
         kutils.assert_dao_error(err, "group:find")
         resp.groups[i] = group
@@ -622,7 +622,7 @@ local function list_user_projects(self, dao_factory)
     local temp, err = dao_factory.assignment:find_all({type = "UserProject", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
 
-    for i = 1, kutils.list_limit(#temp) do
+    for i = 1, kutils.list_limit(#temp, self.config) do
         if not kutils.has_id(resp.projects, temp[i].target_id) then
             local project, err = dao_factory.project:find({id = temp[i].target_id})
             kutils.assert_dao_error(err, "dao_factory.project:find")
@@ -659,7 +659,7 @@ local function list_user_domains(self, dao_factory)
     local temp, err = dao_factory.assignment:find_all({type = "UserDomain", actor_id = user.id, inherited = false})
     kutils.assert_dao_error(err, "assignment:find_all")
 
-    for i = 1, kutils.list_limit(#temp) do
+    for i = 1, kutils.list_limit(#temp, self.config) do
         if not kutils.has_id(resp.domains, temp[i].target_id) then
             local project, err = dao_factory.project:find({id = temp[i].target_id})
             kutils.assert_dao_error(err, "dao_factory.project:find")
@@ -710,11 +710,11 @@ end
 local routes = {
     ["/v3/users"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_users", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_users")
             list_users(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_user", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_user")
             if self.params.user and self.params.user.name and self.params.user.name:match(".*@%a+%.%a+$") then
                 responses.send_HTTP_BAD_REQUEST("Username shouldn't be an email")
             end
@@ -729,42 +729,42 @@ local routes = {
     },
     ["/v3/users/:user_id"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:get_user")
             responses.send(get_user_info(self, dao_factory))
         end,
         PATCH = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:update_user")
 --            if self.params.user and self.params.user.name and self.params.user.name:match(".*@%a+%.%a+$") then
 --                responses.send_HTTP_BAD_REQUEST("Username shouldn't be an email")
 --            end
             update_user(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:delete_user")
             delete_user(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/groups"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_groups_for_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:list_groups_for_user")
             list_user_groups(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/projects"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects_for_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:list_projects_for_user")
             list_user_projects(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/domains"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_domains_for_user", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:list_domains_for_user")
             list_user_domains(self, dao_factory)
         end
     },
     ["/v3/users/:user_id/password"] = {
         POST = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:change_password", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:change_password")
             change_user_password(self, dao_factory)
         end
     }

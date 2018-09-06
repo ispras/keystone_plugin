@@ -174,20 +174,23 @@ local function define_namespace(dao_factory, scope_id)
     return
 end
 
-local function check_policy_rule(token, rule, target, obj, http)
+local function check_policy_rule(self, target, rule, token)
     -- token = self.req.headers['X-Auth-Token']
     -- rule = 'identity:...'
     -- target = dao_factory
     -- obj = self.params
     -- return: namespace_id
 
+    local obj = self.params
+    local config = self.config
+    local token = token or self.req.headers['X-Auth-Token']
     --TODO is_admin_project
     if not token then
         responses.send_HTTP_UNAUTHORIZED()
     end
     local kutils = require ("kong.plugins.keystone.utils")
-    local Tokens = kutils.provider()
-    local token = Tokens.get_info(token, target) --NOTE: there are unscoped tokens
+    local Tokens = kutils.provider(config)
+    local token = Tokens.get_info(config, token, target) --NOTE: there are unscoped tokens
     define_namespace(target, token.scope_id)
     if token.is_admin then
         return namespace_id

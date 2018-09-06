@@ -5,12 +5,17 @@ local function connect_to_redis(conf)
     local red = redis:new()
     local err
 
-    conf, err = conf or kutils.config_from_dao()
+    conf, err = kutils.config_from_dao(conf)
     if not conf then
         return nil, "failed to get configuration parameters: "..err
     end
     red:set_timeout(conf.matchmaker_redis_wait_timeout)
 
+    local cjson = require ("cjson")
+--    error(cjson.encode({conf.matchmaker_redis_host, conf.matchmaker_redis_port}))
+    if not conf.matchmaker_redis_host or not conf.matchmaker_redis_port then
+        error(cjson.encode(conf))
+    end
     local ok, err = red:connect(conf.matchmaker_redis_host, conf.matchmaker_redis_port)
     if err then
         return nil, err
