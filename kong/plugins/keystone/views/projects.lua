@@ -70,7 +70,7 @@ local function list_projects(self, dao_factory)
             return responses.send_HTTP_OK(resp)
         end
 
-        for i = 1, kutils.list_limit(#projects) do
+        for i = 1, kutils.list_limit(#projects, self.config) do
             resp.projects[i] = {}
             resp.projects[i].description = projects[i].description
             resp.projects[i].domain_id = projects[i].domain_id or projects[i].id
@@ -102,7 +102,7 @@ local function list_projects(self, dao_factory)
             return responses.send_HTTP_OK(resp)
         end
 
-        for i = 1, kutils.list_limit(#domains) do
+        for i = 1, kutils.list_limit(#domains, self.config) do
             resp.domains[i] = {}
             resp.domains[i].description = domains[i].description
             resp.domains[i].enabled = domains[i].enabled
@@ -153,8 +153,8 @@ local function check_project_parent(dao_factory, parent_id, domain_id)
     return res
 end
 
-local function check_project_tree_depth(dao_factory, parent_project)
-    local max_project_tree_depth = kutils.config_from_dao().default_max_project_tree_depth
+local function check_project_tree_depth(dao_factory, parent_project, config)
+    local max_project_tree_depth = kutils.config_from_dao(config).default_max_project_tree_depth
     local cur_tree_depth = 1
     local cur_parent_project = parent_project
     while true do
@@ -208,7 +208,7 @@ local function create_project(self, dao_factory)
     local parent_id = request.project.parent_id --must be supplemented
     if parent_id then
         local parent_project = check_project_parent(dao_factory, parent_id, domain_id)
-        check_project_tree_depth(dao_factory, parent_project)
+        check_project_tree_depth(dao_factory, parent_project, self.config)
     end
 
     local id = request.project.id or utils.uuid()
@@ -471,25 +471,25 @@ local routes = {
     ["/v3/projects"] = {
         GET = function(self, dao_factory)
 --            responses.send_HTTP_OK(self.req.headers)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_projects", dao_factory, self.params, self.req.parsed_url.scheme == 'http')
+            policies.check(self, dao_factory, "identity:list_projects", dao_factory, self.params, self.req.parsed_url.scheme == 'http')
             Project.list_projects(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_project", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_project")
             responses.send(Project.create_project(self, dao_factory))
         end
     },
     ["/v3/projects/:project_id"] = {
         GET = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_project", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:get_project")
             Project.get_project_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_project", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:update_project")
             Project.update_project(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_project", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:delete_project")
             Project.delete_project(self, dao_factory)
         end
     }

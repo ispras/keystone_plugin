@@ -30,7 +30,7 @@ local function init(self, dao_factory)
     kutils.assert_dao_error(err, "project find all")
     resp.default_domain_id = temp[1].id
 
-    local admin_domain_name = kutils.config_from_dao().resource_admin_project_domain_name or "admin"
+    local admin_domain_name = kutils.config_from_dao(self.config).resource_admin_project_domain_name or "admin"
     self.params.project = {
         description = "Admin domain",
         enabled = true,
@@ -42,7 +42,7 @@ local function init(self, dao_factory)
     kutils.assert_dao_error(err, "project find all")
     resp.admin_domain_id = temp[1].id
 
-    local admin_project_name = kutils.config_from_dao().resource_admin_project_name or "admin"
+    local admin_project_name = kutils.config_from_dao(self.config).resource_admin_project_name or "admin"
     self.params.project = {
         description = "Admin project",
         domain_id = resp.admin_domain_id,
@@ -67,11 +67,11 @@ local function init(self, dao_factory)
     kutils.assert_dao_error(err, "project find all")
     resp.admin_project_id_2 = temp[1].id
 
-    local member_role_name = kutils.config_from_dao().default_member_role_name or "member"
+    local member_role_name = kutils.config_from_dao(self.config).default_member_role_name or "member"
     self.params.role = {
         name = member_role_name
     }
-    local default_role_id = kutils.config_from_dao().default_member_role_id or nil
+    local default_role_id = kutils.config_from_dao(self.config).default_member_role_id or nil
     if default_role_id then
         self.params.role.id = default_role_id
     end
@@ -151,7 +151,7 @@ local function init(self, dao_factory)
     }
     roles.assignment.assign(self, dao_factory, "UserDomain", false, true)
 
-    fkeys.rotate_keys()
+    fkeys.rotate_keys(self.config)
 
     return resp
 end

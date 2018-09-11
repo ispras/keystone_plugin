@@ -32,7 +32,7 @@ local version_v2 = {
 
 return {
     ["/v3"] = {
-        GET = function(self)
+        GET = function(self, dao)
             version_v3.links[1].href = self:build_url(version_v3.links[1].href)
             responses.send_HTTP_OK({version = version_v3}, kutils.headers())
         end

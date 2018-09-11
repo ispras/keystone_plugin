@@ -11,13 +11,13 @@ local routes = {
             if self.params.auth and self.params.auth.identity then
                 if self.params.auth.identity.methods[1] == "token" then
                     if self.params.auth.scope and self.params.auth.scope['OS-TRUST:trust'] then
-                        local Tokens = kutils.provider()
+                        local Tokens = kutils.provider(self.config)
                         self.params.auth.identity.token = Tokens.check(self.params.auth.identity.token, dao_factory)
                         trust(self, dao_factory)
                     elseif self.params.auth.identity.token['OS-OAUTH2'] then
                         oauth2(self, dao_factory)
                     else
-                        local Tokens = kutils.provider()
+                        local Tokens = kutils.provider(self.config)
                         self.params.auth.identity.token = Tokens.check(self.params.auth.identity.token, dao_factory)
                         if self.params.auth.identity.token.federated then
                             feder(self, dao_factory)
@@ -35,15 +35,15 @@ local routes = {
             end
         end,
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_token", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:validate_token")
             auth.get_token_info(self, dao_factory)
         end,
         HEAD = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:validate_token_head", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:validate_token_head")
             auth.check_token(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:revoke_token", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:revoke_token")
             auth.revoke_token(self, dao_factory)
         end
     }

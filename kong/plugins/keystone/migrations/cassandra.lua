@@ -25,11 +25,6 @@ return {
         PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON assignment(actor_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(target_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(role_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(inherited);
-
       CREATE TABLE IF NOT EXISTS config_register(
         type varchar,
         domain_id varchar,
@@ -67,14 +62,8 @@ return {
         extra text,
         enabled boolean,
         region_id varchar,
-        PRIMARY KEY (id)
+        PRIMARY KEY (service_id, enabled, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON endpoint(legacy_endpoint_id);
-      CREATE INDEX IF NOT EXISTS ON endpoint(interface);
-      CREATE INDEX IF NOT EXISTS ON endpoint(service_id);
-      CREATE INDEX IF NOT EXISTS ON endpoint(enabled);
-      CREATE INDEX IF NOT EXISTS ON endpoint(region_id);
 
       CREATE TABLE IF NOT EXISTS endpoint_group(
         id varchar,
@@ -164,12 +153,8 @@ return {
         name varchar,
         failed_auth_count int,
         failed_auth_at timestamp,
-        PRIMARY KEY (id)
+        PRIMARY KEY (domain_id, name, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON local_user(user_id);
-      CREATE INDEX IF NOT EXISTS ON local_user(domain_id);
-      CREATE INDEX IF NOT EXISTS ON local_user(name);
 
       CREATE TABLE IF NOT EXISTS mapping(
         id varchar,
@@ -201,12 +186,8 @@ return {
         self_service boolean,
         password_hash varchar,
         created_at timestamp,
-        PRIMARY KEY (id)
+        PRIMARY KEY (local_user_id, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON password(local_user_id);
-      CREATE INDEX IF NOT EXISTS ON password(expires_at);
-      CREATE INDEX IF NOT EXISTS ON password(created_at);
 
       CREATE TABLE IF NOT EXISTS policy(
         id varchar,
@@ -236,14 +217,8 @@ return {
         domain_id varchar,
         parent_id varchar,
         is_domain boolean,
-        PRIMARY KEY (id)
+        PRIMARY KEY (name, is_domain, domain_id, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON project(domain_id);
-      CREATE INDEX IF NOT EXISTS ON project(parent_id);
-      CREATE INDEX IF NOT EXISTS ON project(name);
-      CREATE INDEX IF NOT EXISTS ON project(enabled);
-      CREATE INDEX IF NOT EXISTS ON project(is_domain);
 
       CREATE TABLE IF NOT EXISTS project_endpoint(
         endpoint_id varchar,
@@ -335,12 +310,8 @@ return {
         enabled boolean,
         name varchar,
         description text,
-        PRIMARY KEY (id)
+        PRIMARY KEY (id, enabled)
       );
-
-      CREATE INDEX IF NOT EXISTS ON service(type);
-      CREATE INDEX IF NOT EXISTS ON service(enabled);
-      CREATE INDEX IF NOT EXISTS ON service(name);
 
       CREATE TABLE IF NOT EXISTS service_provider(
         auth_url varchar,
@@ -401,11 +372,6 @@ return {
         domain_id varchar,
         PRIMARY KEY (id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON user_(default_project_id);
-      CREATE INDEX IF NOT EXISTS ON user_(domain_id);
-      CREATE INDEX IF NOT EXISTS ON user_(enabled);
-      CREATE INDEX IF NOT EXISTS ON user_(created_at);
 
       CREATE TABLE IF NOT EXISTS user_group_membership(
         user_id varchar,

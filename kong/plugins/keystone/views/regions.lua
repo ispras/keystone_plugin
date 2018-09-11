@@ -29,7 +29,7 @@ local function list_regions(self, dao_factory)
         responses.send_HTTP_OK(resp)
     end
 
-    for i = 1, kutils.list_limit(#regions) do
+    for i = 1, kutils.list_limit(#regions, self.config) do
         resp.regions[i] = {}
         resp.regions[i].description = regions[i].description
         resp.regions[i].id = regions[i].id
@@ -164,25 +164,25 @@ Region.delete_region = delete_region
 return {
     ["/v3/regions"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_regions", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_regions")
             Region.list_regions(self, dao_factory)
         end,
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_region", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_region")
             Region.create_region(self, dao_factory)
         end
     },
     ["/v3/regions/:region_id"] = {
         GET = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_region", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_region")
             Region.get_region_info(self, dao_factory)
         end,
         PATCH = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:update_region", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:update_region")
             Region.update_region(self, dao_factory)
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_region", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_region")
             Region.delete_region(self, dao_factory)
         end
     }

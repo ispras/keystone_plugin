@@ -45,7 +45,7 @@ local function list_groups(self, dao_factory)
     local groups, err = dao_factory.group:find_all(args)
     kutils.assert_dao_error(err, "group:find_all")
     resp.groups = groups
-    for i = 1, kutils.list_limit(#groups) do
+    for i = 1, kutils.list_limit(#groups, self.config) do
         resp.groups[i].links = {
             self = self:build_url(self.req.parsed_url.path..'/'..groups[i].id)
         }
@@ -230,45 +230,45 @@ end
 local routes = {
     ['/v3/groups'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_groups", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_groups")
             list_groups(self, dao_factory)
         end,
         POST = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_group", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_group")
             create_group(self, dao_factory)
         end
     },
     ['/v3/groups/:group_id'] = {
         GET = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:get_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:get_group")
             get_group_info(self, dao_factory)
         end,
         PATCH = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:update_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:update_group")
             update_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:delete_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:delete_group")
             delete_group(self, dao_factory)
         end,
     },
     ['/v3/groups/:group_id/users'] = {
         GET = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:list_users_in_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:list_users_in_group")
             list_group_users(self, dao_factory)
         end
     },
     ['/v3/groups/:group_id/users/:user_id'] = {
         PUT = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:add_user_to_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:add_user_to_group")
             responses.send(add_user_to_group(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:check_user_in_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:check_user_in_group")
             check_user_in_group(self, dao_factory)
         end,
         DELETE = function (self, dao_factory)
-            namespace_id = policies.check(self.req.headers['X-Auth-Token'], "identity:remove_user_from_group", dao_factory, self.params)
+            namespace_id = policies.check(self, dao_factory, "identity:remove_user_from_group")
             remove_user_from_group(self, dao_factory)
         end
     }

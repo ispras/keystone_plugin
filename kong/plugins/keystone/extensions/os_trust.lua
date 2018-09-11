@@ -24,7 +24,7 @@ local function create_trust(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Bad obligatory params")
     end
 
-    if not kutils.config_from_dao()['trust_max_redelegation_count'] then
+    if not kutils.config_from_dao(self.config)['trust_max_redelegation_count'] then
         responses.send_HTTP_BAD_REQUEST("Trust is disabled")
     end
 
@@ -59,7 +59,7 @@ local function create_trust(self, dao_factory)
 
     local trust_obj = self.params.trust
     trust_obj.id = utils.uuid()
-    trust_obj.allow_redelegation = trust_obj.allow_redelegation and kutils.config_from_dao()['trust_allow_redelegation']
+    trust_obj.allow_redelegation = trust_obj.allow_redelegation and kutils.config_from_dao(self.config)['trust_allow_redelegation']
     if not trust_obj.allow_redelegation then
         trust_obj.redelegaion_count = 0
         trust_obj.remaining_uses = nil
@@ -69,7 +69,7 @@ local function create_trust(self, dao_factory)
         elseif old_redelegation_count == 0 then
             responses.send_HTTP_BAD_REQUEST("Redelegation of this trust is forbidden")
         else
-            local max_redelegation_count = kutils.config_from_dao()['trust_max_redelegation_count']
+            local max_redelegation_count = kutils.config_from_dao(self.config)['trust_max_redelegation_count']
             trust_obj.redelegation_count = trust_obj.redelegation_count or max_redelegation_count
             if trust_obj.redelegation_count > max_redelegation_count then
                 trust_obj.redelegation_count = max_redelegation_count
@@ -171,7 +171,7 @@ local function list_trusts(self, dao_factory)
         kutils.assert_dao_error(err, "trust:find_all")
     end
 
-    for i = 1, kutils.list_limit(#trusts) do
+    for i = 1, kutils.list_limit(#trusts, self.config) do
         resp.trusts[i] = trusts[i]
         local trust_roles, err = dao_factory.trust_role:find_all({trust_id = trusts[i].id})
         kutils.assert_dao_error(err, "trust_role:find_all")
@@ -287,7 +287,7 @@ local function list_delegated_roles(self, dao_factory)
     local trust_roles, err = dao_factory.trust_role:find_all({trust_id = trust_id})
     kutils.assert_dao_error(err, "trust_role:find_all")
 
-    for i = 1, kutils.list_limit(#trust_roles) do
+    for i = 1, kutils.list_limit(#trust_roles, self.config) do
         local role, err = dao_factory.role:find({id = trust_roles[i].role_id})
         kutils.assert_dao_error(err, "role:find")
         roles[i] = role
@@ -372,37 +372,37 @@ end
 local routes = {
     ['/v3/OS-TRUST/trusts'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_trusts", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_trusts")
             responses.send(list_trusts(self, dao_factory))
         end,
         POST = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:create_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:create_trust")
             responses.send(create_trust(self, dao_factory))
         end
     },
     ['/v3/OS-TRUST/trusts/:trust_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_trust")
             responses.send(get_trust(self, dao_factory))
         end,
         DELETE = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:delete_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:delete_trust")
             responses.send(delete_trust(self, dao_factory))
         end
     },
     ['/v3/OS-TRUST/trusts/:trust_id/roles/'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:list_roles_for_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:list_roles_for_trust")
             responses.send(list_delegated_roles(self, dao_factory))
         end,
     },
     ['/v3/OS-TRUST/trusts/:trust_id/roles/:role_id'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role_for_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_role_for_trust")
             responses.send(get_delegated_role(self, dao_factory))
         end,
         HEAD = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:get_role_for_trust", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:get_role_for_trust")
             responses.send(check_role_delegated(self, dao_factory))
         end
     },
@@ -443,11 +443,12 @@ local function consuming_trust(self, dao_factory)
         kutils.assert_dao_error(err, "user:find")
     end
 
-    local Tokens = kutils.provider()
+    local Tokens = kutils.provider(self.config)
     local token = Tokens.generate(dao_factory, auth_user, true, trust.project_id, false, trust_id)
 
-    local domain, err = dao_factory.project:find({id = auth_user.domain_id or auth_user.domain.id})
+    local temp, err = dao_factory.project:find_all({id = auth_user.domain_id or auth_user.domain.id})
     kutils.assert_dao_error(err, "project:find")
+    local domain = temp[1]
 
     local resp = {}
     auth_user.default_project_id = nil

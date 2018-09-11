@@ -52,13 +52,13 @@ end
 local routes = {
     ['/v3/OS-SIMPLE-CERT/ca'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:show_ca_cert", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:show_ca_cert")
             responses.send(show_ca_cert(self, dao_factory))
         end
     },
     ['/v3/OS-SIMPLE-CERT/certificate'] = {
         GET = function (self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "identity:show_signing_cert", dao_factory, self.params)
+            policies.check(self, dao_factory, "identity:show_signing_cert")
             responses.send(show_signing_cert(self, dao_factory))
         end
     }

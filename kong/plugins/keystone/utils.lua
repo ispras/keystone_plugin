@@ -19,12 +19,14 @@ local assert_dao_error = function(err, func)
     end
 end
 
-local config_from_dao = function()
+local config_from_dao = function(config)
+    if config then return config end
     local singletons = require "kong.singletons"
     local dao = singletons.dao
     local temp, err = dao.plugins:find_all({name='keystone'})
     assert_dao_error(err, "plugins find all")
-    return temp[1] and temp[1].config or error("Config keystone not found")
+    local config = temp[1] and temp[1].config or error("Config keystone not found")
+    return config
 end
 
 local function bool (a)
@@ -39,8 +41,8 @@ local default_domain = function(dao_factory)
     if not err and next(domain) then return domain[1]['id'] end
     return nil
 end
-local default_role = function(dao_factory)
-    local default_role_name = config_from_dao().default_member_role_name or "member"
+local default_role = function(dao_factory, config)
+    local default_role_name = config_from_dao(config).default_member_role_name or "member"
     local role, err = dao_factory.role:find_all({name = default_role_name})
     if not err and next(role) then return role[1]['id'] end
     return nil
@@ -102,8 +104,8 @@ local subtree = function (dao_factory, project_id, include_names)
     return subtree
 end
 
-local function provider()
-    local config = config_from_dao()
+local function provider(config)
+    local config = config_from_dao(config)
     if config.token_provider == 'uuid' then
         return uuid_tokens
     elseif config.token_provider == 'fernet' then
@@ -182,8 +184,8 @@ table_tostring = function ( tbl )
   return "{" .. table.concat( result, "," ) .. "}"
 end
 
-local function list_limit(len)
-    local config = config_from_dao()
+local function list_limit(len, config)
+    local config = config_from_dao(config)
     return config.default_list_limit == -1 and len or config.default_list_limit > len and len or config.default_list_limit
 end
 return {

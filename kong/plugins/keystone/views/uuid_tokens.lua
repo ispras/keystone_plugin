@@ -4,13 +4,13 @@ local kutils = require ("kong.plugins.keystone.utils")
 local redis = require ("kong.plugins.keystone.redis")
 local cjson = require "cjson"
 
-local function validate_token(dao_factory, token_id, validate)
+local function validate_token(config, dao_factory, token_id, validate)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
     local _, err = dao_factory.token:update({valid = validate}, {id = token_id})
     kutils.assert_dao_error(err, "token update")
 
-    local red, err = redis.connect() -- TODO cache
+    local red, err = redis.connect(config) -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local temp, err = red:get(token_id)
     kutils.assert_dao_error(err, "redis get")
@@ -27,7 +27,7 @@ local function validate_token(dao_factory, token_id, validate)
     end
 end
 
-local function check_token(token, dao_factory, allow_expired, validate)
+local function check_token(config, token, dao_factory, allow_expired, validate)
     -- TODO check federated!!!
     local kutils = require ("kong.plugins.keystone.utils")
     if not token or not token.id then
@@ -45,16 +45,16 @@ local function check_token(token, dao_factory, allow_expired, validate)
             responses.send_HTTP_BAD_REQUEST("Token is not valid")
         end
     elseif not token.valid then
-        validate_token(dao_factory, token.id, true)
+        validate_token(config, dao_factory, token.id, true)
     end
     if not allow_expired then
         if token.expires and token.expires < os.time() then
-            validate_token(dao_factory, token.id, false)
+            validate_token(config, dao_factory, token.id, false)
             responses.send_HTTP_BAD_REQUEST("Token is expired" )
         end
     elseif validate then
         if token.expires and token.expires < os.time() then
-            local token_expiration = kutils.config_from_dao().token_expiration or 24*60*60
+            local token_expiration = kutils.config_from_dao(config).token_expiration or 24*60*60
             token, err = dao_factory.token:update({expires = os.time() + token_expiration}, {id = token.id})
             kutils.assert_dao_error(err, "token update")
         end
@@ -62,10 +62,10 @@ local function check_token(token, dao_factory, allow_expired, validate)
     return token
 end
 
-local function generate_token(dao_factory, user, cached, scope_id, is_domain, trust_id)
+local function generate_token(config, dao_factory, user, cached, scope_id, is_domain, trust_id)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
-    local token_expiration = kutils.config_from_dao().token_expiration or 24*60*60
+    local token_expiration = kutils.config_from_dao(config).token_expiration or 24*60*60
     local token = {
         id = utils.uuid(),
         valid = true,
@@ -80,7 +80,7 @@ local function generate_token(dao_factory, user, cached, scope_id, is_domain, tr
         return token
     end
 
-    local red, err = redis.connect() -- TODO cache
+    local red, err = redis.connect(config) -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local temp, err = red:get(user.id..'&'..scope_id)
     kutils.assert_dao_error(err, "redis get")
@@ -96,10 +96,10 @@ local function generate_token(dao_factory, user, cached, scope_id, is_domain, tr
     return token
 end
 
-local function get_token_info(token_id, dao_factory)
+local function get_token_info(config, token_id, dao_factory)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
-    local red, err = redis.connect() -- TODO cache
+    local red, err = redis.connect(config) -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local key, err = red:get(token_id)
     kutils.assert_dao_error(err, "redis get")

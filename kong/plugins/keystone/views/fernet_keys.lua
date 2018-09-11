@@ -8,9 +8,9 @@ local cjson = require "cjson"
 -- because of lapis error "attempt to index upvalue (a userdata value)
 -- for more information https://github.com/Neopallium/lua-pb/issues/28
 
-local function get_keys()
+local function get_keys(config)
     local redis = require ("kong.plugins.keystone.redis")
-    local red, err = redis.connect() -- TODO cache
+    local red, err = redis.connect(config) -- TODO cache
     if err then error(err) end
     local temp, err = red:get("fernet_keys")
     if err then error(err) end
@@ -25,8 +25,8 @@ local function get_keys()
     responses.send_HTTP_CONFLICT("No generated keys found. Call key rotation")
 end
 
-local function get_primary()
-    local keys = get_keys()
+local function get_primary(config)
+    local keys = get_keys(config)
     return keys[#keys]
 end
 
@@ -36,11 +36,12 @@ local function generate_key()
     return secret
 end
 
-local function rotate_keys()
+local function rotate_keys(config)
     local kutils = require ("kong.plugins.keystone.utils")
     local redis = require ("kong.plugins.keystone.redis")
-    local max_active_keys = kutils.config_from_dao()['fernet_tokens_max_active_keys']
-    local red, err = redis.connect()
+    local config = kutils.config_from_dao(config)
+    local max_active_keys = config['fernet_tokens_max_active_keys']
+    local red, err = redis.connect(config)
     kutils.assert_dao_error(err, "redis connect")
     local temp, err = red:get("fernet_keys")
     kutils.assert_dao_error(err, "redis get")
@@ -68,9 +69,9 @@ local function rotate_keys()
     kutils.assert_dao_error(err, "redis set")
     return keys
 end
-local function revoke_keys()
+local function revoke_keys(config)
     local redis = require ("kong.plugins.keystone.redis")
-    local red, err = redis.connect()
+    local red, err = redis.connect(config)
     if err then error(err) end
     local temp, err = red:del("fernet_keys")
     if err then error(err) end
@@ -79,11 +80,11 @@ end
 local routes = {
     ["/v3/fernet_keys"] = {
         POST = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "admin_required", dao_factory, self.params)
+            policies.check(self, dao_factory, "admin_required")
             responses.send_HTTP_CREATED(rotate_keys())
         end,
         DELETE = function(self, dao_factory)
-            policies.check(self.req.headers['X-Auth-Token'], "admin_required", dao_factory, self.params)
+            policies.check(self, dao_factory, "admin_required")
             responses.send_HTTP_NO_CONTENT(revoke_keys())
         end
     }
