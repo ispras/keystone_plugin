@@ -231,7 +231,7 @@ return {
         domain_id varchar,
         parent_id varchar,
         is_domain boolean,
-        PRIMARY KEY (id, name)
+        PRIMARY KEY (name, id)
       );
 
       CREATE TABLE IF NOT EXISTS project_endpoint(
