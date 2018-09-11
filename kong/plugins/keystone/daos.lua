@@ -89,10 +89,10 @@ local CREDENTIAL_SCHEMA = {
 }
 
 local ENDPOINT_SCHEMA = {
-    primary_key = {"id"},
+    primary_key = {"service_id", "enabled", "id"},
     table = "endpoint",
     fields = {
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         legacy_endpoint_id = { type = "string" },
         interface = { type = "string", required = true },
         service_id = { type = "string", required = true, queryable = true },
@@ -203,10 +203,10 @@ local LIMIT_SCHEMA = {
 }
 
 local LOCAL_USER_SCHEMA = {
-    primary_key = {"id"},
+    primary_key = {"domain_id", "name", "id"},
     table = "local_user",
     fields = {
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         user_id = { type = "string", required = true, unique = true, queryable = true },
         domain_id = { type = "string", required = true, queryable = true },
         name = { type = "string", required = true },
@@ -245,10 +245,10 @@ local NONLOCAL_USER_SCHEMA = {
 }
 
 local PASSWORD_SCHEMA = {
-    primary_key = {"id"},
+    primary_key = {"local_user_id", "id"},
     table = "password",
     fields = {
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         local_user_id = { type = "string", required = true, queryable = true },
         password = { type = "string" },
         expires_at = { type = "timestamp" },
@@ -282,10 +282,10 @@ local POLICY_ASSOCIATION_SCHEMA = {
 }
 
 local PROJECT_SCHEMA = {
-    primary_key = {"id"},
+    primary_key = {"name", "is_domain", "domain_id", "id"},
     table = "project",
     fields = {
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         name = { type = "string", required = true },
         extra = { type = "string" },
         description = { type = "string" },
@@ -404,10 +404,10 @@ local SENSITIVE_CONFIG_SCHEMA = {
 }
 
 local SERVICE_SCHEMA = {
-    primary_key = {"id"},
+    primary_key = {"id", "enabled"},
     table = "service",
     fields = {
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         type = { type = "string" },
         enabled = { type = "boolean", required = true },
         name = { type = "string", required = true},
@@ -420,7 +420,7 @@ local SERVICE_PROVIDER_SCHEMA = {
     table = "service_provider",
     fields = {
         auth_url = { type = "url", required = true },
-        id = { type = "string", required = true },
+        id = { type = "string", required = true, unique = true },
         enabled = { type = "boolean", required = true },
         description = { type = "string" },
         sp_url = { type = "url", required = true },
