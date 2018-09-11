@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+kong restart
 
 keystone_ep="http://localhost:8000/v3/"
 init_ep="http://localhost:8001/v3"

@@ -373,11 +373,6 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON user_(default_project_id);
-      CREATE INDEX IF NOT EXISTS ON user_(domain_id);
-      CREATE INDEX IF NOT EXISTS ON user_(enabled);
-      CREATE INDEX IF NOT EXISTS ON user_(created_at);
-
       CREATE TABLE IF NOT EXISTS user_group_membership(
         user_id varchar,
         group_id varchar,
