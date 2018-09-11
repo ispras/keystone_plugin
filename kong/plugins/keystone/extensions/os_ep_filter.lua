@@ -52,8 +52,9 @@ local function create_endpoint_group(self, dao_factory)
     end
 
     if endpoint_group.filters.service_id then
-        local tmp, err = dao_factory.service:find({id = endpoint_group.filters.service_id})
+        local temp, err = dao_factory.service:find_all({id = endpoint_group.filters.service_id})
         kutils.assert_dao_error(err, "service:find")
+        local tmp = temp[1]
         if not tmp then
             responses.send_HTTP_BAD_REQUEST("No such service in the system")
         end
@@ -178,14 +179,16 @@ local function create_association(self, dao_factory)
     end
     local endpoint_id, project_id = self.params.endpoint_id, self.params.project_id
 
-    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
+    local temp, err = dao_factory.endpoint:find_all({id = endpoint_id})
     kutils.assert_dao_error(err, "endpoint:find")
+    local endpoint = temp[1]
     if not endpoint then
         responses.send_HTTP_BAD_REQUEST("No such endpoint in the system")
     end
 
-    local project, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "project:find")
+    local project = temp[1]
     if not project then
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
@@ -254,8 +257,9 @@ local function list_associations_by_project(self, dao_factory)
 
     local j = 1
     for i = 1, kutils.list_limit(#associations, self.config) do
-        local endpoint, err = dao_factory.endpoint:find({id = associations[i].endpoint_id})
+        local temp, err = dao_factory.endpoint:find_all({id = associations[i].endpoint_id})
         kutils.assert_dao_error(err, "endpoint:find")
+        local endpoint = temp[1]
 
         if endpoint then
             endpoint.links = {
@@ -288,8 +292,9 @@ local function list_associations_by_endpoint(self, dao_factory)
 
     local j = 1
     for i = 1, kutils.list_limit(#associations, self.config) do
-        local project, err = dao_factory.project:find({id = associations[i].project_id})
+        local temp, err = dao_factory.project:find_all({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
+        local project = temp[1]
 
         if project then
             project.links = {
@@ -315,8 +320,9 @@ local function create_ep_to_project_association(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such endpoint group in the system")
     end
 
-    local project, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "project:find")
+    local project = temp[1]
     if not project then
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
@@ -348,8 +354,9 @@ local function get_ep_to_project_association(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such endpoint group in the system")
     end
 
-    local project, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "project:find")
+    local project = temp[1]
     if not project then
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
@@ -380,8 +387,9 @@ local function check_ep_to_project_association(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such endpoint group in the system")
     end
 
-    local project, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "project:find")
+    local project = temp[1]
     if not project then
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
@@ -408,8 +416,9 @@ local function delete_ep_to_project_association(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("No such endpoint group in the system")
     end
 
-    local project, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "project:find")
+    local project = temp[1]
     if not project then
         responses.send_HTTP_BAD_REQUEST("No such project in the system")
     end
@@ -445,8 +454,9 @@ local function list_projects_by_endpoint_group(self, dao_factory)
 
     local j = 1
     for i = 1,kutils.list_limit( #associations, self.config) do
-        local project, err = dao_factory.project:find({id = associations[i].project_id})
+        local temp, err = dao_factory.project:find_all({id = associations[i].project_id})
         kutils.assert_dao_error(err, "project:find")
+        local project = temp[1]
 
         if project then
             project.links = {

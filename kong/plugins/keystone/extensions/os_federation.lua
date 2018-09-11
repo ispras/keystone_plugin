@@ -687,8 +687,9 @@ end
 
 local function map_local_user(user, dao_factory)
     if user.domain.id then
-        local domain, err = dao_factory.project:find({id = user.domain.id})
+        local temp, err = dao_factory.project:find_all({id = user.domain.id})
         kutils.assert_dao_error(err, "project find")
+        local domain = temp[1]
         if not domain or not domain.is_domain or user.domain.name and user.domain.name ~= domain.name then
             responses.send_HTTP_UNAUTHORIZED()
         end
@@ -789,8 +790,9 @@ local function request_unscoped_token(self, dao_factory) -- TODO how? remote par
             end
         end
         if project.id then
-            local temp, err = dao_factory.project:find({id = project.id})
+            local temp_mult, err = dao_factory.project:find_all({id = project.id})
             kutils.assert_dao_error(err, "project find")
+            local temp = temp_mult[1]
             if not temp or project.name and project.name ~= temp.name then
                 responses.send_HTTP_BAD_REQUEST()
             end
@@ -834,8 +836,9 @@ local function request_unscoped_token(self, dao_factory) -- TODO how? remote par
     for i, group in pairs(user.groups) do
         if group.domain then
             if group.domain.id then
-                local temp, err = dao_factory.project:find({id = group.domain.id})
+                local temp_mult, err = dao_factory.project:find_all({id = group.domain.id})
                 kutils.assert_dao_error(err, "project find")
+                local temp = temp_mult[1]
                 if not temp or group.domain.name and group.domain.name ~= temp.name then
                     responses.send_HTTP_BAD_REQUEST()
                 end
@@ -918,8 +921,9 @@ local function list_projects_allowed_for_federated_user(self, dao_factory, is_do
 
     local scopes = {}
     for i, v in pairs(assignments) do
-        local scope, err = dao_factory.project:find({id = v.target_id})
+        local temp, err = dao_factory.project:find_all({id = v.target_id})
         kutils.assert_dao_error(err, "project find ")
+        local scope = temp[1]
         if scope and scope.enabled and not kutils.has_id(scopes, scope.id) then
             scopes[#scopes] = {
                 id = scope.id,

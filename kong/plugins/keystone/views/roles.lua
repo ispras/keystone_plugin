@@ -193,8 +193,9 @@ local function list_role_assignments_for_actor_on_target(self, dao_factory, type
     if not type or not (type == "UserProject" or type == "UserDomain" or type == "GroupProject" or type == "GroupDomain") or not actor_id or not target_id then
         responses.send_HTTP_BAD_REQUEST("Incorrect type")
     end
-    local project, err = dao_factory.project:find({id = target_id})
+    local temp, err = dao_factory.project:find_all({id = target_id})
     kutils.assert_dao_error(err, "project find")
+    local project = temp[1]
 
     local resp = {
         links = {
@@ -301,8 +302,9 @@ local function check_actor_target_role_id(dao_factory, actor_id, target_id, role
         end
     end
     if type:match("Project") then
-        local temp, err = dao_factory.project:find({id = target_id})
+        local temp, err = dao_factory.project:find_all({id = target_id})
         kutils.assert_dao_error(err, "project find")
+        local temp = temp[1]
         if not temp then
             return nil, "No project found"
         end
@@ -311,8 +313,9 @@ local function check_actor_target_role_id(dao_factory, actor_id, target_id, role
         end
     end
     if type:match("Domain") then
-        local temp, err = dao_factory.project:find({id = target_id})
+        local temp, err = dao_factory.project:find_all({id = target_id})
         kutils.assert_dao_error(err, "project find")
+        local temp = temp[1]
         if not temp or not temp.is_domain then
             return nil, "No domain found"
         end
@@ -334,8 +337,9 @@ local function assign_role(self, dao_factory, type, inherited, checked)
     end
     local role_id = self.params.role_id
 
-    local project, err = dao_factory.project:find({id = target_id})
+    local temp, err = dao_factory.project:find_all({id = target_id})
     kutils.assert_dao_error(err, "project find")
+    local project = temp[1]
 
     local role_name, err
     if not checked then
@@ -453,8 +457,9 @@ local function unassign_role(self, dao_factory, type, inherited)
     end
     local role_id = self.params.role_id
 
-    local project, err = dao_factory.project:find({id = target_id})
+    local temp, err = dao_factory.project:find_all({id = target_id})
     kutils.assert_dao_error(err, "project find")
+    local project = temp[1]
 
     local role_name, err = check_actor_target_role_id(dao_factory, actor_id, target_id, role_id, type)
     if err then
@@ -585,8 +590,9 @@ local function fill_assignment(dao_factory, role_assignments, type, actor_id, ta
             local temp, err = dao_factory.role:find({id = assigns[i].role_id})
             kutils.assert_dao_error(err, "role find")
             name.role = temp and temp.name
-            temp, err = dao_factory.project:find({id = assigns[i].target_id})
+            temp, err = dao_factory.project:find_all({id = assigns[i].target_id})
             kutils.assert_dao_error(err, "project find")
+            temp = temp[1]
             name.project = temp and temp.name
             if type:match("User") then
                 temp, err = dao_factory.local_user:find_all({user_id = assigns[i].actor_id})

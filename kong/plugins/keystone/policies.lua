@@ -114,9 +114,10 @@ local function handle_match(rule, user_id, scope_id, target, obj)
         if not target_id then
             return false
         end
-        local temp, err
+        local temp, err, temp_mult
         if ob == 'domain' or ob == 'project' then
-            temp, err = target.project:find({id = target_id})
+            temp_mult, err = target.project:find_all({id = target_id})
+            temp = temp_mult[1]
             if err then
                 return false
             end
@@ -125,7 +126,8 @@ local function handle_match(rule, user_id, scope_id, target, obj)
                 temp = temp and temp[1] or nil
             end
         else
-            temp, err = target[ob]:find({id = target_id})
+            temp_mult, err = target[ob]:find_all({id = target_id})
+            temp = temp_mult[1]
             if err then
                 return false
             end
@@ -168,8 +170,9 @@ local function define_namespace(dao_factory, scope_id)
     end
 
     local kutils = require ("kong.plugins.keystone.utils")
-    local project, err = dao_factory.project:find({id = scope_id})
+    local temp, err = dao_factory.project:find_all({id = scope_id})
     kutils.assert_dao_error(err, "project find")
+    local project = temp[1]
     namespace_id = project and (project.is_domain and project.id or project.domain_id) or nil
     return
 end

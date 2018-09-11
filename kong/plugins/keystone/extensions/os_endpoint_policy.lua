@@ -11,10 +11,17 @@ local function verify_policy_endpoint_association(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or endpoint id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.endpoint:find({id=endpoint_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.endpoint:find_all({id=endpoint_id})
     kutils.assert_dao_error(err, "endpoint find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Endpoint not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id, endpoint_id = endpoint_id})
     kutils.assert_dao_error(err, "policy association find all")
@@ -33,8 +40,9 @@ local function associate_policy_endpoint(self, dao_factory)
 
     local _, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local endpoint, err = dao_factory.endpoint:find({id=endpoint_id})
+    local temp, err = dao_factory.endpoint:find_all({id=endpoint_id})
     kutils.assert_dao_error(err, "endpoint find")
+    local endpoint = temp[1]
 
     local policy_assoiation_id = utils.uuid()
     local policy_association = {id = policy_assoiation_id, policy_id = policy_id, endpoint_id = endpoint_id}
@@ -51,10 +59,17 @@ local function delete_policy_endpoint_association(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or endpoint id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.endpoint:find({id=endpoint_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.endpoint:find_all({id=endpoint_id})
     kutils.assert_dao_error(err, "endpoint find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Endpoint not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id, endpoint_id = endpoint_id})
     kutils.assert_dao_error(err, "policy association find all")
@@ -74,10 +89,17 @@ local function verify_policy_service_association(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id, service_id = service_id})
     kutils.assert_dao_error(err, "policy association find all")
@@ -94,10 +116,17 @@ local function associate_policy_service(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
 
     local endpoint, err = dao_factory.endpoint:find_all({service_id=service_id})
     kutils.assert_dao_error(err, "endpoint find all")
@@ -122,10 +151,17 @@ local function delete_policy_service_association(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id, service_id = service_id})
     kutils.assert_dao_error(err, "policy association find all")
@@ -186,12 +222,22 @@ local function verify_policy_in_region(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service or region id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
-    local _, err = dao_factory.region:find({id=region_id})
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
+    local temp, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Region not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id, service_id = service_id,
                                                                             region_id = region_id})
@@ -210,12 +256,22 @@ local function associate_policy_in_region(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service or region id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
-    local _, err = dao_factory.region:find({id=region_id})
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
+    local temp, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Region not found")
+    end
 
     local endpoint, err = dao_factory.endpoint:find_all({service_id=service_id, region_id = region_id})
     kutils.assert_dao_error(err, "endpoint find all")
@@ -242,12 +298,22 @@ local function delete_policy_in_region_association(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy or service or region id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
-    local _, err = dao_factory.service:find({id=service_id})
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
+    local temp, err = dao_factory.service:find_all({id=service_id})
     kutils.assert_dao_error(err, "service find")
-    local _, err = dao_factory.region:find({id=region_id})
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Service not found")
+    end
+    local temp, err = dao_factory.region:find({id=region_id})
     kutils.assert_dao_error(err, "region find")
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Region not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id,
                                                                             service_id = service_id, region_id = region_id})
@@ -267,8 +333,11 @@ local function list_endpoints_for_policy(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad policy id")
     end
 
-    local _, err = dao_factory.policy:find({id=policy_id})
+    local temp, err = dao_factory.policy:find({id=policy_id})
     kutils.assert_dao_error(err, "policy find")
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Policy not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({policy_id = policy_id,
                                                                             service_id = service_id, region_id = region_id})
@@ -289,8 +358,9 @@ local function list_endpoints_for_policy(self, dao_factory)
     local idx = 1
     for i = 1, kutils.list_limit(#policy_association, self.config) do
         if policy_association[i].endpoint_id then
-            local endpoint, err = dao_factory.endpoint:find({id = policy_association[i].endpoint_id})
+            local temp, err = dao_factory.endpoint:find_all({id = policy_association[i].endpoint_id})
             kutils.assert_dao_error(err, "endpoint find")
+            local endpoint = temp[1]
             endpoint.legacy_endpoint_id = nil
             endpoint.links = {self = self:build_url(self.req.parsed_url.path) }
             endpoint.extra = nil
@@ -309,8 +379,12 @@ local function get_policy_for_endpoint(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint id")
     end
 
-    local _, err = dao_factory.endpoint:find({id=endpoint_id})
+    local temp, err = dao_factory.endpoint:find_all({id=endpoint_id})
     kutils.assert_dao_error(err, "endpoint find")
+    local temp = temp[1]
+    if not temp then
+        responses.send_HTTP_BAD_REQUEST("Endpoint not found")
+    end
 
     local policy_association, err = dao_factory.policy_association:find_all({endpoint_id = endpoint_id})
     kutils.assert_dao_error(err, "policy association find all")

@@ -446,8 +446,9 @@ local function consuming_trust(self, dao_factory)
     local Tokens = kutils.provider(self.config)
     local token = Tokens.generate(dao_factory, auth_user, true, trust.project_id, false, trust_id)
 
-    local domain, err = dao_factory.project:find({id = auth_user.domain_id or auth_user.domain.id})
+    local temp, err = dao_factory.project:find_all({id = auth_user.domain_id or auth_user.domain.id})
     kutils.assert_dao_error(err, "project:find")
+    local domain = temp[1]
 
     local resp = {}
     auth_user.default_project_id = nil

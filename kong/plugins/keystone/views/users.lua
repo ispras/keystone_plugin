@@ -117,8 +117,9 @@ local function list_users(self, dao_factory, helpers)
 end
 
 local function check_user_domain(dao_factory, domain_id, uname)
-    local temp, err = dao_factory.project:find({id = domain_id})
-    kutils.assert_dao_error(err, "projects:find")
+    local temp, err = dao_factory.project:find_all({id = domain_id})
+    kutils.assert_dao_error(err, "projects find")
+    local temp = temp[1]
     if not temp or not temp.is_domain then
         responses.send_HTTP_BAD_REQUEST("Invalid domain ID")
     end
@@ -137,8 +138,9 @@ local function check_user_domain(dao_factory, domain_id, uname)
 end
 
 local function check_user_project(dao_factory, project_id)
-    local temp, err = dao_factory.project:find({id = project_id})
+    local temp, err = dao_factory.project:find_all({id = project_id})
     kutils.assert_dao_error(err, "projects:find")
+    local temp = temp[1]
     if not temp then
         return responses.send_HTTP_BAD_REQUEST("Invalid default project ID")
     end
@@ -624,8 +626,9 @@ local function list_user_projects(self, dao_factory)
 
     for i = 1, kutils.list_limit(#temp, self.config) do
         if not kutils.has_id(resp.projects, temp[i].target_id) then
-            local project, err = dao_factory.project:find({id = temp[i].target_id})
-            kutils.assert_dao_error(err, "dao_factory.project:find")
+            local temp, err = dao_factory.project:find_all({id = temp[i].target_id})
+            kutils.assert_dao_error(err, "project find")
+            local project = temp[1]
             local index = #resp.projects + 1
             resp.projects[index] = {
                 description = project.description or cjson.null,
@@ -661,8 +664,9 @@ local function list_user_domains(self, dao_factory)
 
     for i = 1, kutils.list_limit(#temp, self.config) do
         if not kutils.has_id(resp.domains, temp[i].target_id) then
-            local project, err = dao_factory.project:find({id = temp[i].target_id})
-            kutils.assert_dao_error(err, "dao_factory.project:find")
+            local temp, err = dao_factory.project:find_all({id = temp[i].target_id})
+            kutils.assert_dao_error(err, "project find")
+            local project = temp[1]
             local index = #resp.domains + 1
             resp.domains[index] = {
                 description = project.description or cjson.null,
