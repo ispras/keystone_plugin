@@ -33,11 +33,8 @@ local version_v2 = {
 return {
     ["/v3"] = {
         GET = function(self, dao)
---            version_v3.links[1].href = self:build_url(version_v3.links[1].href)
---            responses.send_HTTP_OK({version = version_v3}, kutils.headers())
-            local temp, err = dao.assignment:find_all({target_id = 'default'})
-            kutils.assert_dao_error(err, "ass find all")
-            responses.send_HTTP_OK(temp)
+            version_v3.links[1].href = self:build_url(version_v3.links[1].href)
+            responses.send_HTTP_OK({version = version_v3}, kutils.headers())
         end
     },
     ["/"] = {
