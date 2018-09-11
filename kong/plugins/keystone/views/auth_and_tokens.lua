@@ -61,8 +61,9 @@ local function check_user(user, dao_factory)
 
     if not domain then
         local err
-        domain, err = dao_factory.project:find({id = user.domain_id})
-        kutils.assert_dao_error(err, "project:find")
+        domain, err = dao_factory.project:find_all({id = user.domain_id})
+        kutils.assert_dao_error(err, "project:find_all")
+        domain = domain[1]
     end
 
     local resp = {
@@ -97,14 +98,18 @@ local function check_scope(scope, dao_factory)
     end
     if scope.project then
         if scope.project.id then
-            local temp, err = dao_factory.project:find({id = scope.project.id})
+            local temp, err = dao_factory.project:find_all({id = scope.project.id})
             kutils.assert_dao_error(err, "project:find")
             if not temp then
                 responses.send_HTTP_BAD_REQUEST("No requsted project for scope found")
             end
             project = temp
-            local temp, err = dao_factory.project:find({id = project.domain_id})
-            kutils.assert_dao_error(err, "project:find")
+            local temp, err = dao_factory.project:find_all({id = project.domain_id})
+            kutils.assert_dao_error(err, "project:find_all")
+            if not next(temp) then
+                responses.send_HTTP_BAD_REQUEST("No requsted project for scope found")
+            end
+            temp = temp[1]
             domain_name = temp.name
         elseif scope.project.name and scope.project.domain and (scope.project.domain.id or scope.project.domain.name) then
             if not scope.project.domain.id then
@@ -134,9 +139,12 @@ local function check_scope(scope, dao_factory)
 
     elseif scope.domain then
         if scope.domain.id then
-            local temp, err = dao_factory.project:find({id = scope.domain.id})
-            kutils.assert_dao_error(err, "project:find")
-            project = temp
+            local temp, err = dao_factory.project:find_all({id = scope.domain.id})
+            kutils.assert_dao_error(err, "project:find_all")
+            if not next(temp) then
+                responses.send_HTTP_BAD_REQUEST("No requsted project for scope found")
+            end
+            project = temp[1]
 
         elseif scope.domain.name then
             local temp, err = dao_factory.project:find_all({name = scope.domain.name, is_domain = true})
@@ -150,8 +158,12 @@ local function check_scope(scope, dao_factory)
         end
 
         if project.domain_id then
-            local temp, err = dao_factory.project:find({id = project.domain_id})
-            kutils.assert_dao_error(err, "project:find")
+            local temp, err = dao_factory.project:find_all({id = project.domain_id})
+            kutils.assert_dao_error(err, "project:find_all")
+            if not next(temp) then
+                responses.send_HTTP_BAD_REQUEST("No requsted project for scope found")
+            end
+            project = temp[1]
             domain_name = temp.name
         end
 
@@ -189,8 +201,12 @@ local function check_token_user(token, dao_factory)
     end
     local user, err = dao_factory.user:find({id = token.user_id})
     kutils.assert_dao_error(err, "user:find")
-    local domain, err = dao_factory.project:find({id = user.domain_id})
+    local domain, err = dao_factory.project:find_all({id = user.domain_id})
     kutils.assert_dao_error(err, "project:find")
+    if not next(domain) then
+        responses.send_HTTP_BAD_REQUEST("No requsted domain found")
+    end
+    domain = domain[1]
     local loc_user, err = dao_factory.local_user:find_all({user_id = user.id})
     kutils.assert_dao_error(err, "local_user:find_all")
     if loc_user[1] then
@@ -399,8 +415,12 @@ function _M.get_token_info(self, dao_factory)
 
     local project, is_domain
     if cache.scope_id then
-        local temp, err = dao_factory.project:find({id = cache.scope_id})
-        kutils.assert_dao_error(err, "project:find")
+        local temp, err = dao_factory.project:find_all({id = cache.scope_id})
+        kutils.assert_dao_error(err, "project:find_all")
+        if not next(temp) then
+            responses.send_HTTP_BAD_REQUEST("Error")
+        end
+        temp = temp[1]
         is_domain = temp.is_domain
         project = {
             id = temp.id,
@@ -413,8 +433,12 @@ function _M.get_token_info(self, dao_factory)
             }
         }
         if temp.domain_id then
-            local temp, err = dao_factory.project:find({id = temp.domain_id})
-            kutils.assert_dao_error(err, "project:find")
+            local temp, err = dao_factory.project:find_all({id = temp.domain_id})
+            kutils.assert_dao_error(err, "project:find_all")
+            if not next(temp) then
+                responses.send_HTTP_BAD_REQUEST("No requsted project found")
+            end
+            temp = temp[1]
             project.domain.name = temp.name
         end
     end
@@ -541,9 +565,10 @@ local function get_scopes(self, dao_factory, domain_scoped)
     end
     local prjs = {}
     for _, v in pairs(projects) do
-        local project, err = dao_factory.project:find({id = v.id})
-        kutils.assert_dao_error(err, "project find")
-        if project and project.enabled then
+        local project, err = dao_factory.project:find_all({id = v.id})
+        kutils.assert_dao_error(err, "project find_all")
+        if next(project) and project[1].enabled then
+            project = project[1]
             prjs[#prjs] = {
                 id = project.id,
                 links = {

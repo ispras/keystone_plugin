@@ -137,17 +137,17 @@ local function check_project_name(dao_factory,name, is_domain, domain_id)
 end
 
 local function check_project_domain(dao_factory, domain_id)
-    local res, err = dao_factory.project:find({id = domain_id})
-    kutils.assert_dao_error(err, "project:find")
-    if not res or not res.is_domain then
+    local res, err = dao_factory.project:find_all({id = domain_id})
+    kutils.assert_dao_error(err, "project:find_all")
+    if not next(res) or not res[1].is_domain then
         return responses.send_HTTP_CONFLICT("Error: domain with this ID does not exist")
     end
 end
 
 local function check_project_parent(dao_factory, parent_id, domain_id)
-    local res, err = dao_factory.project:find({id = parent_id})
-    kutils.assert_dao_error(err, "project:find")
-    if not res or res.domain_id ~= domain_id then
+    local res, err = dao_factory.project:find_all({id = parent_id})
+    kutils.assert_dao_error(err, "project:find_all")
+    if not next(res) or res[1].domain_id ~= domain_id then
         return responses.send_HTTP_CONFLICT("Error: parent project with this ID does not exist")
     end
     return res
@@ -265,6 +265,8 @@ local function get_project_info(self, dao_factory)
             if not next(project) then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
             end
+        else
+            project = project[1]
         end
 
         local domain = false
@@ -280,10 +282,10 @@ local function get_project_info(self, dao_factory)
             return responses.send_HTTP_BAD_REQUEST("No such domain in the system")
         end
     else
-        project, err = dao_factory.project:find({id=project_id})
-        kutils.assert_dao_error(err, "project find")
+        project, err = dao_factory.project:find_all({id=project_id})
+        kutils.assert_dao_error(err, "project find_all")
 
-        if not project then
+        if not next(project) then
             project, err = dao_factory.project:find_all({name=project_id, domain_id = namespace_id})
             kutils.assert_dao_error(err, "project find_all")
             if not next(project) then
@@ -301,6 +303,8 @@ local function get_project_info(self, dao_factory)
             if not if_project_was then
                 return responses.send_HTTP_BAD_REQUEST("No such project in the system")
             end
+        else
+            project = project[1]
         end
     end
 
@@ -329,12 +333,12 @@ local function get_project_info(self, dao_factory)
                     break
                 end
 
-                local parent, err = dao_factory.project:find({id=cur_project.parent_id})
+                local parent, err = dao_factory.project:find_all({id=cur_project.parent_id})
                 kutils.assert_dao_error(err, "project find")
-                if not parent then
+                if not next(parent) then
                     break
                 end
-
+                parent = parent[1]
                 parent.links = {self = self:build_url(self.req.parsed_url.path)}
                 table.insert(parents, parent)
                 cur_project = parent
@@ -355,11 +359,12 @@ local function get_project_info(self, dao_factory)
                     break
                 end
 
-                local parent, err = dao_factory.project:find({id=cur_project.parent_id})
+                local parent, err = dao_factory.project:find_all({id=cur_project.parent_id})
                 kutils.assert_dao_error(err, "project find")
-                if not parent then
+                if not next(parent) then
                     break
                 end
+                parent = parent[1]
 
                 table.insert(parents, parent.id)
                 cur_project = parent
@@ -395,11 +400,12 @@ local function update_project(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
 
-    local project, err = dao_factory.project:find({id=project_id})
-    kutils.assert_dao_error(err, "project find")
-    if not project then
+    local project, err = dao_factory.project:find_all({id=project_id})
+    kutils.assert_dao_error(err, "project find_all")
+    if not next(project) then
         responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
+    project = project[1]
 
 --    ngx.req.read_body()
 --    local request = ngx.req.get_body_data()
@@ -441,10 +447,15 @@ local function delete_project(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad project id")
     end
 
-    local _, err = dao_factory.project:find({id=project_id})
-    kutils.assert_dao_error(err, "project find")
+    local project, err = dao_factory.project:find_all({id=project_id})
+    kutils.assert_dao_error(err, "project find_all")
+    if not next(project) then
+        return responses.send_HTTP_NOT_FOUND("Error: bad project id")
+    end
+    project = project[1]
 
-    local _, err = dao_factory.project:delete({id = project_id})
+    local _, err = dao_factory.project:delete({name = project.name, is_domain = project.is_domain,
+                                                domain_id = project.domain_id, id = project_id})
     kutils.assert_dao_error(err, "project delete")
 
     return responses.send_HTTP_NO_CONTENT()

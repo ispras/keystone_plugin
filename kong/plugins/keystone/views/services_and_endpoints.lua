@@ -12,9 +12,9 @@ local available_interface_types = {
 }
 
 local function get_service_by_id_or_name (dao_factory, id_or_name)
-    local service, err = dao_factory.service:find({id = id_or_name})
-    kutils.assert_dao_error(err, "service find")
-    if service then return service, false end
+    local service, err = dao_factory.service:find_all({id = id_or_name})
+    kutils.assert_dao_error(err, "service find_all")
+    if next(service) then return service[1], false end
     service, err = dao_factory.service:find_all({ name = id_or_name })
     kutils.assert_dao_error(err, "service find_all")
     if service[1] then return service[1], false end
@@ -128,11 +128,12 @@ local function update_service(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
     end
 
-    local service, err = dao_factory.service:find({id = service_id})
-    kutils.assert_dao_error(err, "service find")
-    if not service then
+    local service, err = dao_factory.service:find_all({id = service_id})
+    kutils.assert_dao_error(err, "service find_all")
+    if not next(service) then
         responses.send_HTTP_BAD_REQUEST("Error in update: no such service in the system")
     end
+    service = service[1]
 
     if not self.params.service then
         responses.send_HTTP_BAD_REQUEST("Error: self.params.service is nil")
@@ -162,11 +163,12 @@ local function delete_service(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad service_id")
     end
 
-    local service, err = dao_factory.service:find({id = service_id})
-    kutils.assert_dao_error(err, "service find")
-    if not service then
+    local service, err = dao_factory.service:find_all({id = service_id})
+    kutils.assert_dao_error(err, "service find_all")
+    if not next(service) then
         responses.send_HTTP_BAD_REQUEST("Error with delete: no such service in the system")
     end
+    service = service[1]
 
     local endpoints, err = dao_factory.endpoint:find_all({service_id = service_id})
     kutils.assert_dao_error(err, "endpoint find_all")
@@ -175,7 +177,7 @@ local function delete_service(self, dao_factory)
         kutils.assert_dao_error(err, "endpoint delete")
     end
 
-    local _, err = dao_factory.service:delete({id = service_id})
+    local _, err = dao_factory.service:delete({id = service_id, enabled = service.enabled})
     kutils.assert_dao_error(err, "service delete")
     responses.send_HTTP_NO_CONTENT()
 end
@@ -199,11 +201,12 @@ local function list_endpoints(self, dao_factory, enabled)
     end
 
     if self.params.service_id then
-        local service, err = dao_factory.service:find({id = self.params.service_id})
-        kutils.assert_dao_error(err, "service find")
-        if not service then
+        local service, err = dao_factory.service:find_all({id = self.params.service_id})
+        kutils.assert_dao_error(err, "service find_all")
+        if not next(service) then
             return responses.send_HTTP_BAD_REQUEST("Error in list endpoints: no such service in the system")
         end
+        service = service[1]
         args.service_id = self.params.service_id
     end
 
@@ -264,11 +267,12 @@ local function create_endpoint(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad endpoint service_id")
     end
 
-    local service, err = dao_factory.service:find({id = endpoint.service_id})
-    kutils.assert_dao_error(err, "service find")
-    if not service or err then
+    local service, err = dao_factory.service:find_all({id = endpoint.service_id})
+    kutils.assert_dao_error(err, "service find_all")
+    if not next(service) or err then
         responses.send_HTTP_BAD_REQUEST("Error in create endpoint: no such service in the system")
     end
+    service = service[1]
 
     endpoint.region_id = endpoint.region_id or endpoint.region
     endpoint.region = nil
@@ -302,11 +306,12 @@ local function get_endpoint_info(self, dao_factory)
         return responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
     end
 
-    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
-    kutils.assert_dao_error(err, "endpoint find")
-    if not endpoint then
+    local endpoint, err = dao_factory.endpoint:find_all({id = endpoint_id})
+    kutils.assert_dao_error(err, "endpoint find_all")
+    if not next(endpoint) then
         return responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
     end
+    endpoint = endpoint[1]
 
     endpoint.region = endpoint.region_id
     endpoint.links = {
@@ -321,11 +326,12 @@ local function update_endpoint(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
     end
 
-    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
-    kutils.assert_dao_error(err, "endpoint find")
-    if not endpoint then
-        responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
+    local endpoint, err = dao_factory.endpoint:find_all({id = endpoint_id})
+    kutils.assert_dao_error(err, "endpoint find_all")
+    if not next(endpoint) then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
     end
+    endpoint = endpoint[1]
 
     local new_endpoint = self.params.endpoint
     if not new_endpoint then
@@ -339,9 +345,9 @@ local function update_endpoint(self, dao_factory)
     end
 
     if new_endpoint.service_id then
-       local service, err = dao_factory.service:find({id = new_endpoint.service_id})
-        kutils.assert_dao_error(err, "service find")
-        if not service then
+       local service, err = dao_factory.service:find_all({id = new_endpoint.service_id})
+        kutils.assert_dao_error(err, "service find_all")
+        if not next(service) then
             responses.send_HTTP_BAD_REQUEST("Error in update endpoint: no such service in the system")
         end
     end
@@ -382,13 +388,15 @@ local function delete_endpoint(self, dao_factory)
         responses.send_HTTP_BAD_REQUEST("Error: bad endpoint_id")
     end
 
-    local endpoint, err = dao_factory.endpoint:find({id = endpoint_id})
-    kutils.assert_dao_error(err, "endpoint find")
-    if not endpoint then
-        responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
+    local endpoint, err = dao_factory.endpoint:find_all({id = endpoint_id})
+    kutils.assert_dao_error(err, "endpoint find_all")
+    if not next(endpoint) then
+        return responses.send_HTTP_BAD_REQUEST("Error: no such endpoint in the system")
     end
+    endpoint = endpoint[1]
 
-    local _, err = dao_factory.endpoint:delete({id = endpoint_id})
+    local _, err = dao_factory.endpoint:delete({service_id = endpoint.service_id, enabled = endpoint.enabled,
+                                                    id = endpoint_id})
     kutils.assert_dao_error(err, "endpoint delete")
 
     responses.send_HTTP_NO_CONTENT()

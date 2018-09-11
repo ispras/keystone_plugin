@@ -10,9 +10,9 @@ local available_credential_types = {
 }
 
 local function check_project(dao_factory, project_id)
-    local temp, err = dao_factory.project:find({id = project_id})
-    kutils.assert_dao_error(err, "projects:find")
-    if not temp then
+    local temp, err = dao_factory.project:find_all({id = project_id})
+    kutils.assert_dao_error(err, "projects:find_all")
+    if not next(temp) then
         return responses.send_HTTP_BAD_REQUEST("Invalid project ID")
     end
 
