@@ -212,13 +212,13 @@ local function create_local_user(self, dao_factory)
     kutils.assert_dao_error(err, "password:insert")
     local _, err = dao_factory.local_user:insert(loc_user)
     if err then
-        dao_factory.password:delete({id = passwd.id})
+        dao_factory.password:delete({local_user_id = loc_user.id, id = passwd.id})
         kutils.assert_dao_error(err, "local_user:insert")
     end
     local user, err = dao_factory.user:insert(user)
     if err then
-        dao_factory.local_user:delete({id = loc_user.id})
-        dao_factory.password:delete({id = passwd.id})
+        dao_factory.local_user:delete({domain_id = loc_user.domain_id, name = loc_user.name, id = loc_user.id})
+        dao_factory.password:delete({local_user_id = loc_user.id, id = passwd.id})
         kutils.assert_dao_error(err, "user:insert")
     end
 
@@ -288,7 +288,7 @@ local function create_nonlocal_user(self, dao_factory)
     kutils.assert_dao_error(err, "local_user:insert")
     local user, err = dao_factory.user:insert(user)
     if err then
-        dao_factory.local_user:delete({id = nonloc_user.id})
+        dao_factory.local_user:delete({domain_id = nonloc_user.domain_id, name = nonloc_user.name, id = nonloc_user.id})
         kutils.assert_dao_error(err, "user:insert")
     end
 
@@ -400,7 +400,7 @@ local function update_user(self, dao_factory)
     if loc_user then
         loc = true
         if uupdate.name then
-            loc_user, err = dao_factory.local_user:update({name = uupdate.name}, {id = loc_user.id})
+            loc_user, err = dao_factory.local_user:update({name = uupdate.name}, {domain_id = loc_user.domain_id, name = loc_user.name, id = loc_user.id})
             kutils.assert_dao_error(err, "local_user:update")
         end
         passwd, err = dao_factory.password:find_all ({local_user_id = loc_user.id})
@@ -448,7 +448,7 @@ local function update_user(self, dao_factory)
     end
 
     if passwd.new_password and loc_user and passwd.new_password ~= passwd.password then
-        passwd, err = dao_factory.password:update({password = passwd.new_password}, {id = passwd.id})
+        passwd, err = dao_factory.password:update({password = passwd.new_password}, {local_user_id = loc_user.id, id = passwd.id})
         kutils.assert_dao_error(err, "password:update")
     elseif passwd.new_password and nonloc_user then
         local _, err = dao_factory.nonlocal_user:delete({name = nonloc_user.name, domain_id = nonloc_user.domain_id})
@@ -470,7 +470,7 @@ local function update_user(self, dao_factory)
         kutils.assert_dao_error(err, "password:insert")
         loc_user, err = dao_factory.local_user:insert(loc_user)
         if err then
-            dao_factory.password:delete({passwd.id})
+            dao_factory.password:delete({local_user_id = loc_user.id, id = passwd.id})
             kutils.assert_dao_error(err, "password:delete")
         end
         loc = true
@@ -534,11 +534,11 @@ local function delete_user(self, dao_factory)
         temp, err3 = dao_factory.local_user:find_all({user_id = user.id})
         if not err3 then
             for i = 1, #temp do
-                _, err3 = dao_factory.local_user:delete({id = temp[i].id})
+                _, err3 = dao_factory.local_user:delete({domain_id = temp[i].domain_id, name = temp[i].name, id = temp[i].id})
                 temp1, err3 = dao_factory.password:find_all({local_user_id = temp[i].id})
                 if not err3 then
                     for j = 1, #temp1 do
-                        _, err3 = dao_factory.password:delete({id = temp1[i].id})
+                        _, err3 = dao_factory.password:delete({local_user_id = temp[i].id,id = temp1[j].id})
                     end
                 end
 
@@ -701,7 +701,7 @@ local function change_user_password(self, dao_factory)
 
     passwd.created_at = os.time()
     passwd.password = bcrypt.digest(uupdate.password, 4)
-    local passwd, err = dao_factory.password:update(passwd, {id = passwd.id})
+    local passwd, err = dao_factory.password:update(passwd, {local_user_id = loc_user.id, id = passwd.id})
     kutils.assert_dao_error(err, "password:update")
 
     responses.send_HTTP_NO_CONTENT()
