@@ -239,9 +239,6 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON project(domain_id);
-      CREATE INDEX IF NOT EXISTS ON project(parent_id);
-      CREATE INDEX IF NOT EXISTS ON project(name);
       CREATE INDEX IF NOT EXISTS ON project(enabled);
       CREATE INDEX IF NOT EXISTS ON project(is_domain);
 
