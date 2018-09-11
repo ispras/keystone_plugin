@@ -25,11 +25,6 @@ return {
         PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON assignment(actor_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(target_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(role_id);
-      CREATE INDEX IF NOT EXISTS ON assignment(inherited);
-
       CREATE TABLE IF NOT EXISTS config_register(
         type varchar,
         domain_id varchar,
@@ -236,11 +231,8 @@ return {
         domain_id varchar,
         parent_id varchar,
         is_domain boolean,
-        PRIMARY KEY (id)
+        PRIMARY KEY (id, name)
       );
-
-      CREATE INDEX IF NOT EXISTS ON project(enabled);
-      CREATE INDEX IF NOT EXISTS ON project(is_domain);
 
       CREATE TABLE IF NOT EXISTS project_endpoint(
         endpoint_id varchar,
