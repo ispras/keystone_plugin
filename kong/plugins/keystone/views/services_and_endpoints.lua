@@ -4,6 +4,7 @@ local cjson = require "cjson"
 local utils = require "kong.tools.utils"
 local kutils = require ("kong.plugins.keystone.utils")
 local policies = require ("kong.plugins.keystone.policies")
+local redis = require ("kong.plugins.keystone.redis")
 
 local ServiceAndEndpoint = {}
 
@@ -64,6 +65,12 @@ local function check_service(dao_factory, name, type)
     end
 end
 
+local function clean_cache_catalog (config)
+    local red, err = redis.connect(config) -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    red:del("servicecatalog")
+end
+
 local function create_service(self, dao_factory)
     local service = self.params.service
     if not service then
@@ -89,8 +96,10 @@ local function create_service(self, dao_factory)
     kutils.assert_dao_error(err, "service insert")
 
     service.links = {
-                self = self:build_url(self.req.parsed_url.path)
-            }
+        self = self:build_url(self.req.parsed_url.path)
+    }
+    clean_cache_catalog(self.config)
+
     return responses.send_HTTP_CREATED({service = service})
 end
 
@@ -153,6 +162,7 @@ local function update_service(self, dao_factory)
     updated_service.links = {
                 self = self:build_url(self.req.parsed_url.path)
             }
+    clean_cache_catalog(self.config)
 
     responses.send_HTTP_OK({service = updated_service})
 end
@@ -179,6 +189,8 @@ local function delete_service(self, dao_factory)
 
     local _, err = dao_factory.service:delete({id = service_id, enabled = service.enabled})
     kutils.assert_dao_error(err, "service delete")
+
+    clean_cache_catalog(self.config)
     responses.send_HTTP_NO_CONTENT()
 end
 
@@ -296,6 +308,7 @@ local function create_endpoint(self, dao_factory)
     endpoint.links = {
                 self = self:build_url(self.req.parsed_url.path)
     }
+    clean_cache_catalog(self.config)
 
     responses.send_HTTP_CREATED({endpoint = endpoint})
 end
@@ -379,6 +392,8 @@ local function update_endpoint(self, dao_factory)
     updated_endpoint.links = {
                 self = self:build_url(self.req.parsed_url.path)
             }
+    clean_cache_catalog(self.config)
+
     responses.send_HTTP_OK({endpoint = updated_endpoint})
 end
 
@@ -398,6 +413,7 @@ local function delete_endpoint(self, dao_factory)
     local _, err = dao_factory.endpoint:delete({service_id = endpoint.service_id, enabled = endpoint.enabled,
                                                     id = endpoint_id})
     kutils.assert_dao_error(err, "endpoint delete")
+    clean_cache_catalog(self.config)
 
     responses.send_HTTP_NO_CONTENT()
 end

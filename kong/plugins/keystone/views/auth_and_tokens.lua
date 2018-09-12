@@ -178,21 +178,30 @@ local function check_scope(scope, dao_factory)
 end
 
 local function get_catalog(self,dao_factory, opts)
-    local temp = service.list(self,dao_factory, true)
-    local catalog = temp.services
-    for i = 1, #catalog do
-        catalog[i].description = nil
-        catalog[i].links = nil
-        catalog[i].enabled = nil
-        self.params.service_id = catalog[i].id
-        local temp = endpoint.list(self, dao_factory, true)
-        catalog[i].endpoints = temp.endpoints
-        for j = 1, #catalog[i].endpoints do
-            catalog[i].endpoints[j].enabled = nil
-            catalog[i].endpoints[j].service_id = nil
-            catalog[i].endpoints[j].links = nil
-            catalog[i].endpoints[j].url = catalog[i].endpoints[j].url:gsub('%$%(project_id%)s', opts.project_id)
+    local red, err = redis.connect(self.config) -- TODO cache
+    kutils.assert_dao_error(err, "redis connect")
+    local catalog = red:get("servicecatalog")
+    if not catalog then
+        local temp = service.list(self,dao_factory, true)
+        catalog = temp.services
+        for i = 1, #catalog do
+            catalog[i].description = nil
+            catalog[i].links = nil
+            catalog[i].enabled = nil
+            self.params.service_id = catalog[i].id
+            local temp = endpoint.list(self, dao_factory, true)
+            catalog[i].endpoints = temp.endpoints
+            for j = 1, #catalog[i].endpoints do
+                catalog[i].endpoints[j].enabled = nil
+                catalog[i].endpoints[j].service_id = nil
+                catalog[i].endpoints[j].links = nil
+                catalog[i].endpoints[j].url = catalog[i].endpoints[j].url:gsub('%$%(project_id%)s', opts.project_id)
+            end
         end
+        _, err = red:set("servicecatalog", cjson.encode(catalog))
+        kutils.assert_dao_error(err, "redis set catalog")
+    else
+        catalog = cjson.decode(catalog)
     end
 
     return catalog
