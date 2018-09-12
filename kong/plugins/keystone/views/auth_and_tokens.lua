@@ -181,7 +181,7 @@ local function get_catalog(self,dao_factory, opts)
     local red, err = redis.connect(self.config) -- TODO cache
     kutils.assert_dao_error(err, "redis connect")
     local catalog = red:get("servicecatalog")
-    if not catalog then
+    if catalog == ngx.null then
         local temp = service.list(self,dao_factory, true)
         catalog = temp.services
         for i = 1, #catalog do
