@@ -51,6 +51,7 @@ local pluginName = "keystone"  -- TODO: rename. This is the name to set in the K
 build = {
   type = "builtin",
   modules = {
+    ["kong.plugins.keystone.routes"] = "kong/plugins/keystone/routes.lua",
     ["kong.plugins.keystone.keystone_api"] = "kong/plugins/keystone/keystone_api.lua",
     ["kong.plugins.keystone.api"] = "kong/plugins/keystone/api.lua",
     ["kong.plugins.keystone.daos"] = "kong/plugins/keystone/daos.lua",
