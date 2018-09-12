@@ -13,16 +13,13 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON access_token(authorizing_user_id);
-      CREATE INDEX IF NOT EXISTS ON access_token(consumer_id);
-
       CREATE TABLE IF NOT EXISTS assignment(
         type varchar,
         actor_id varchar,
         target_id varchar,
         role_id varchar,
         inherited boolean,
-        PRIMARY KEY (type, inherited, actor_id, target_id, role_id)
+        PRIMARY KEY (actor_id, type, inherited, target_id, role_id)
       );
 
       CREATE TABLE IF NOT EXISTS config_register(
@@ -62,7 +59,19 @@ return {
         extra text,
         enabled boolean,
         region_id varchar,
-        PRIMARY KEY (service_id, enabled, id)
+        PRIMARY KEY (service_id, enabled, region_id, interface)
+      );
+
+      CREATE TABLE IF NOT EXISTS endpoint_by_id(
+        id varchar,
+        legacy_endpoint_id varchar,
+        interface varchar,
+        service_id varchar,
+        url text,
+        extra text,
+        enabled boolean,
+        region_id varchar,
+        PRIMARY KEY (id)
       );
 
       CREATE TABLE IF NOT EXISTS endpoint_group(
@@ -80,22 +89,15 @@ return {
         protocol_id varchar,
         unique_id varchar,
         display_name varchar,
-        PRIMARY KEY (id)
+        PRIMARY KEY (user_id, idp_id, protocol_id, unique_id, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON federated_user(user_id);
-      CREATE INDEX IF NOT EXISTS ON federated_user(idp_id);
-      CREATE INDEX IF NOT EXISTS ON federated_user(protocol_id);
 
       CREATE TABLE IF NOT EXISTS federation_protocol(
         id varchar,
         idp_id varchar,
         mapping_id varchar,
-        PRIMARY KEY (id, idp_id)
+        PRIMARY KEY (idp_id, id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON federation_protocol(idp_id);
-      CREATE INDEX IF NOT EXISTS ON federation_protocol(mapping_id);
 
       CREATE TABLE IF NOT EXISTS group_(
         id varchar,
@@ -103,11 +105,17 @@ return {
         name varchar,
         description text,
         extra text,
-        PRIMARY KEY (id)
+        PRIMARY KEY (name, domain_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON group_(domain_id);
-      CREATE INDEX IF NOT EXISTS ON group_(name);
+      CREATE TABLE IF NOT EXISTS group_by_id(
+        id varchar,
+        domain_id varchar,
+        name varchar,
+        description text,
+        extra text,
+        PRIMARY KEY (id)
+      );
 
       CREATE TABLE IF NOT EXISTS id_mapping(
         public_id varchar,
@@ -117,10 +125,6 @@ return {
         PRIMARY KEY (public_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON id_mapping(domain_id);
-      CREATE INDEX IF NOT EXISTS ON id_mapping(local_id);
-      CREATE INDEX IF NOT EXISTS ON id_mapping(entity_type);
-
       CREATE TABLE IF NOT EXISTS identity_provider(
         id varchar,
         enabled boolean,
@@ -129,16 +133,11 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON identity_provider(domain_id);
-      CREATE INDEX IF NOT EXISTS ON identity_provider(enabled);
-
       CREATE TABLE IF NOT EXISTS idp_remote_ids(
         idp_id varchar,
         remote_id varchar,
-        PRIMARY KEY (remote_id)
+        PRIMARY KEY (idp_id, remote_id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON idp_remote_ids(idp_id);
 
       CREATE TABLE IF NOT EXISTS implied_role(
         prior_role_id varchar,
@@ -146,14 +145,24 @@ return {
         PRIMARY KEY (prior_role_id, implied_role_id)
       );
 
-      CREATE TABLE IF NOT EXISTS local_user(
+      CREATE TABLE IF NOT EXISTS local_user_by_name(
         id varchar,
         user_id varchar,
         domain_id varchar,
         name varchar,
         failed_auth_count int,
         failed_auth_at timestamp,
-        PRIMARY KEY (domain_id, name, id)
+        PRIMARY KEY (name, domain_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS local_user_by_user(
+        id varchar,
+        user_id varchar,
+        domain_id varchar,
+        name varchar,
+        failed_auth_count int,
+        failed_auth_at timestamp,
+        PRIMARY KEY (user_id)
       );
 
       CREATE TABLE IF NOT EXISTS mapping(
@@ -169,14 +178,19 @@ return {
         PRIMARY KEY (repository_id)
       );
 
-      CREATE TABLE IF NOT EXISTS nonlocal_user(
+      CREATE TABLE IF NOT EXISTS nonlocal_user_by_name(
         domain_id varchar,
         name varchar,
         user_id varchar,
-        PRIMARY KEY (domain_id, name)
+        PRIMARY KEY (name, domain_id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON nonlocal_user(user_id);
+      CREATE TABLE IF NOT EXISTS nonlocal_user_by_user(
+        domain_id varchar,
+        name varchar,
+        user_id varchar,
+        PRIMARY KEY (user_id)
+      );
 
       CREATE TABLE IF NOT EXISTS password(
         id varchar,
@@ -206,7 +220,17 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON policy_association(endpoint_id);
+      CREATE TABLE IF NOT EXISTS project_by_id(
+        id varchar,
+        name varchar,
+        extra text,
+        description text,
+        enabled boolean,
+        domain_id varchar,
+        parent_id varchar,
+        is_domain boolean,
+        PRIMARY KEY (id)
+      );
 
       CREATE TABLE IF NOT EXISTS project(
         id varchar,
@@ -217,7 +241,7 @@ return {
         domain_id varchar,
         parent_id varchar,
         is_domain boolean,
-        PRIMARY KEY (name, is_domain, domain_id, id)
+        PRIMARY KEY (name, is_domain, domain_id, parent_id)
       );
 
       CREATE TABLE IF NOT EXISTS project_endpoint(
@@ -279,13 +303,7 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON revocation_event(project_id);
-      CREATE INDEX IF NOT EXISTS ON revocation_event(user_id);
-      CREATE INDEX IF NOT EXISTS ON revocation_event(issued_before);
-      CREATE INDEX IF NOT EXISTS ON revocation_event(revoked_at);
-      CREATE INDEX IF NOT EXISTS ON revocation_event(audit_id);
-
-      CREATE TABLE IF NOT EXISTS role(
+      CREATE TABLE IF NOT EXISTS role_by_id(
         id varchar,
         name varchar,
         extra text,
@@ -293,8 +311,13 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON role(name);
-      CREATE INDEX IF NOT EXISTS ON role(domain_id);
+      CREATE TABLE IF NOT EXISTS role(
+        id varchar,
+        name varchar,
+        extra text,
+        domain_id varchar,
+        PRIMARY KEY (name, domain_id)
+      );
 
       CREATE TABLE IF NOT EXISTS sensitive_config(
         domain_id varchar,
@@ -333,11 +356,6 @@ return {
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON token_(expires);
-      CREATE INDEX IF NOT EXISTS ON token_(trust_id);
-      CREATE INDEX IF NOT EXISTS ON token_(user_id);
-      CREATE INDEX IF NOT EXISTS ON token_(valid);
-
       CREATE TABLE IF NOT EXISTS trust(
         id varchar,
         trustor_user_id varchar,
@@ -353,8 +371,6 @@ return {
         extra text,
         PRIMARY KEY (id)
       );
-
-      CREATE INDEX IF NOT EXISTS ON trust(trustor_user_id);
 
       CREATE TABLE IF NOT EXISTS trust_role(
         trust_id varchar,
@@ -402,22 +418,27 @@ return {
       DROP TABLE consumer;
       DROP TABLE credential;
       DROP TABLE endpoint;
+      DROP TABLE endpoint_by_id;
       DROP TABLE enpoint_group;
       DROP TABLE federated_user;
       DROP TABLE federation_protocol;
       DROP TABLE group_;
+      DROP TABLE group_by_id;
       DROP TABLE id_mapping;
       DROP TABLE identity_provider;
       DROP TABLE idp_remote_ids;
       DROP TABLE implied_role;
-      DROP TABLE local_user;
+      DROP TABLE local_user_by_name;
+      DROP TABLE local_user_by_user;
       DROP TABLE mapping;
       DROP TABLE migrate_version;
-      DROP TABLE nonlocal_user;
+      DROP TABLE nonlocal_user_by_name;
+      DROP TABLE nonlocal_user_by_user;
       DROP TABLE password;
       DROP TABLE policy;
       DROP TABLE policy_association;
       DROP TABLE project;
+      DROP TABLE project_by_id;
       DROP TABLE project_endpoint;
       DROP TABLE project_endpoint_group;
       DROP TABLE project_tag;
@@ -425,6 +446,7 @@ return {
       DROP TABLE request_token;
       DROP TABLE revocation_event;
       DROP TABLE role;
+      DROP TABLE role_by_id;
       DROP TABLE sensitive_config;
       DROP TABLE service;
       DROP TABLE service_config;
